@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Geologica:wght@300..900&family=Onest:wght@300..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Geologica:wght@300..900&display=swap">
 <title>Scroll + Float + Dock</title>
 <style>
   :root{
     --ink:#14202A;
     --accent:#0FA5D8;
     --page:#FFFFFF;
-    --hero-bg:#0A1722;            /* фон главного экрана */
-    --hero-font:'Onest',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
     --pad:clamp(24px,5vw,96px);   /* боковые отступы страницы */
     /* заголовки разделов: Climate Crisis с Google Fonts, фолбэк системный */
     --display:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
@@ -509,7 +507,7 @@
     font-kerning:none;
     text-rendering:optimizeSpeed;
     transform:translateZ(0);
-    font-family:var(--hero-font);   /* Onest, только главный экран */
+    font-family:var(--display);   /* Geologica, как у заголовков разделов */
     font-weight:900;
     text-transform:lowercase;
     font-size:clamp(52px,8.0vw,116px);
@@ -521,7 +519,6 @@
     color:var(--ink);
   }
   .hero p{
-    font-family:var(--hero-font);   /* Onest, только главный экран */
     margin:40px 0 0;
     max-width:660px;
     font-size:clamp(20px,1.75vw,26px);
@@ -545,7 +542,7 @@
     position:fixed;
     inset:0;
     z-index:50;
-    background:var(--hero-bg);
+    background:var(--page);
     pointer-events:none;
     overflow:hidden;
     will-change:opacity;
@@ -561,7 +558,7 @@
     position:absolute;
     left:50%; top:50%;
     width:min(26vw,520px);
-    color:#FFFFFF;
+    color:#000;
     will-change:opacity,transform;
   }
   .pre-logo svg{display:block;width:100%;height:auto}
