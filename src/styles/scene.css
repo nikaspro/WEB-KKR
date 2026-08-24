@@ -1,0 +1,3 @@
+/* Стили скролл-сцены. Перенести из legacy/rd-hero-v4.html. */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: 'Geologica', system-ui, sans-serif; color: var(--ink); }

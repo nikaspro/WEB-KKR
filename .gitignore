@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.frames/
+
+# секреты и логи
+.env
+.env.*
+*.log
+npm-debug.log*
+
+# редакторы
+.vscode/
+.idea/
+*.swp
+
+# архивы: исходники держим файлами, не зипами
+*.zip

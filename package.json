@@ -1,0 +1,20 @@
+{
+  "name": "rd-landing",
+  "version": "0.1.0",
+  "description": "Лендинг «Путешествовать — легко»",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev":    "vite",
+    "build":  "vite build",
+    "preview":"vite preview",
+    "budget": "node scripts/budget.mjs",
+    "phases:check": "node scripts/phases-check.mjs"
+  },
+  "dependencies": {
+    "gsap": "^3.12.5"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
