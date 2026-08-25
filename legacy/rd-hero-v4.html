@@ -578,7 +578,7 @@
     transition:transform .62s cubic-bezier(.22,1,.36,1),
                color .6s,background-color .6s;
   }
-  body.menu-open{overflow:hidden}
+  body.menu-open{overflow-x:hidden}
   .menu-trigger{
     position:fixed;
     top:0;
@@ -621,42 +621,38 @@
     z-index:40;
     display:flex;
     flex-direction:column;
-    padding:clamp(24px,2.65vw,52px);
-    height:clamp(320px,33vh,460px);
+    padding:0 clamp(24px,2.65vw,52px);
+    height:0;
     background:#151515;
     color:#fff;
     border-radius:0 0 clamp(22px,2vw,38px) clamp(22px,2vw,38px);
     box-shadow:0 16px 42px rgba(10,23,34,.20);
     visibility:hidden;
     opacity:0;
-    transform:translateY(-108%);
+    pointer-events:none;
     overflow:hidden;
     transition:
-      transform .68s cubic-bezier(.76,0,.24,1),
+      height .68s cubic-bezier(.76,0,.24,1),
+      padding .68s cubic-bezier(.76,0,.24,1),
       opacity .18s ease,
       visibility 0s linear .68s;
   }
   .site-menu.is-open{
     visibility:visible;
     opacity:1;
-    transform:translateY(0);
+    pointer-events:auto;
+    height:clamp(320px,33vh,460px);
+    padding:clamp(24px,2.65vw,52px);
     transition-delay:0s;
   }
-  /* При открытом меню весь сайт становится отдельной карточкой: он уезжает
-     вниз, чуть уменьшается и оставляет по краям воздух, как в референсе. */
+  /* Меню раскрывается по высоте и сдвигает страницу, сохраняя её размер. */
   .site-shell{
     position:relative;
-    transform-origin:50% 0;
-    transition:transform .78s cubic-bezier(.22,1,.36,1),
-               border-radius .78s cubic-bezier(.22,1,.36,1),
-               box-shadow .78s ease;
+    margin-top:0;
+    transition:margin-top .68s cubic-bezier(.76,0,.24,1);
   }
   body.menu-open .site-shell{
-    transform:translate3d(0,clamp(320px,33vh,460px),0) scale(.945);
-    border-radius:clamp(20px,2vw,34px);
-    overflow:hidden;
-    box-shadow:0 20px 56px rgba(10,23,34,.18);
-    pointer-events:none;
+    margin-top:clamp(320px,33vh,460px);
   }
   .menu-top{
     position:relative;
@@ -775,7 +771,9 @@
   .site-menu .menu-note{display:none}
   @media (max-width:760px){
     .site-menu{height:58vh;overflow-y:auto}
-    body.menu-open .site-shell{transform:translate3d(0,58vh,0) scale(.96)}
+    .site-menu.is-open{height:58vh}
+    .site-menu:not(.is-open){height:0}
+    body.menu-open .site-shell{margin-top:58vh}
     .menu-links{
       grid-template-columns:1fr;
       align-items:start;
