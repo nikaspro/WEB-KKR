@@ -578,11 +578,6 @@
     transition:transform .62s cubic-bezier(.22,1,.36,1),
                color .6s,background-color .6s;
   }
-  body.header-hidden:not(.menu-open) .hdr,
-  body.header-hidden:not(.menu-open) .menu-trigger,
-  body.header-hidden:not(.menu-open) .header-cta-shine{
-    transform:translateY(-125%);
-  }
   body.menu-open{overflow:hidden}
   .menu-trigger{
     position:fixed;
@@ -2789,26 +2784,6 @@ function finishPreloader() {
     if (event.deltaY > 8) setMenu(false);
   }, { passive: true });
   addEventListener('keydown', event => { if (event.key === 'Escape') setMenu(false); });
-})();
-
-// Шапка не висит поверх контента: вниз — уезжает, вверх — возвращается.
-(() => {
-  let lastY = scrollY;
-  let ticking = false;
-  addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const nextY = scrollY;
-      const delta = nextY - lastY;
-      if (nextY < 36 || delta < -7) document.body.classList.remove('header-hidden');
-      else if (delta > 7 && !document.body.classList.contains('menu-open')) {
-        document.body.classList.add('header-hidden');
-      }
-      lastY = nextY;
-      ticking = false;
-    });
-  }, { passive: true });
 })();
 
 // Посимвольный GSAP-roll для пунктов меню и ссылок в подвале.
