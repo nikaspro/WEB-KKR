@@ -3213,13 +3213,16 @@ const influx = (() => {
   const out = [];
   for (let i = 0; i < INF_N; i++) {
     const el = document.createElement('i');
+    // Один индекс задаёт и очередь пролёта, и тип изображения. Поэтому в
+    // каждом видимом отрезке потока есть все фотографии и все PNG-объекты.
+    const flowIndex = (i * 67) % INF_N;
     // В каждом левом и правом потоке поровну фотографий и PNG-объектов.
     const isPhoto = i % 4 === 0 || i % 4 === 3;
     if (isPhoto) {
-      el.className = `is-photo ${FALL_CLASSES[(i * 7) % FALL_CLASSES.length]}`;
+      el.className = `is-photo ${FALL_CLASSES[flowIndex % FALL_CLASSES.length]}`;
     } else {
       el.className = 'is-object';
-      el.style.backgroundImage = `url('${PLAN_ASSETS[(i >> 1) % PLAN_ASSETS.length]}')`;
+      el.style.backgroundImage = `url('${PLAN_ASSETS[flowIndex % PLAN_ASSETS.length]}')`;
     }
     influxEl.appendChild(el);
     out.push({
@@ -3231,7 +3234,7 @@ const influx = (() => {
       // Перемешанные сменяющиеся группы: за весь проход прилетают все 192,
       // но в одном кадре они не образуют сплошную стену.
       // Последняя картинка должна полностью завершить путь к w=1.
-      lag: (((i * 67) % INF_N) / INF_N) * (1 - INF_ITEM_WINDOW),
+      lag: (flowIndex / INF_N) * (1 - INF_ITEM_WINDOW),
       rot: (i % 2 ? 1 : -1) * (5 + (i % 5) * 3),
       visible: false
     });
