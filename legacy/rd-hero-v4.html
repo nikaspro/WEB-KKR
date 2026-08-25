@@ -2100,7 +2100,50 @@
   }
   .tail-space{height:0}
   .hud{position:fixed;left:24px;bottom:24px;font-size:13px;color:#5A6B78;font-variant-numeric:tabular-nums}
-  @media (prefers-reduced-motion:reduce){.idle-y,.idle-r{animation:none}}
+  /* Декоративный скролл-индикатор. Внутренняя маска обрезает прозрачные
+     поля исходного SVG 64x932 до фактической графики между y=328 и y=604. */
+  .scroll-indicator{
+    --scroll-indicator-width:clamp(56px,4.3vw,64px);
+    position:fixed;
+    z-index:24;
+    left:0;
+    top:clamp(94px,11vh,122px);
+    bottom:clamp(30px,5vh,54px);
+    width:var(--scroll-indicator-width);
+    pointer-events:none;
+    overflow:visible;
+    opacity:.88;
+    transition:opacity .35s ease;
+    contain:layout paint;
+  }
+  .scroll-indicator__marker{
+    position:absolute;
+    top:0;
+    left:0;
+    width:var(--scroll-indicator-width);
+    height:calc(var(--scroll-indicator-width) * 4.3125); /* 276 / 64 */
+    overflow:hidden;
+    will-change:transform;
+  }
+  .scroll-indicator__graphic{
+    position:absolute;
+    top:calc(var(--scroll-indicator-width) * -5.125); /* -328 / 64 */
+    left:0;
+    display:block;
+    width:var(--scroll-indicator-width);
+    height:auto;
+    filter:drop-shadow(0 0 5px rgba(10,23,34,.22));
+    user-select:none;
+  }
+  body.is-loading .scroll-indicator{opacity:0}
+  @media (max-width:1100px){
+    .scroll-indicator{--scroll-indicator-width:56px;left:-4px}
+  }
+  @media (max-width:900px){.scroll-indicator{display:none}}
+  @media (prefers-reduced-motion:reduce){
+    .idle-y,.idle-r{animation:none}
+    .scroll-indicator{transition:none}
+  }
 </style>
 </head>
 <body class="is-loading">
@@ -2148,6 +2191,12 @@
   </div>
   <p class="menu-note">Путешествовать — легко</p>
 </nav>
+
+<div class="scroll-indicator" id="scrollIndicator" aria-hidden="true">
+  <div class="scroll-indicator__marker" id="scrollIndicatorMarker">
+    <img class="scroll-indicator__graphic" src="assets/ui/scroll-indicator.svg" alt="" width="64" height="932" draggable="false">
+  </div>
+</div>
 
 <div class="pre" id="pre">
   <div class="pre-blob" id="pb0" style="--w:46vw; left:-12vw; top:66vh"><div class="gimg g1"></div></div>
@@ -2398,6 +2447,35 @@
 <script src="assets/vendor/gsap.min.js"></script>
 <script>
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Сквозной прогресс страницы: индикатор движется внутри безопасного fixed-трека.
+// Используем общий GSAP ticker проекта вместо второго scroll-цикла/плагина.
+const scrollIndicator = document.getElementById('scrollIndicator');
+const scrollIndicatorMarker = document.getElementById('scrollIndicatorMarker');
+const setScrollIndicatorY = scrollIndicatorMarker && gsap.quickSetter(scrollIndicatorMarker, 'y', 'px');
+let scrollIndicatorRange = 0;
+let scrollIndicatorProgress = 0;
+let scrollIndicatorDrawn = -1;
+function refreshScrollIndicator() {
+  if (!scrollIndicator || !scrollIndicatorMarker) return;
+  scrollIndicatorRange = Math.max(0, scrollIndicator.clientHeight - scrollIndicatorMarker.offsetHeight);
+  scrollIndicatorDrawn = -1;
+}
+refreshScrollIndicator();
+addEventListener('resize', refreshScrollIndicator, { passive:true });
+addEventListener('load', refreshScrollIndicator, { once:true, passive:true });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshScrollIndicator);
+gsap.ticker.add(() => {
+  // У position:fixed offsetParent всегда null, поэтому видимость проверяем
+  // по адаптивному брейкпоинту, а не по offsetParent.
+  if (!setScrollIndicatorY || innerWidth <= 900) return;
+  const maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+  const target = gsap.utils.clamp(0, 1, scrollY / maxScroll);
+  scrollIndicatorProgress += (target - scrollIndicatorProgress) * (reduced ? 1 : 0.095);
+  if (Math.abs(scrollIndicatorProgress - scrollIndicatorDrawn) < 0.00008) return;
+  scrollIndicatorDrawn = scrollIndicatorProgress;
+  setScrollIndicatorY(scrollIndicatorRange * scrollIndicatorProgress);
+});
 
 // Точная копия референсной шапки, обрезанная до центрального логотипа.
 // На светлом фоне она становится чёрной, на тёмном уступает белому оригиналу.
