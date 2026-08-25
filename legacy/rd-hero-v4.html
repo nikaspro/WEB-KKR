@@ -663,7 +663,8 @@
     z-index:1;
     display:flex;
     align-items:center;
-    justify-content:space-between;
+    justify-content:center;
+    min-height:42px;
   }
   .menu-brand{
     color:#fff;
@@ -671,11 +672,13 @@
     letter-spacing:-.07em;
   }
   .menu-close{
-    position:relative;
+    position:absolute;
+    top:0;
+    left:calc(clamp(112px,10vw,150px) / 2 - 21px);
     z-index:1;
     display:inline-flex;
     align-items:center;
-    gap:14px;
+    gap:0;
     padding:0;
     border:0;
     background:transparent;
@@ -683,6 +686,7 @@
     font:600 13px/1 'Onest',system-ui,sans-serif;
     cursor:pointer;
   }
+  .menu-close > span{display:none}
   .menu-close b{
     display:grid;
     place-items:center;
@@ -2006,19 +2010,16 @@
   </div>
   <div class="menu-links">
     <section class="menu-column">
-      <p class="menu-kicker">Продукт</p>
       <a href="#features" data-menu-close>Возможности</a>
       <a href="#routes" data-menu-close>Маршруты</a>
       <a href="#assistant" data-menu-close>Помощник</a>
     </section>
     <section class="menu-column">
-      <p class="menu-kicker">О проекте</p>
       <a href="#" data-menu-close>Главная</a>
       <a href="#weatherSection" data-menu-close>Как это работает</a>
       <a href="#footer" data-menu-close>Контакты</a>
     </section>
     <section class="menu-column">
-      <p class="menu-kicker">Приложение</p>
       <a href="#download" data-menu-close>Скачать</a>
       <div class="menu-languages" aria-label="Выбор языка">
         <button class="menu-language" type="button" data-language="en">EN</button>
