@@ -1168,6 +1168,20 @@
   .influx i.is-photo{background-size:cover;background-color:#E4E8EC}
   .influx i.is-object{border-radius:0}
 
+  /* Финальный взрыв собранного плана: объекты разлетаются из корпуса,
+     оставаясь за телефоном, чтобы источник движения читался естественно. */
+  .plan-explosion{position:absolute;inset:0;z-index:5;overflow:hidden;pointer-events:none}
+  .plan-explosion img{
+    position:absolute;
+    left:50%;top:50%;
+    width:clamp(72px,8vw,180px);
+    height:clamp(72px,8vw,180px);
+    object-fit:contain;
+    opacity:0;
+    will-change:transform,opacity;
+    backface-visibility:hidden;
+  }
+
   /* карточка рождается под курсором и живёт до конца падения */
   /* рой шариков: под корпусом, поэтому втягивание читается как въезд внутрь */
   .swarm{position:absolute;inset:0;z-index:5;pointer-events:none}
@@ -2122,6 +2136,7 @@
   <div class="swarm" id="swarm"></div>
 
   <div class="influx" id="influx"></div>
+  <div class="plan-explosion" id="planExplosion" aria-hidden="true"></div>
   <div class="fall" id="fall"></div>
   <div class="demo-cursor" id="demoCursor"></div>
 
@@ -2983,6 +2998,7 @@ const setBot = gsap.quickSetter('#botGlow', 'css');
 
 // ---- фаза зарядки: скролл заливает текст, фон желтеет, частицы летят в корпус ----
 const CHG_IN = 1.240, CHG_OUT = 1.695;   // старт позже: перед ней успевает пройти помощник
+const EXP_IN = 1.515, EXP_FULL = 1.590, EXP_OUT = 1.690;
 const setChargeBg = gsap.quickSetter('#chargeBg', 'opacity');
 const setPulse    = gsap.quickSetter('#pulseWhite', 'css');
 const cap3El  = document.getElementById('cap3');
@@ -3108,6 +3124,23 @@ const PLAN_ASSETS = [
   'assets/plan-build/bust.webp',
   'assets/plan-build/shell.webp'
 ];
+// В кульминации собранного плана эти же объекты вылетают из телефона.
+const explosionEl = document.getElementById('planExplosion');
+const explosionItems = Array.from({ length: 30 }, (_, i) => {
+  const el = document.createElement('img');
+  el.src = PLAN_ASSETS[i % PLAN_ASSETS.length];
+  el.alt = '';
+  el.decoding = 'async';
+  explosionEl.appendChild(el);
+  return {
+    setC: gsap.quickSetter(el, 'css'),
+    angle: (i / 30) * Math.PI * 2 + (i % 3) * 0.18,
+    reach: 0.25 + (i % 7) * 0.055,
+    size: 0.34 + (i % 6) * 0.12,
+    rot: -38 + (i * 47) % 92
+  };
+});
+let explosionDirty = true;
 // Сильный перепад размеров создаёт глубину без деформации самих картинок.
 const INF_SCALES = [
   .24,.34,.42,.52,.62,.76,.90,1.05,.30,.46,
@@ -3373,6 +3406,28 @@ gsap.ticker.add(() => {
   // кадр не задерживается при медленном скролле.
   const chgY = smooth(clamp01(chg / 0.018));
   setChargeBg(chgY);
+
+  // После сборки план выстреливает наружу. Источник движения берём из
+  // фактической позиции корпуса, поэтому взрыв остаётся привязан к телефону.
+  const expIn = smooth(clamp01((p - EXP_IN) / 0.035));
+  const expTravel = smooth(clamp01((p - EXP_IN) / (EXP_FULL - EXP_IN)));
+  const expOut = smooth(clamp01((p - EXP_OUT) / 0.025));
+  const explosionPhase = p > EXP_IN - 0.02 && p < EXP_OUT + 0.04;
+  if (explosionPhase || explosionDirty) {
+    const phoneRect = box.getBoundingClientRect();
+    const sourceX = phoneRect.left + phoneRect.width * 0.5 - innerWidth * 0.5;
+    const sourceY = phoneRect.top + phoneRect.height * 0.48 - innerHeight * 0.5;
+    explosionItems.forEach((item) => {
+      item.setC({
+        x: sourceX + Math.cos(item.angle) * innerWidth * item.reach * expTravel,
+        y: sourceY + Math.sin(item.angle) * innerHeight * item.reach * expTravel,
+        rotation: item.rot * expTravel,
+        scale: item.size * (0.14 + 0.86 * expTravel),
+        opacity: expIn * (1 - expOut)
+      });
+    });
+    explosionDirty = explosionPhase;
+  }
   setVeil(dk * (1 - Math.min(1, chgY * 2.2)));   // вуаль уходит с опережением: смеси нет
   cap3El.style.setProperty('--chg', ((1 - chg) * 100).toFixed(1) + '%');
   const c3in  = smooth(clamp01((p - CHG_IN) / 0.02));
