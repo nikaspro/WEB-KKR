@@ -3034,7 +3034,6 @@ const setBot = gsap.quickSetter('#botGlow', 'css');
 
 // ---- фаза зарядки: скролл заливает текст, фон желтеет, частицы летят в корпус ----
 const CHG_IN = 1.240, CHG_OUT = 1.695;   // старт позже: перед ней успевает пройти помощник
-const EXP_IN = 1.515, EXP_FULL = 1.590, EXP_OUT = 1.690;
 const setChargeBg = gsap.quickSetter('#chargeBg', 'opacity');
 const setPulse    = gsap.quickSetter('#pulseWhite', 'css');
 const cap3El  = document.getElementById('cap3');
@@ -3171,12 +3170,13 @@ const explosionItems = Array.from({ length: 30 }, (_, i) => {
   return {
     setC: gsap.quickSetter(el, 'css'),
     angle: (i / 30) * Math.PI * 2 + (i % 3) * 0.18,
-    reach: 0.25 + (i % 7) * 0.055,
-    size: 0.34 + (i % 6) * 0.12,
-    rot: -38 + (i * 47) % 92
+    phase: i / 30,
+    reach: 0.88 + (i % 7) * 0.045,
+    size: 0.58 + (i % 6) * 0.14,
+    rot: -54 + (i * 47) % 116
   };
 });
-let explosionDirty = true;
+gsap.set(explosionEl.children, { xPercent: -50, yPercent: -50, opacity: 0 });
 // Сильный перепад размеров создаёт глубину без деформации самих картинок.
 const INF_SCALES = [
   .24,.34,.42,.52,.62,.76,.90,1.05,.30,.46,
@@ -3449,27 +3449,6 @@ gsap.ticker.add(() => {
   const chgY = smooth(clamp01(chg / 0.018));
   setChargeBg(chgY);
 
-  // После сборки план выстреливает наружу. Источник движения берём из
-  // фактической позиции корпуса, поэтому взрыв остаётся привязан к телефону.
-  const expIn = smooth(clamp01((p - EXP_IN) / 0.035));
-  const expTravel = smooth(clamp01((p - EXP_IN) / (EXP_FULL - EXP_IN)));
-  const expOut = smooth(clamp01((p - EXP_OUT) / 0.025));
-  const explosionPhase = p > EXP_IN - 0.02 && p < EXP_OUT + 0.04;
-  if (explosionPhase || explosionDirty) {
-    const phoneRect = box.getBoundingClientRect();
-    const sourceX = phoneRect.left + phoneRect.width * 0.5 - innerWidth * 0.5;
-    const sourceY = phoneRect.top + phoneRect.height * 0.48 - innerHeight * 0.5;
-    explosionItems.forEach((item) => {
-      item.setC({
-        x: sourceX + Math.cos(item.angle) * innerWidth * item.reach * expTravel,
-        y: sourceY + Math.sin(item.angle) * innerHeight * item.reach * expTravel,
-        rotation: item.rot * expTravel,
-        scale: item.size * (0.14 + 0.86 * expTravel),
-        opacity: expIn * (1 - expOut)
-      });
-    });
-    explosionDirty = explosionPhase;
-  }
   setVeil(dk * (1 - Math.min(1, chgY * 2.2)));   // вуаль уходит с опережением: смеси нет
   cap3El.style.setProperty('--chg', ((1 - chg) * 100).toFixed(1) + '%');
   const c3in  = smooth(clamp01((p - CHG_IN) / 0.02));
@@ -3676,6 +3655,44 @@ gsap.ticker.add(() => {
     pEl.textContent = nextShown;
   }
   p = pq;   // сглаживание наверху работает в шкале q
+});
+
+// После завершения белой волны объекты непрерывно рождаются внутри телефона
+// и летят к рамке. Перспектива строится только масштабом: рядом с источником
+// объект почти точка, у края экрана он становится в несколько раз крупнее.
+let explosionLoopOn = false;
+gsap.ticker.add(() => {
+  const travelP = clamp01((p - TRV_IN) / (1 - TRV_IN));
+  const whiteReady = reduced ? 0 : smooth(clamp01((travelP - 0.36) / 0.07));
+
+  if (whiteReady <= 0.001) {
+    if (explosionLoopOn) {
+      explosionLoopOn = false;
+      explosionItems.forEach((item) => item.setC({ opacity: 0 }));
+    }
+    return;
+  }
+
+  explosionLoopOn = true;
+  const phoneRect = box.getBoundingClientRect();
+  const sourceX = phoneRect.left + phoneRect.width * 0.5 - innerWidth * 0.5;
+  const sourceY = phoneRect.top + phoneRect.height * 0.47 - innerHeight * 0.5;
+  const clock = performance.now() / 4600;
+
+  explosionItems.forEach((item) => {
+    const life = (clock + item.phase) % 1;
+    const travel = life * life * (3 - 2 * life);
+    const born = smooth(clamp01(life / 0.09));
+    const gone = smooth(clamp01((life - 0.91) / 0.09));
+    const depth = Math.pow(life, 1.72);
+    item.setC({
+      x: sourceX + Math.cos(item.angle) * innerWidth * 0.62 * item.reach * travel,
+      y: sourceY + Math.sin(item.angle) * innerHeight * 0.78 * item.reach * travel,
+      rotation: item.rot * travel,
+      scale: item.size * (0.08 + depth * 2.72),
+      opacity: whiteReady * born * (1 - gone)
+    });
+  });
 });
 
 // ---- демонстрация жеста на фазе карточек ----
