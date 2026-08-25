@@ -3365,8 +3365,10 @@ gsap.ticker.add(() => {
     const fromCenterY = baseY - innerHeight / 2;
     const side = fromCenterX < 0 ? -1 : 1;
     const centerNear = 1 - Math.min(1, Math.abs(fromCenterX) / (innerWidth * .5));
-    const spreadX = side * innerWidth * (.08 + .25 * centerNear) * tagSpread * t.depth;
-    const spreadY = Math.sign(fromCenterY || 1) * innerHeight * .045 * centerNear * tagSpread;
+    // Разъезжается всё облако, включая крайние плашки. Дополнительный импульс
+    // в центре сохраняет свободное место для крупного запроса.
+    const spreadX = side * innerWidth * (.095 + .19 * centerNear) * tagSpread;
+    const spreadY = Math.sign(fromCenterY || 1) * innerHeight * (.024 + .033 * centerNear) * tagSpread;
     let cursorTargetX = 0, cursorTargetY = 0;
     let cursorNear = 0;
     if (tagPointer.active && !reduced) {
