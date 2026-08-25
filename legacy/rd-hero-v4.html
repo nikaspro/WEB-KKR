@@ -2215,6 +2215,27 @@
 <div class="spacer"></div>
 </div>
 
+<!-- Погода следует за сценой «Куда сходить», до онлайн-гида. -->
+<section class="weather-story" id="weatherStory" aria-label="План поездки с учётом погоды">
+  <div class="weather-sticky">
+    <svg class="weather-icons" aria-hidden="true"><defs>
+      <symbol id="wx-partly" viewBox="0 0 72 72"><circle cx="49" cy="24" r="13" fill="#FFB612"/><path d="M17 56h36.5a12.5 12.5 0 0 0 0-25 19 19 0 0 0-35.8 5.2A10 10 0 0 0 17 56Z" fill="#82B5F4"/></symbol>
+      <symbol id="wx-sun" viewBox="0 0 72 72"><g stroke="#FFB612" stroke-width="5" stroke-linecap="round"><path d="M36 5v9M36 58v9M5 36h9M58 36h9M14 14l7 7M51 51l7 7M58 14l-7 7M21 51l-7 7"/></g><circle cx="36" cy="36" r="15" fill="#FFB612"/></symbol>
+      <symbol id="wx-sunset" viewBox="0 0 72 72"><path d="M12 48h48" stroke="#FFB612" stroke-width="4" stroke-linecap="round"/><path d="M22 48a14 14 0 0 1 28 0" fill="#FFD76C"/><path d="M36 13v8M13 36h8M51 36h8M20 20l6 6M52 20l-6 6" stroke="#FFB612" stroke-width="4" stroke-linecap="round"/><path d="M36 55v11m0 0-5-5m5 5 5-5" stroke="#7BBBEF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="wx-moon" viewBox="0 0 72 72"><path d="M49 53A25 25 0 0 1 30 9a25 25 0 1 0 19 44Z" fill="#FFE9A9"/></symbol>
+    </defs></svg>
+    <div class="weather-head"><h2 class="weather-title">События подстраиваются под погоду</h2><p class="weather-intro">Luna следит за прогнозом во время поездки и перестраивает план так, чтобы хорошая погода не пропадала зря.</p></div>
+    <div class="weather-timeline-wrap">
+      <div class="weather-timeline" id="weatherTimeline"><div class="weather-glow" id="weatherGlow"></div>
+        <div class="weather-hour" data-weather-phase="0"><time>14:00</time><svg><use href="#wx-partly"/></svg><b>+20°</b><small></small></div><div class="weather-hour" data-weather-phase="0"><time>15:00</time><svg><use href="#wx-partly"/></svg><b>+20°</b><small></small></div><div class="weather-hour" data-weather-phase="0"><time>16:00</time><svg><use href="#wx-partly"/></svg><b>+19°</b><small></small></div>
+        <div class="weather-hour" data-weather-phase="1"><time>17:00</time><svg><use href="#wx-sun"/></svg><b>+18°</b><small></small></div><div class="weather-hour" data-weather-phase="1"><time>18:00</time><svg><use href="#wx-sun"/></svg><b>+19°</b><small></small></div><div class="weather-hour" data-weather-phase="1"><time>19:00</time><svg><use href="#wx-sun"/></svg><b>+18°</b><small></small></div>
+        <div class="weather-hour" data-weather-phase="2"><time>19:45</time><svg><use href="#wx-sunset"/></svg><b>Закат</b><small>через 45 минут</small></div><div class="weather-hour" data-weather-phase="3"><time>20:00</time><svg><use href="#wx-moon"/></svg><b>+17°</b><small></small></div><div class="weather-hour" data-weather-phase="3"><time>21:00</time><svg><use href="#wx-moon"/></svg><b>+16°</b><small></small></div><div class="weather-hour" data-weather-phase="3"><time>22:00</time><svg><use href="#wx-moon"/></svg><b>+15°</b><small></small></div><div class="weather-hour" data-weather-phase="3"><time>23:00</time><svg><use href="#wx-moon"/></svg><b>+15°</b><small></small></div>
+      </div>
+      <div class="weather-comment-row"><div class="weather-comment" id="weatherComment" data-phase="0" aria-live="polite">Днём хорошая погода — предлагаю больше прогулок</div></div>
+    </div>
+  </div>
+</section>
+
 <section class="guide-expand" id="guideExpand" aria-label="Онлайн-гид по поездке">
   <div class="guide-sticky">
     <h2 class="guide-title"><span class="guide-word guide-word-left">Онлайн</span><span class="guide-gap" aria-hidden="true"></span><span class="guide-word guide-word-right">гид</span></h2>
@@ -2223,53 +2244,6 @@
            width="1591" height="988"
            alt="Исторический центр Кембриджа и мост над рекой"
            loading="lazy" decoding="async">
-    </div>
-  </div>
-</section>
-
-<section class="weather-story" id="weatherStory" aria-label="План поездки с учётом погоды">
-  <div class="weather-sticky">
-    <svg class="weather-icons" aria-hidden="true">
-      <defs>
-        <symbol id="wx-partly" viewBox="0 0 72 72">
-          <circle cx="49" cy="24" r="13" fill="#FFB612"/>
-          <path d="M17 56h36.5a12.5 12.5 0 0 0 0-25 19 19 0 0 0-35.8 5.2A10 10 0 0 0 17 56Z" fill="#82B5F4"/>
-        </symbol>
-        <symbol id="wx-sun" viewBox="0 0 72 72">
-          <g stroke="#FFB612" stroke-width="5" stroke-linecap="round"><path d="M36 5v9M36 58v9M5 36h9M58 36h9M14 14l7 7M51 51l7 7M58 14l-7 7M21 51l-7 7"/></g><circle cx="36" cy="36" r="15" fill="#FFB612"/>
-        </symbol>
-        <symbol id="wx-sunset" viewBox="0 0 72 72">
-          <path d="M12 48h48" stroke="#FFB612" stroke-width="4" stroke-linecap="round"/><path d="M22 48a14 14 0 0 1 28 0" fill="#FFD76C"/><path d="M36 13v8M13 36h8M51 36h8M20 20l6 6M52 20l-6 6" stroke="#FFB612" stroke-width="4" stroke-linecap="round"/><path d="M36 55v11m0 0-5-5m5 5 5-5" stroke="#7BBBEF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-        <symbol id="wx-moon" viewBox="0 0 72 72">
-          <path d="M49 53A25 25 0 0 1 30 9a25 25 0 1 0 19 44Z" fill="#FFE9A9"/>
-        </symbol>
-      </defs>
-    </svg>
-
-    <div class="weather-head">
-      <h2 class="weather-title">События подстраиваются под погоду</h2>
-      <p class="weather-intro">Luna следит за прогнозом во время поездки и перестраивает план так, чтобы хорошая погода не пропадала зря.</p>
-    </div>
-
-    <div class="weather-timeline-wrap">
-      <div class="weather-timeline" id="weatherTimeline">
-        <div class="weather-glow" id="weatherGlow"></div>
-        <div class="weather-hour" data-weather-phase="0"><time>14:00</time><svg><use href="#wx-partly"/></svg><b>+20°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="0"><time>15:00</time><svg><use href="#wx-partly"/></svg><b>+20°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="0"><time>16:00</time><svg><use href="#wx-partly"/></svg><b>+19°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="1"><time>17:00</time><svg><use href="#wx-sun"/></svg><b>+18°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="1"><time>18:00</time><svg><use href="#wx-sun"/></svg><b>+19°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="1"><time>19:00</time><svg><use href="#wx-sun"/></svg><b>+18°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="2"><time>19:45</time><svg><use href="#wx-sunset"/></svg><b>Закат</b><small>через 45 минут</small></div>
-        <div class="weather-hour" data-weather-phase="3"><time>20:00</time><svg><use href="#wx-moon"/></svg><b>+17°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="3"><time>21:00</time><svg><use href="#wx-moon"/></svg><b>+16°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="3"><time>22:00</time><svg><use href="#wx-moon"/></svg><b>+15°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="3"><time>23:00</time><svg><use href="#wx-moon"/></svg><b>+15°</b><small></small></div>
-      </div>
-      <div class="weather-comment-row">
-        <div class="weather-comment" id="weatherComment" data-phase="0" aria-live="polite">Днём хорошая погода — предлагаю больше прогулок</div>
-      </div>
     </div>
   </div>
 </section>
