@@ -2480,9 +2480,11 @@ CAP_START.forEach((at, i) => {
   capTl.set(el, { opacity: 1 }, at)
     .fromTo(ws, { yPercent: 115 },
       { yPercent: 0, duration: CIN, stagger: 0.006, ease: 'expo.out' }, at)
-    .to(ws,
-      { yPercent: -115, duration: COUT, stagger: 0.004, ease: 'power2.inOut' }, end)
-    .set(el, { opacity: 0 }, end + COUT + 0.008);
+    // Уход — целой надписью, а не через маску каждого слова: так в кадре
+    // не остаётся эффект «обрезанных» или зависших букв.
+    .to(el, { opacity: 0, y: -14, duration: COUT, ease: 'power2.inOut' }, end)
+    .set(ws, { yPercent: 0 }, end + COUT + 0.008)
+    .set(el, { opacity: 0, y: 0 }, end + COUT + 0.008);
   // подпись и чипсы внутри заголовка идут следом, коротким ходом
   const subs = el.querySelectorAll('em, .cchips, .ticks');
   if (subs.length) capTl.fromTo(subs, { opacity: 0, y: 30 },
