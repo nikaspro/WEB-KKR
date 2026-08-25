@@ -2426,20 +2426,16 @@ if (document.readyState === 'complete') tryFinish();
 else addEventListener('load', tryFinish);
 setTimeout(tryFinish, 6000);   // страховка: не залипать, если что-то не догрузилось
 
-// надписи: один paused-таймлайн GSAP, прогресс задаём сами из тикера.
-// заголовки выезжают словами из-под масок (паттерн заголовка «рутины»):
-// ход = высота строки, полупрозрачных промежуточных кадров нет.
-// окна короче и не пересекаются: вход 0.02 + холд 0.03 + уход 0.016
+// Надписи: один paused-таймлайн GSAP, прогресс задаём сами из тикера.
+// Важно: кадры дискретные — блок либо есть целиком, либо его уже нет.
+// Так при скролле не остаются обрезанные или полупрозрачные слова.
 // [0] после влёта карточек и появления плана, [3] — вход в зарядку
 const CAP_START = [0.600, 0.832, 1.016, 1.240];
 // длина таймлайна: позиции заданы в единицах старой шкалы p и уходят за 1.0,
 // поэтому прогресс нормируем на эту длину, а не на единицу
 const CAP_TL_LEN = 1.45;
-// Заголовки проходят кадр непрерывно: после появления сразу начинают уходить,
-// без «зависания» в центре сцены.
-const CAP_HOLD  = 0;
-const CAP_HOLD2 = 0.095;   // «помощник» держится дольше: под ним закрывается чек-лист
-const CIN = 0.038, COUT = 0.030;   // окна вдвое длиннее: текст не щёлкает, а выезжает
+const CAP_HOLD  = 0.070;
+const CAP_HOLD2 = 0.105;   // «помощник» держится дольше: под ним закрывается чек-лист
 const capTl = gsap.timeline({ paused: true, defaults: { ease: 'power2.out' } });
 
 // текстовые узлы заголовка режем на слова в масках; em и чипсы не трогаем
@@ -2470,29 +2466,19 @@ CAP_START.forEach((at, i) => {
   if (i === 3) return;   // «заряжаем поездку» живёт своей фазой зарядки
   const el = document.getElementById('cap' + i);
   const ws = splitCapWords(el);
-  const end = at + CIN + (i === 2 ? CAP_HOLD2 : CAP_HOLD);
-  capTl.set(el, { opacity: 1 }, at)
-    .fromTo(ws, { yPercent: 115 },
-      { yPercent: 0, duration: CIN, stagger: 0.006, ease: 'expo.out' }, at)
-    // Уход — целой надписью, а не через маску каждого слова: так в кадре
-    // не остаётся эффект «обрезанных» или зависших букв.
-    .to(el, { opacity: 0, y: -14, duration: COUT, ease: 'power2.inOut' }, end)
-    .set(ws, { yPercent: 0 }, end + COUT + 0.008)
-    .set(el, { opacity: 0, y: 0 }, end + COUT + 0.008);
-  // подпись и чипсы внутри заголовка идут следом, коротким ходом
-  const subs = el.querySelectorAll('em, .cchips, .ticks');
-  if (subs.length) capTl.fromTo(subs, { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: CIN, stagger: 0.008, ease: 'expo.out' }, at + 0.010)
-    .to(subs, { opacity: 0, y: -22, duration: COUT, ease: 'power2.inOut' }, end);
+  const end = at + (i === 2 ? CAP_HOLD2 : CAP_HOLD);
+  gsap.set(el, { autoAlpha: 0 });
+  gsap.set(ws, { yPercent: 0 });
+  capTl.set(el, { autoAlpha: 1 }, at)
+    .set(el, { autoAlpha: 0 }, end);
 });
 // длительность таймлайна прибиваем к 1.0: позиции выше заданы в единицах
 // прогресса, и без этой заглушки они бы сжались под фактическую длину
 // боковые блоки: тот же короткий ход
 function capSide(sel, at, hold) {
-  capTl.fromTo(sel, { opacity: 0, y: 44 },
-      { opacity: 1, y: 0, duration: CIN, ease: 'expo.out' }, at + 0.008)
-    .to(sel, { opacity: 0, y: -30, duration: COUT, ease: 'power2.inOut' },
-      at + CIN + (hold || CAP_HOLD));
+  gsap.set(sel, { autoAlpha: 0 });
+  capTl.set(sel, { autoAlpha: 1 }, at)
+    .set(sel, { autoAlpha: 0 }, at + (hold || CAP_HOLD));
 }
 // чек-лист помощника: пункты приходят по одному и тут же зачёркиваются —
 // помощник делает это за гостя, поэтому список закрывается сам
@@ -2513,14 +2499,10 @@ capSide('#side0', CAP_START[0]);
 capSide('#awave', CAP_START[0]);
 capSide('#side2', CAP_START[2], CAP_HOLD2);
 
-// облако тегов справа: чипсы приходят каскадом
-capTl.set('#ctags', { opacity: 1 }, CAP_START[0])
-  .fromTo('#ctags .cchip', { opacity: 0, y: 28 },
-    { opacity: 1, y: 0, duration: CIN, stagger: 0.008, ease: 'expo.out' }, CAP_START[0] + 0.008)
-  .to('#ctags .cchip',
-    { opacity: 0, y: -22, duration: COUT, stagger: 0.005, ease: 'power2.inOut' },
-    CAP_START[0] + CIN + CAP_HOLD)
-  .set('#ctags', { opacity: 0 }, CAP_START[0] + CIN + CAP_HOLD + COUT + 0.012);
+// Облако тегов справа появляется и исчезает целиком вместе с надписью.
+gsap.set('#ctags', { autoAlpha: 0 });
+capTl.set('#ctags', { autoAlpha: 1 }, CAP_START[0])
+  .set('#ctags', { autoAlpha: 0 }, CAP_START[0] + CAP_HOLD);
 
 
 // реальный твин-заглушка держит длину: пустой set() длину не задаёт
