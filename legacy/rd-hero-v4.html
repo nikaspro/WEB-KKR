@@ -272,7 +272,6 @@
        иначе на масштабе финала растр не тянет */
     border:0;
     transform-origin:0 0;
-    opacity:0;
     /* scale считает JS от фактического размера .screen */
   }
 
@@ -3167,7 +3166,10 @@ const influx = (() => {
     const el = document.createElement('i');
     // Один индекс задаёт и очередь пролёта, и тип изображения. Поэтому в
     // каждом видимом отрезке потока есть все фотографии и все PNG-объекты.
-    const flowIndex = (i * 67) % INF_N;
+    // Левая и правая копии пары проходят сцену одновременно. Раньше их
+    // задержки отличались, поэтому в случайных кадрах вся масса оказывалась справа.
+    const pairIndex = Math.floor(i / 2);
+    const flowIndex = (pairIndex * 67) % (INF_N / 2);
     // В каждом левом и правом потоке поровну фотографий и PNG-объектов.
     const isPhoto = i % 4 === 0 || i % 4 === 3;
     if (isPhoto) {
@@ -3182,11 +3184,13 @@ const influx = (() => {
       side: i % 2 ? 1 : -1,
       row: 0.12 + ((i * 37) % 101) / 100 * 0.76,
       lane: ((i * 53) % 97) / 96 * .11,
-      size: INF_SCALES[i % INF_SCALES.length],
+      // Одинаковый масштаб для левого и правого элемента пары: крупные
+      // значения больше не скапливаются только с одной стороны экрана.
+      size: INF_SCALES[Math.floor(i / 2) % INF_SCALES.length],
       // Перемешанные сменяющиеся группы: за весь проход прилетают все 192,
       // но в одном кадре они не образуют сплошную стену.
       // Последняя картинка должна полностью завершить путь к w=1.
-      lag: (flowIndex / INF_N) * (1 - INF_ITEM_WINDOW),
+      lag: (flowIndex / (INF_N / 2)) * (1 - INF_ITEM_WINDOW),
       rot: (i % 2 ? 1 : -1) * (5 + (i % 5) * 3),
       visible: false
     });
@@ -3200,9 +3204,7 @@ let influxDirty = true;
 // гаснет к нырку и ставится на паузу, чтобы не жечь кадры за кадром
 const heroVid = document.getElementById('heroVid');
 const setVid = gsap.quickSetter(heroVid, 'css');
-const setAppFrame = gsap.quickSetter(frame, 'css');
 let vidOn = true;
-let appFrameOn = false;
 const VIDEO_CUT = 0.060;
 
 // Отдельный MP4 поддерживает range-запросы и не требует синхронного base64-декодирования.
@@ -3301,17 +3303,11 @@ gsap.ticker.add(() => {
   // До точки переключения виден исключительно MP4. Затем кадр меняется
   // целиком: видео исчезает, а приложение появляется без наложения слоёв.
   const wantVid = p < VIDEO_CUT;
-  const wantAppFrame = !wantVid;
   setVid({ opacity: wantVid ? 1 : 0 });
-  setAppFrame({ opacity: wantAppFrame ? 1 : 0 });
   if (wantVid !== vidOn) {
     vidOn = wantVid;
     heroVid.style.visibility = vidOn ? 'visible' : 'hidden';
     if (vidOn) heroVid.play().catch(() => {}); else heroVid.pause();
-  }
-  if (wantAppFrame !== appFrameOn) {
-    appFrameOn = wantAppFrame;
-    frame.style.visibility = appFrameOn ? 'visible' : 'hidden';
   }
 
   // поток превью: летят к корпусу и гаснут у кромки
@@ -3533,11 +3529,8 @@ gsap.ticker.add(() => {
   let zV  = mirZ;
   let scV = sc;
 
-  // На втором экране корпус возвращается ровно в оптический центр.
-  // Компенсируем смещение, которое создаёт наклон высокого корпуса в перспективе.
-  const returnCenter = smooth(clamp01((p - BACK_IN) / 0.035))
-    * (1 - smooth(clamp01((p - LOAD_OUT) / 0.05)));
-  xV += innerWidth * 0.10 * returnCenter;
+  // На экране сборки корпус остаётся в геометрическом центре. Дополнительный
+  // сдвиг вправо ломал композицию на широких окнах и стягивал поток в одну сторону.
 
   // проезд: w вводит в макро, e ведёт камеру вдоль корпуса и выпрямляет перспективу.
   // корпус скользит вниз сквозь кадр — это и есть движение камеры вдоль длины
