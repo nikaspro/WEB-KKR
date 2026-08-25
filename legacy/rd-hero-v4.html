@@ -493,14 +493,9 @@
     user-select:none;
     -webkit-user-select:none;
     -webkit-user-drag:none;
-    /* В исходной картинке шапки языки были частью SVG. Две маски
-       оставляют бургер и всю правую часть, но вырезают EN/RU. */
-    -webkit-mask:
-      linear-gradient(#000 0 0) left top/6.15% 100% no-repeat,
-      linear-gradient(#000 0 0) left 6.15% top/80.35% 100% no-repeat;
-    mask:
-      linear-gradient(#000 0 0) left top/6.15% 100% no-repeat,
-      linear-gradient(#000 0 0) left 6.15% top/80.35% 100% no-repeat;
+    /* SVG остаётся только источником для отдельного адаптивного логотипа.
+       Иначе его бургер и EN/RU накладываются на настоящий интерактивный хедер. */
+    display:none;
   }
   .header-logo-adaptive,
   .header-lang-adaptive{
@@ -520,8 +515,8 @@
   }
   .header-lang-adaptive{display:none}
   body.menu-on-dark .header-logo-adaptive,
+  body.is-dark .header-logo-adaptive{filter:brightness(0) invert(1)}
   body.menu-on-dark .header-lang-adaptive,
-  body.is-dark .header-logo-adaptive,
   body.is-dark .header-lang-adaptive,
   body.logo-inv .header-logo-adaptive,
   body.logo-inv .header-lang-adaptive{opacity:0}
