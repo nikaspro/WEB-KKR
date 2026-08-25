@@ -201,12 +201,10 @@
     transform:translateZ(calc(var(--d)/-2)) rotateY(180deg);
   }
 
-  /* шторка сверху */
-  /* обёртка центрирует раскладкой: GSAP меняет ширину, и любой
-     пересчитанный в пиксели translate уводил бы шторку в сторону */
+  /* Финальная подпись — отдельное уведомление поверх экрана, не «чёлка». */
   .island-wrap{
     position:absolute;
-    top:calc(var(--r) * .22);
+    top:calc(var(--h) * .13);
     left:0; right:0;
     display:flex;
     justify-content:center;
@@ -906,8 +904,9 @@
     height:60px;
     padding:0;
     border-radius:30px;
-    background:#000;
-    color:#fff;
+    background:rgba(255,255,255,.96);
+    box-shadow:0 12px 30px rgba(10,23,34,.18);
+    color:#0A1722;
     box-shadow:inset 5px 4px 12px rgba(255,255,255,.22);
     font-size:14px;
     font-weight:600;
@@ -2995,7 +2994,7 @@ const TRV_IN  = OLD_END / TRV_K;
 const TRV_RX  = 62;    // макро-питч: взгляд вдоль корпуса от нижнего торца
 const TRV_SC0 = 1.12;  // умеренный масштаб: растр экрана не мылится
 // финал проезда: корпус не выпрямляется во фронт, а остаётся в лёгком развороте,
-// шторка «Поездка готова!» раскрывается на этой позе
+// поверх экрана появляется подтверждение «Поездка готова!»
 const TRV_END = { rx: 6, ry: -14, rz: -4, sc: 1.32 };
 const ISL = { w: 127, h: 37, w2: 268, h2: 74 };   // поля по бокам поджаты
 const setIsland = gsap.quickSetter('#island', 'css');
@@ -3512,12 +3511,15 @@ gsap.ticker.add(() => {
     rollLayerEl.classList.toggle('sharp', isSharp);
   }
 
-  // шторка раскрывается, как Dynamic Island
+  // Подтверждение появляется поверх экрана без имитации Dynamic Island.
   const isl = smooth(clamp01((trv - 0.36) / 0.20));   // уведомление после импульса и остановки
+  const toast = clamp01((isl - 0.34) / 0.34);
   setIsland({
     width:  ISL.w + (ISL.w2 - ISL.w) * isl,
     height: ISL.h + (ISL.h2 - ISL.h) * isl,
-    borderRadius: (18 + 24 * isl) + 'px'
+    borderRadius: (18 + 24 * isl) + 'px',
+    opacity: toast,
+    y: (1 - toast) * -12
   });
   setIslandIn(clamp01((isl - 0.45) / 0.4));
 
