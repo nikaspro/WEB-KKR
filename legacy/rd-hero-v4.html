@@ -1695,6 +1695,8 @@
     z-index:30;
     height:100vh;
     visibility:visible;
+    opacity:0;
+    will-change:transform,opacity;
   }
   .weather-story.weather-in-stage .weather-sticky{position:relative;top:auto}
   .weather-sticky{
@@ -4059,6 +4061,9 @@ gsap.ticker.add(() => {
 // и переносит к нему рекомендацию помощника.
 const weatherSec = document.getElementById('weatherStory');
 watchAnimatedSection(weatherSec);
+const setWeatherStage = weatherSec && gsap.quickSetter(weatherSec, 'css');
+const setWeatherHead = gsap.quickSetter('.weather-head', 'css');
+const setWeatherTimelineWrap = gsap.quickSetter('.weather-timeline-wrap', 'css');
 const weatherTimeline = document.getElementById('weatherTimeline');
 const weatherHours = [...document.querySelectorAll('.weather-hour')];
 const weatherGlow = document.getElementById('weatherGlow');
@@ -4120,17 +4125,54 @@ function setWeatherPhase(next, immediate = false) {
 // следующему разделу до появления «Вся поездка в одном месте».
 const WEATHER_STAGE_IN = CAP_START[0] + CAP_HOLD + 0.006;
 const WEATHER_STAGE_OUT = CAP_START[1] - 0.006;
+const WEATHER_BLEND = 0.032;
 let weatherWasActive = false;
 setWeatherPhase(0, true);
 gsap.ticker.add(() => {
   if (!weatherSec) return;
-  const oldProgress = Math.min(readProgress() * TRV_K, OLD_END);
-  const active = oldProgress >= WEATHER_STAGE_IN && oldProgress < WEATHER_STAGE_OUT;
+  // Та же сглаженная шкала, что двигает телефон и подписи: при резком колесе
+  // погода больше не перескакивает вперёд предыдущего экрана.
+  const oldProgress = Math.min(p * TRV_K, OLD_END);
+  const active = oldProgress >= WEATHER_STAGE_IN - WEATHER_BLEND &&
+    oldProgress < WEATHER_STAGE_OUT + WEATHER_BLEND;
   if (active !== weatherWasActive) {
     weatherWasActive = active;
     weatherSec.classList.toggle('weather-in-stage', active);
+    if (!active) {
+      setWeatherStage({opacity:0,y:0,scale:1});
+      setWeatherHead({opacity:0,y:0,filter:'blur(0px)'});
+      setWeatherTimelineWrap({opacity:0,y:0,filter:'blur(0px)'});
+    }
   }
   if (!active) return;
+
+  // Погода не перекрывает телефон одним жёстким кадром: новый экран входит
+  // снизу сквозь лёгкий blur, а на выходе симметрично освобождает следующий.
+  const enter = smooth(clamp01(
+    (oldProgress - (WEATHER_STAGE_IN - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
+  ));
+  const leave = 1 - smooth(clamp01(
+    (oldProgress - (WEATHER_STAGE_OUT - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
+  ));
+  const weatherMix = enter * leave;
+  // Сначала белая подложка гасит прежний экран, затем проявляется контент.
+  // Благодаря задержке два крупных заголовка не читаются одновременно.
+  const contentEnter = smooth(clamp01((enter - 0.40) / 0.60));
+  const contentLeave = smooth(clamp01((leave - 0.32) / 0.68));
+  const contentMix = contentEnter * contentLeave;
+  setWeatherStage({
+    opacity: weatherMix,
+    y: 0,
+    scale: 0.996 + weatherMix * 0.004
+  });
+  const contentState = {
+    opacity: contentMix,
+    y: (1 - contentEnter) * 26 - (1 - contentLeave) * 18,
+    filter: `blur(${((1 - contentMix) * 5).toFixed(2)}px)`
+  };
+  setWeatherHead(contentState);
+  setWeatherTimelineWrap(contentState);
+
   const raw = clamp01((oldProgress - WEATHER_STAGE_IN) / (WEATHER_STAGE_OUT - WEATHER_STAGE_IN));
   setWeatherPhase(Math.min(3, Math.floor(raw * 4)));
 });
