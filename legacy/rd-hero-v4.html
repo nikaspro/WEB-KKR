@@ -1680,10 +1680,23 @@
   /* Погода: почасовой сценарий закрепляется и меняется по скроллу */
   .weather-story{
     position:relative;
-    height:430vh;
+    height:0;
     background:#FCFCFB;
     color:#111C25;
+    overflow:hidden;
+    visibility:hidden;
+    pointer-events:none;
   }
+  /* Погода — самостоятельный экран между «Куда сходить» и следующим
+     рассказом, а не отдельная длинная глава в конце лендинга. */
+  .weather-story.weather-in-stage{
+    position:fixed;
+    inset:0;
+    z-index:30;
+    height:100vh;
+    visibility:visible;
+  }
+  .weather-story.weather-in-stage .weather-sticky{position:relative;top:auto}
   .weather-sticky{
     position:sticky;
     top:0;
@@ -4060,12 +4073,22 @@ function setWeatherPhase(next, immediate = false) {
   }
 }
 
+// Экран погоды встаёт ровно после «Куда сходить» и уступает место
+// следующему разделу до появления «Вся поездка в одном месте».
+const WEATHER_STAGE_IN = CAP_START[0] + CAP_HOLD + 0.006;
+const WEATHER_STAGE_OUT = CAP_START[1] - 0.006;
+let weatherWasActive = false;
 setWeatherPhase(0, true);
 gsap.ticker.add(() => {
-  if (!weatherSec || !sectionVisibility.get(weatherSec)) return;
-  const r = weatherSec.getBoundingClientRect();
-  if (r.top > innerHeight || r.bottom < 0) return;
-  const raw = clamp01(-r.top / Math.max(1, r.height - innerHeight));
+  if (!weatherSec) return;
+  const oldProgress = Math.min(readProgress() * TRV_K, OLD_END);
+  const active = oldProgress >= WEATHER_STAGE_IN && oldProgress < WEATHER_STAGE_OUT;
+  if (active !== weatherWasActive) {
+    weatherWasActive = active;
+    weatherSec.classList.toggle('weather-in-stage', active);
+  }
+  if (!active) return;
+  const raw = clamp01((oldProgress - WEATHER_STAGE_IN) / (WEATHER_STAGE_OUT - WEATHER_STAGE_IN));
   setWeatherPhase(Math.min(3, Math.floor(raw * 4)));
 });
 
