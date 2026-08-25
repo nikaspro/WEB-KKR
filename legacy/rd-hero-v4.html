@@ -272,6 +272,7 @@
        иначе на масштабе финала растр не тянет */
     border:0;
     transform-origin:0 0;
+    opacity:0;
     /* scale считает JS от фактического размера .screen */
   }
 
@@ -3199,7 +3200,10 @@ let influxDirty = true;
 // гаснет к нырку и ставится на паузу, чтобы не жечь кадры за кадром
 const heroVid = document.getElementById('heroVid');
 const setVid = gsap.quickSetter(heroVid, 'css');
+const setAppFrame = gsap.quickSetter(frame, 'css');
 let vidOn = true;
+let appFrameOn = false;
+const VIDEO_CUT = 0.060;
 
 // Отдельный MP4 поддерживает range-запросы и не требует синхронного base64-декодирования.
 (function mountVideo() {
@@ -3294,14 +3298,20 @@ gsap.ticker.add(() => {
   tagsDirty = tagsPhase;   // один сброс после выхода из фазы
   }
 
-  // стартовое видео: держится до нырка корпуса
-  const vidA = 1 - smooth(clamp01((p - 0.015) / 0.05));
-  setVid({ opacity: vidA });
-  const wantVid = vidA > 0.01;
+  // До точки переключения виден исключительно MP4. Затем кадр меняется
+  // целиком: видео исчезает, а приложение появляется без наложения слоёв.
+  const wantVid = p < VIDEO_CUT;
+  const wantAppFrame = !wantVid;
+  setVid({ opacity: wantVid ? 1 : 0 });
+  setAppFrame({ opacity: wantAppFrame ? 1 : 0 });
   if (wantVid !== vidOn) {
     vidOn = wantVid;
     heroVid.style.visibility = vidOn ? 'visible' : 'hidden';
     if (vidOn) heroVid.play().catch(() => {}); else heroVid.pause();
+  }
+  if (wantAppFrame !== appFrameOn) {
+    appFrameOn = wantAppFrame;
+    frame.style.visibility = appFrameOn ? 'visible' : 'hidden';
   }
 
   // поток превью: летят к корпусу и гаснут у кромки
