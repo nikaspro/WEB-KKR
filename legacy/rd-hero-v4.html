@@ -499,10 +499,10 @@
        оставляют бургер и всю правую часть, но вырезают EN/RU. */
     -webkit-mask:
       linear-gradient(#000 0 0) left top/6.15% 100% no-repeat,
-      linear-gradient(#000 0 0) right top/88.5% 100% no-repeat;
+      linear-gradient(#000 0 0) left 6.15% top/80.35% 100% no-repeat;
     mask:
       linear-gradient(#000 0 0) left top/6.15% 100% no-repeat,
-      linear-gradient(#000 0 0) right top/88.5% 100% no-repeat;
+      linear-gradient(#000 0 0) left 6.15% top/80.35% 100% no-repeat;
   }
   .header-logo-adaptive,
   .header-lang-adaptive{
@@ -529,12 +529,11 @@
   body.logo-inv .header-lang-adaptive{opacity:0}
   .header-cta-shine{
     position:fixed;
-    left:87.733vw;
-    top:1.067vw;
+    right:24px;
+    top:16px;
     z-index:21;
-    width:10.667vw;
-    height:4vw;
-    min-height:32px;
+    width:132px;
+    height:48px;
     border-radius:999px;
     overflow:hidden;
     pointer-events:none;
@@ -571,7 +570,7 @@
     transform:translate(-50%,-50%);
     will-change:opacity,transform;
   }
-  .hdr > :not(.header-reference):not(.header-logo-adaptive):not(.header-lang-adaptive){visibility:hidden}
+  .hdr > :not(.header-reference):not(.header-logo-adaptive):not(.header-lang-adaptive):not(.hdr-r){visibility:hidden}
   .hdr,
   .menu-trigger,
   .header-cta-shine{
@@ -786,6 +785,14 @@
   }
   .hdr-l,.hdr-r{display:flex;align-items:center;gap:20px;flex:1}
   .hdr-r{justify-content:flex-end}
+  .hdr-r{
+    position:fixed;
+    top:16px;
+    right:24px;
+    z-index:22;
+    flex:none;
+  }
+  .hdr-r .hdr-item{opacity:1}
   .burger{width:44px;height:14px;position:relative;cursor:pointer}
   .burger i{position:absolute;left:0;right:0;height:4px;border-radius:2px;background:var(--ink)}
   .burger i:first-child{top:0}
@@ -800,8 +807,9 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    width:210px; height:120px;
-    margin:-30px -30px -30px 0;
+    width:132px;
+    height:48px;
+    margin:0;
   }
   .cta{
     appearance:none;border:0;cursor:pointer;
@@ -892,16 +900,22 @@
   .cta{
     display:inline-flex;
     align-items:center;
-    gap:8px;
-    padding:17px 31px;
-    border-radius:999px;
-    background:linear-gradient(110deg,#54DCE5,#3DFF88);
+    justify-content:center;
+    gap:7px;
+    width:132px;
+    height:48px;
+    padding:0;
+    border-radius:24px;
+    background:#000;
     color:#fff;
-    font-weight:800;
-    letter-spacing:.03em;
-    text-transform:uppercase;
+    box-shadow:inset 5px 4px 12px rgba(255,255,255,.22);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0;
+    text-transform:none;
   }
-  .cta img{width:18px;height:18px}
+  body.is-dark .cta{background:#000;color:#fff}
+  .cta img{width:16px;height:19px}
   .hero{
     left:0;
     right:0;
