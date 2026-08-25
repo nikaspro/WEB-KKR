@@ -2458,6 +2458,8 @@ const CAP_START = [0.600, 0.832, 1.016, 1.240];
 // поэтому прогресс нормируем на эту длину, а не на единицу
 const CAP_TL_LEN = 1.45;
 const CAP_HOLD  = 0.070;
+const CAP_HOLD0 = 0.120;   // «Куда сходить» остаётся читаемым дольше
+const CAP_EXIT0 = 0.068;   // и уходит отдельным мягким GSAP-переходом
 const CAP_HOLD2 = 0.105;   // «помощник» держится дольше: под ним закрывается чек-лист
 const capTl = gsap.timeline({ paused: true, defaults: { ease: 'power2.out' } });
 
@@ -2489,11 +2491,20 @@ CAP_START.forEach((at, i) => {
   if (i === 3) return;   // «заряжаем поездку» живёт своей фазой зарядки
   const el = document.getElementById('cap' + i);
   const ws = splitCapWords(el);
-  const end = at + (i === 2 ? CAP_HOLD2 : CAP_HOLD);
+  const hold = i === 0 ? CAP_HOLD0 : (i === 2 ? CAP_HOLD2 : CAP_HOLD);
+  const end = at + hold;
   gsap.set(el, { autoAlpha: 0 });
   gsap.set(ws, { yPercent: 0 });
-  capTl.set(el, { autoAlpha: 1 }, at)
-    .set(el, { autoAlpha: 0 }, end);
+  if (i === 0) {
+    capTl.set(el, { autoAlpha: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)' }, at)
+      .to(el, {
+        autoAlpha: 0, x: -44, y: -18, scale: .985, filter: 'blur(11px)',
+        duration: CAP_EXIT0, ease: 'power2.in'
+      }, end);
+  } else {
+    capTl.set(el, { autoAlpha: 1 }, at)
+      .set(el, { autoAlpha: 0 }, end);
+  }
 });
 // длительность таймлайна прибиваем к 1.0: позиции выше заданы в единицах
 // прогресса, и без этой заглушки они бы сжались под фактическую длину
@@ -2518,14 +2529,26 @@ function capSide(sel, at, hold) {
     .to(el.querySelector('s'), { width: 26, duration: 0.016, ease: 'power2.out' }, cross + 0.020);
 });
 
-capSide('#side0', CAP_START[0]);
-capSide('#awave', CAP_START[0]);
+function capExit0(sel, x, y) {
+  const at = CAP_START[0], end = at + CAP_HOLD0;
+  gsap.set(sel, { autoAlpha: 0 });
+  capTl.set(sel, { autoAlpha: 1, x: 0, y: 0, filter: 'blur(0px)' }, at)
+    .to(sel, {
+      autoAlpha: 0, x, y, filter: 'blur(9px)',
+      duration: CAP_EXIT0, ease: 'power2.in'
+    }, end);
+}
+capExit0('#side0', -28, -10);
+capExit0('#awave', 34, -8);
 capSide('#side2', CAP_START[2], CAP_HOLD2);
 
 // Облако тегов справа появляется и исчезает целиком вместе с надписью.
 gsap.set('#ctags', { autoAlpha: 0 });
-capTl.set('#ctags', { autoAlpha: 1 }, CAP_START[0])
-  .set('#ctags', { autoAlpha: 0 }, CAP_START[0] + CAP_HOLD);
+capTl.set('#ctags', { autoAlpha: 1, x: 0, y: 0, filter: 'blur(0px)' }, CAP_START[0])
+  .to('#ctags', {
+    autoAlpha: 0, x: 42, y: 10, filter: 'blur(9px)',
+    duration: CAP_EXIT0, ease: 'power2.in'
+  }, CAP_START[0] + CAP_HOLD0);
 
 
 // реальный твин-заглушка держит длину: пустой set() длину не задаёт
