@@ -9,7 +9,8 @@
     "build":  "vite build",
     "preview":"vite preview",
     "budget": "node scripts/budget.mjs",
-    "phases:check": "node scripts/phases-check.mjs"
+    "phases:check": "node scripts/phases-check.mjs",
+    "legacy:check": "node scripts/legacy-check.mjs"
   },
   "dependencies": {
     "gsap": "^3.12.5"

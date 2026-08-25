@@ -149,7 +149,12 @@ const textExt = textExt0;
 const seen = new Map();
 for (const f of files.filter(f => textExt.has(extname(f)))) {
   const txt = readFileSync(join(root, f), 'utf8');
+  // URL в лицензионном block comment не создаёт сетевой запрос. Например,
+  // локальный vendor/gsap.min.js содержит ссылку на текст лицензии gsap.com.
+  const blockComments = [...txt.matchAll(/\/\*[\s\S]*?\*\//g)]
+    .map(m => [m.index, m.index + m[0].length]);
   for (const m of txt.matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) {
+    if (blockComments.some(([from, to]) => m.index >= from && m.index < to)) continue;
     const host = m[1].toLowerCase();
     if (allow.has(host)) continue;
     // XML-неймспейсы не являются загрузкой: не считаем их сторонним origin
