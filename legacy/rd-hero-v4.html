@@ -1590,7 +1590,7 @@
     }
   }
 
-  .spacer{height:1900vh}
+  .spacer{height:1500vh}
 
   /* сцена и спейсер в одной обёртке: sticky заканчивается на её границе,
      дальше страница идёт обычным потоком */
@@ -2940,7 +2940,7 @@ const PROMPT_TEXT = 'Еду в Санкт-Петербург с ребёнком
 const tagsLayer = document.getElementById('tags');
 
 // облако тегов: направление разлёта считается от центра сцены один раз
-const TAGS_IN = 0.14, TAGS_SPREAD = 0.30, TAGS_OUT = 0.30;
+const TAGS_IN = 0.08, TAGS_SPREAD = 0.30, TAGS_OUT = 0.30;
 const tags = [...document.querySelectorAll('.tag-pos')].map(pos => {
   const el = pos.firstElementChild;
   const px = parseFloat(pos.style.left) / 100;
@@ -2986,9 +2986,9 @@ const FIN_IN = 9;      // старый финал отключён: зарядк
 const FIN_END = 9.02;        // пара к FIN_IN, оба за шкалой
 const FIN_SCALE = 1.7;        // во сколько раз крупнее к концу
 // ---- сцена-проезд: макро-ракурс вдоль корпуса, камера едет по длине ----
-// спейсер вырос 1000vh -> 1300vh; старые фазы читают прежние абсолютные позиции
-// через p = q * TRV_K с потолком OLD_END, новые 335vh целиком под проезд
-const TRV_K   = 1.9;   // спейсер 1900vh; хвост после зарядки: остановка и уведомление
+// Старые фазы читают прежние абсолютные позиции через p = q * TRV_K.
+// Более короткий спейсер быстрее переводит к следующему экрану.
+const TRV_K   = 1.9;
 const OLD_END = 1.70;    // зарядке 900vh скролла
 const TRV_IN  = OLD_END / TRV_K;
 const TRV_RX  = 62;    // макро-питч: взгляд вдоль корпуса от нижнего торца
