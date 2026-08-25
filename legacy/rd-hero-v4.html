@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preload" as="image" href="assets/weather/weather-sky.avif" type="image/avif">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Geologica:wght@300..900&display=swap">
@@ -1760,164 +1761,99 @@
     .guide-gap{flex-basis:36vw}
   }
 
-  /* Погода: почасовой сценарий закрепляется и меняется по скроллу */
+  /* Погода продолжает pinned-сцену «Куда сходить». Фон находится в том же
+     stacking context, поэтому один живой телефон проходит поверх него без дубля. */
   .weather-story{
-    position:relative;
-    height:0;
-    background:#FCFCFB;
-    color:#111C25;
-    overflow:hidden;
-    visibility:hidden;
-    pointer-events:none;
-  }
-  /* Погода — самостоятельный экран между «Куда сходить» и следующим
-     рассказом, а не отдельная длинная глава в конце лендинга. */
-  .weather-story.weather-in-stage{
-    position:fixed;
+    position:absolute;
     inset:0;
-    z-index:30;
-    height:100vh;
-    visibility:visible;
-    opacity:0;
-    will-change:transform,opacity;
-  }
-  .weather-story.weather-in-stage .weather-sticky{position:relative;top:auto}
-  .weather-sticky{
-    position:sticky;
-    top:0;
-    height:100vh;
+    z-index:4;
     overflow:hidden;
-    box-sizing:border-box;
-    padding:clamp(112px,13vh,158px) var(--pad) clamp(42px,6vh,72px);
-    background:
-      radial-gradient(circle at 20% 0%,rgba(255,246,191,.24),transparent 30%),
-      #FCFCFB;
-  }
-  .weather-head{
-    display:grid;
-    grid-template-columns:minmax(0,1.1fr) minmax(320px,.8fr);
-    align-items:end;
-    gap:clamp(64px,10vw,180px);
-  }
-  .weather-title{
-    max-width:10.5em;
-    margin:0;
-    font:700 clamp(62px,6.25vw,118px)/.91 'Onest',system-ui,sans-serif;
-    letter-spacing:-.055em;
-  }
-  .weather-intro{
-    max-width:28em;
-    margin:0 0 .28em;
-    font:500 clamp(18px,1.45vw,27px)/1.38 'Onest',system-ui,sans-serif;
-    letter-spacing:-.025em;
-  }
-  .weather-timeline-wrap{
-    position:absolute;
-    left:var(--pad);
-    right:var(--pad);
-    bottom:clamp(48px,8vh,92px);
-  }
-  .weather-timeline{
-    position:relative;
-    display:grid;
-    grid-template-columns:repeat(11,minmax(82px,1fr));
-    align-items:start;
-    min-width:1030px;
-    isolation:isolate;
-  }
-  .weather-glow{
-    position:absolute;
-    z-index:-1;
-    left:0;
-    top:28px;
-    width:240px;
-    height:160px;
-    border-radius:999px;
-    background:radial-gradient(ellipse,rgba(116,204,255,.20),rgba(116,204,255,0) 70%);
-    filter:blur(10px);
+    color:#14202A;
+    visibility:hidden;
+    opacity:0;
     pointer-events:none;
-    will-change:transform,width,background;
+    isolation:isolate;
+    contain:layout paint;
   }
-  .weather-hour{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:12px;
-    padding:0 8px;
-    opacity:.17;
-    transform-origin:50% 60%;
-    will-change:opacity,transform;
+  .weather-layer{position:absolute;inset:-1px;pointer-events:none}
+  .weather-base{
+    z-index:0;
+    background:linear-gradient(128deg,#BDF3FF 0%,#69C8FF 100%);
   }
-  .weather-hour time{
-    font:500 clamp(18px,1.65vw,30px)/1 'Onest',system-ui,sans-serif;
-    letter-spacing:-.035em;
-    white-space:nowrap;
+  .weather-picture{z-index:1;display:block;margin:0;overflow:hidden}
+  .weather-picture img{
+    width:100%;height:100%;display:block;object-fit:cover;object-position:center;
+    transform:scale(1.015);will-change:transform,opacity;
   }
-  .weather-hour svg{
-    display:block;
-    width:clamp(46px,4.2vw,66px);
-    height:clamp(46px,4.2vw,66px);
-    overflow:visible;
+  .weather-wash{
+    z-index:2;
+    background:linear-gradient(128deg,rgba(189,243,255,.52),rgba(105,200,255,.34));
+    mix-blend-mode:screen;
   }
-  .weather-hour b{
-    font:650 clamp(18px,1.65vw,30px)/1 'Onest',system-ui,sans-serif;
-    letter-spacing:-.035em;
-    white-space:nowrap;
+  .weather-rain{
+    z-index:3;
+    opacity:0;
+    background:
+      radial-gradient(circle at 70% 18%,rgba(83,142,177,.18),transparent 44%),
+      linear-gradient(122deg,rgba(33,69,92,.54),rgba(20,54,77,.30));
+    will-change:opacity;
   }
-  .weather-hour small{
-    min-height:1em;
-    margin-top:-5px;
-    color:#78828A;
-    font:500 13px/1 'Onest',system-ui,sans-serif;
+  .weather-noise{
+    z-index:4;
+    opacity:.25;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.62'/%3E%3C/svg%3E");
+    background-size:180px 180px;
+    mix-blend-mode:soft-light;
   }
-  .weather-comment-row{
-    position:relative;
-    height:76px;
-    margin-top:28px;
-  }
-  .weather-comment{
+  .weather-composition{position:absolute;inset:0;z-index:5}
+  .weather-temp{
     position:absolute;
-    left:0;
-    top:0;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-height:64px;
-    width:min(440px,34vw);
-    max-width:min(440px,34vw);
-    box-sizing:border-box;
-    padding:13px 30px;
-    border-radius:999px;
-    background:linear-gradient(110deg,#9DE5FA,#5BB9F6);
+    left:clamp(28px,7.2vw,138px);
+    top:50%;
+    width:min(34vw,650px);
+    height:clamp(210px,33vmin,410px);
     color:#fff;
-    text-align:center;
-    font:650 clamp(15px,1.18vw,20px)/1.18 'Onest',system-ui,sans-serif;
-    letter-spacing:-.025em;
-    box-shadow:0 12px 34px rgba(56,151,213,.14);
-    transform:translateX(-50%);
-    will-change:left,transform,opacity,filter,background;
+    font:750 clamp(190px,28vmin,390px)/.78 'Onest',system-ui,sans-serif;
+    letter-spacing:-.085em;
+    white-space:nowrap;
+    transform:translateY(-48%);
+    text-shadow:0 10px 45px rgba(54,136,183,.12);
   }
-  .weather-comment[data-phase="1"]{background:linear-gradient(110deg,#FFD66F,#FFAE19);color:#3F2C00;box-shadow:0 12px 34px rgba(255,174,25,.16)}
-  .weather-comment[data-phase="2"]{background:linear-gradient(110deg,#FFB270,#FF7A68);box-shadow:0 12px 34px rgba(255,122,104,.17)}
-  .weather-comment[data-phase="3"]{background:linear-gradient(110deg,#263A52,#0A1722);box-shadow:0 12px 34px rgba(10,23,34,.18)}
-  .weather-icons{position:absolute;width:0;height:0;overflow:hidden}
+  .weather-temp span{position:absolute;inset:0;display:flex;align-items:center}
+  .weather-temp-new{opacity:0}
+  .weather-title{
+    position:absolute;
+    right:clamp(34px,6.2vw,124px);
+    top:50%;
+    width:min(31vw,560px);
+    margin:0;
+    color:#183242;
+    font:700 clamp(46px,5.1vmin,82px)/.91 'Onest',system-ui,sans-serif;
+    letter-spacing:-.052em;
+    transform:translateY(-42%);
+  }
+  .weather-title span{display:block}
   @media(max-width:900px){
-    .weather-story{height:390vh}
-    .weather-sticky{padding-left:24px;padding-right:24px}
-    .weather-head{grid-template-columns:1fr;gap:24px;align-content:start}
-    .weather-title{max-width:9.5em;font-size:clamp(48px,10.5vw,78px)}
-    .weather-intro{max-width:34em}
-    .weather-timeline-wrap{left:0;right:0;bottom:7vh;overflow:visible}
-    .weather-timeline{width:1030px;padding-left:24px;padding-right:24px;transition:transform .8s cubic-bezier(.22,1,.36,1)}
-    .weather-comment-row{width:1030px}
-    .weather-comment{width:330px;max-width:330px}
+    .weather-picture img{object-position:58% center}
+    .weather-temp{
+      left:18px;top:25%;width:auto;height:auto;
+      font-size:clamp(112px,32vw,210px);transform:none;
+    }
+    .weather-title{
+      left:clamp(22px,7vw,54px);right:auto;top:auto;bottom:clamp(42px,8vh,90px);
+      width:min(78vw,520px);font-size:clamp(42px,11.5vw,70px);transform:none;
+    }
   }
-  @media(max-height:720px) and (min-width:901px){
-    .weather-sticky{padding-top:88px}
-    .weather-title{font-size:clamp(54px,5.4vw,90px)}
-    .weather-timeline-wrap{bottom:28px}
-    .weather-comment-row{margin-top:18px}
+  @media(max-width:520px){
+    .weather-temp{top:18%;font-size:clamp(96px,29vw,150px)}
+    .weather-title{width:84vw;font-size:clamp(38px,10.8vw,56px)}
+  }
+  @media(max-height:700px) and (min-width:901px){
+    .weather-temp{font-size:clamp(158px,27vmin,250px)}
+    .weather-title{font-size:clamp(38px,6.2vmin,58px)}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .weather-picture img{transform:none!important}
   }
 
   /* гигантская кнопка «Погнали»: во всю ширину, между сценой и рутиной */
@@ -2507,6 +2443,25 @@
   </div>
   <div class="caption right" id="cap3"><span class="ln l1">Заряжаем</span><span class="ln l2">поездку</span></div>
 
+  <section class="weather-story" id="weatherStory" aria-label="События подстраиваются под погоду">
+    <div class="weather-layer weather-base" aria-hidden="true"></div>
+    <picture class="weather-layer weather-picture" aria-hidden="true">
+      <source srcset="assets/weather/weather-sky.avif" type="image/avif">
+      <source srcset="assets/weather/weather-sky.webp" type="image/webp">
+      <img src="assets/weather/weather-sky.webp" width="3000" height="1864" alt="" decoding="async">
+    </picture>
+    <div class="weather-layer weather-wash" aria-hidden="true"></div>
+    <div class="weather-layer weather-rain" id="weatherRain" aria-hidden="true"></div>
+    <div class="weather-layer weather-noise" aria-hidden="true"></div>
+    <div class="weather-composition">
+      <div class="weather-temp" aria-label="Температура меняется с двадцати до семнадцати градусов">
+        <span class="weather-temp-old">20°</span>
+        <span class="weather-temp-new">17°</span>
+      </div>
+      <h2 class="weather-title"><span>События</span><span>подстраиваются</span><span>под погоду</span></h2>
+    </div>
+  </section>
+
   <img class="phone-glow" id="phoneGlow" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgzMSIgaGVpZ2h0PSIxMDk4IiB2aWV3Qm94PSIwIDAgMTgzMSAxMDk4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8ZyBmaWx0ZXI9InVybCgjZmlsdGVyMF9mXzE3OF8xMDI5KSI+CjxlbGxpcHNlIGN4PSI5MTUuMjg4IiBjeT0iNTQ4LjU2NyIgcng9IjU2My41IiByeT0iMTkyIiB0cmFuc2Zvcm09InJvdGF0ZSgtNC4wMDIwOSA5MTUuMjg4IDU0OC41NjcpIiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfMTc4XzEwMjkpIi8+CjwvZz4KPGRlZnM+CjxmaWx0ZXIgaWQ9ImZpbHRlcjBfZl8xNzhfMTAyOSIgeD0iMCIgeT0iMCIgd2lkdGg9IjE4MzAuNTgiIGhlaWdodD0iMTA5Ny4xMyIgZmlsdGVyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBjb2xvci1pbnRlcnBvbGF0aW9uLWZpbHRlcnM9InNSR0IiPgo8ZmVGbG9vZCBmbG9vZC1vcGFjaXR5PSIwIiByZXN1bHQ9IkJhY2tncm91bmRJbWFnZUZpeCIvPgo8ZmVCbGVuZCBtb2RlPSJub3JtYWwiIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9IkJhY2tncm91bmRJbWFnZUZpeCIgcmVzdWx0PSJzaGFwZSIvPgo8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIxNzYuNSIgcmVzdWx0PSJlZmZlY3QxX2ZvcmVncm91bmRCbHVyXzE3OF8xMDI5Ii8+CjwvZmlsdGVyPgo8bGluZWFyR3JhZGllbnQgaWQ9ImZpbHR0MF9saW5lYXJfMTc4XzEwMjkiIHgxPSI0MzguNjI3IiB5MT0iNjU0LjcxMiIgeDI9Ijg4MC41MTUiIHkyPSIxMTI2LjM4IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM0OEQzRTIiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM0RGRjg4Ii8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg==" alt="" aria-hidden="true">
   <div class="roll-layer" id="rollLayer">
   <div class="scroll-layer">
@@ -2555,27 +2510,6 @@
 
 <div class="spacer"></div>
 </div>
-
-<!-- Погода следует за сценой «Куда сходить», до онлайн-гида. -->
-<section class="weather-story" id="weatherStory" aria-label="План поездки с учётом погоды">
-  <div class="weather-sticky">
-    <svg class="weather-icons" aria-hidden="true"><defs>
-      <symbol id="wx-partly" viewBox="0 0 72 72"><circle cx="49" cy="24" r="13" fill="#FFB612"/><path d="M17 56h36.5a12.5 12.5 0 0 0 0-25 19 19 0 0 0-35.8 5.2A10 10 0 0 0 17 56Z" fill="#82B5F4"/></symbol>
-      <symbol id="wx-sun" viewBox="0 0 72 72"><g stroke="#FFB612" stroke-width="5" stroke-linecap="round"><path d="M36 5v9M36 58v9M5 36h9M58 36h9M14 14l7 7M51 51l7 7M58 14l-7 7M21 51l-7 7"/></g><circle cx="36" cy="36" r="15" fill="#FFB612"/></symbol>
-      <symbol id="wx-sunset" viewBox="0 0 72 72"><path d="M12 48h48" stroke="#FFB612" stroke-width="4" stroke-linecap="round"/><path d="M22 48a14 14 0 0 1 28 0" fill="#FFD76C"/><path d="M36 13v8M13 36h8M51 36h8M20 20l6 6M52 20l-6 6" stroke="#FFB612" stroke-width="4" stroke-linecap="round"/><path d="M36 55v11m0 0-5-5m5 5 5-5" stroke="#7BBBEF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-      <symbol id="wx-moon" viewBox="0 0 72 72"><path d="M49 53A25 25 0 0 1 30 9a25 25 0 1 0 19 44Z" fill="#FFE9A9"/></symbol>
-    </defs></svg>
-    <div class="weather-head"><h2 class="weather-title">События подстраиваются под погоду</h2><p class="weather-intro">Luna следит за прогнозом во время поездки и перестраивает план так, чтобы хорошая погода не пропадала зря.</p></div>
-    <div class="weather-timeline-wrap">
-      <div class="weather-timeline" id="weatherTimeline"><div class="weather-glow" id="weatherGlow"></div>
-        <div class="weather-hour" data-weather-phase="0"><time>14:00</time><svg><use href="#wx-partly"/></svg><b>+20°</b><small></small></div><div class="weather-hour" data-weather-phase="0"><time>15:00</time><svg><use href="#wx-partly"/></svg><b>+20°</b><small></small></div><div class="weather-hour" data-weather-phase="0"><time>16:00</time><svg><use href="#wx-partly"/></svg><b>+19°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="1"><time>17:00</time><svg><use href="#wx-sun"/></svg><b>+18°</b><small></small></div><div class="weather-hour" data-weather-phase="1"><time>18:00</time><svg><use href="#wx-sun"/></svg><b>+19°</b><small></small></div><div class="weather-hour" data-weather-phase="1"><time>19:00</time><svg><use href="#wx-sun"/></svg><b>+18°</b><small></small></div>
-        <div class="weather-hour" data-weather-phase="2"><time>19:45</time><svg><use href="#wx-sunset"/></svg><b>Закат</b><small>через 45 минут</small></div><div class="weather-hour" data-weather-phase="3"><time>20:00</time><svg><use href="#wx-moon"/></svg><b>+17°</b><small></small></div><div class="weather-hour" data-weather-phase="3"><time>21:00</time><svg><use href="#wx-moon"/></svg><b>+16°</b><small></small></div><div class="weather-hour" data-weather-phase="3"><time>22:00</time><svg><use href="#wx-moon"/></svg><b>+15°</b><small></small></div><div class="weather-hour" data-weather-phase="3"><time>23:00</time><svg><use href="#wx-moon"/></svg><b>+15°</b><small></small></div>
-      </div>
-      <div class="weather-comment-row"><div class="weather-comment" id="weatherComment" data-phase="0" aria-live="polite">Днём хорошая погода — предлагаю больше прогулок</div></div>
-    </div>
-  </div>
-</section>
 
 <!-- Временно скрыто: сохраняем разметку и GSAP-сцену для быстрого возврата. -->
 <section class="guide-expand" id="guideExpand" aria-label="Онлайн-гид по поездке" hidden>
@@ -2629,7 +2563,9 @@
 </main>
 
 <script src="assets/vendor/gsap.min.js"></script>
+<script src="assets/vendor/ScrollTrigger.min.js"></script>
 <script>
+gsap.registerPlugin(ScrollTrigger);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Сквозной прогресс страницы: индикатор движется внутри безопасного fixed-трека.
@@ -2814,6 +2750,9 @@ const CAP_HOLD  = 0.070;
 const CAP_HOLD0 = 0.120;   // «Куда сходить» остаётся читаемым дольше
 const CAP_EXIT0 = 0.068;   // и уходит отдельным мягким GSAP-переходом
 const CAP_HOLD2 = 0.105;   // «помощник» держится дольше: под ним закрывается чек-лист
+const WEATHER_STAGE_IN = CAP_START[0] + CAP_HOLD0 + 0.008;
+const WEATHER_STAGE_OUT = CAP_START[1] - 0.008;
+const WEATHER_BLEND = 0.020;
 const capTl = gsap.timeline({ paused: true, defaults: { ease: 'power2.out' } });
 
 // текстовые узлы заголовка режем на слова в масках; em и чипсы не трогаем
@@ -3923,6 +3862,28 @@ gsap.ticker.add(() => {
     scV += pop * 0.03;
     yV += -smooth(clamp01((trv - 0.62) / 0.38)) * innerHeight * 0.10;
   }
+
+  // Погодный экран продолжает движение того же DOM-телефона. На входе он
+  // мягко встаёт по центру и выпрямляется, поэтому между сценами нет дубля.
+  if (!reduced) {
+    const weatherEnter = smooth(clamp01(
+      (p - (WEATHER_STAGE_IN - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
+    ));
+    const weatherLeave = 1 - smooth(clamp01(
+      (p - (WEATHER_STAGE_OUT - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
+    ));
+    const weatherPhone = weatherEnter * weatherLeave;
+    if (weatherPhone > 0.0001) {
+      const weatherScale = innerWidth <= 520 ? 0.68 : innerWidth <= 900 ? 0.76 : 0.86;
+      rzV += (0 - rzV) * weatherPhone;
+      rxV += (0 - rxV) * weatherPhone;
+      ryV += (0 - ryV) * weatherPhone;
+      xV  += (0 - xV) * weatherPhone;
+      yV  += ((innerWidth <= 900 ? innerHeight * 0.025 : 0) - yV) * weatherPhone;
+      zV  += (0 - zV) * weatherPhone;
+      scV += (weatherScale - scV) * weatherPhone;
+    }
+  }
   // белая волна: круг растёт из корпуса сразу за импульсом
   setPulse({ scale: smooth(clamp01((trv - 0.12) / 0.22)) });
 
@@ -4435,125 +4396,70 @@ gsap.ticker.add(() => {
   }
 });
 
-// Почасовой прогноз: каждая четверть скролла подсвечивает новый период
-// и переносит к нему рекомендацию помощника.
+// Погодная глава встроена в ту же sticky-сцену: фон сменяется под уже
+// существующим телефоном, а ScrollTrigger отвечает только за драматургию слоя.
 const weatherSec = document.getElementById('weatherStory');
-watchAnimatedSection(weatherSec);
-const setWeatherStage = weatherSec && gsap.quickSetter(weatherSec, 'css');
-const setWeatherHead = gsap.quickSetter('.weather-head', 'css');
-const setWeatherTimelineWrap = gsap.quickSetter('.weather-timeline-wrap', 'css');
-const weatherTimeline = document.getElementById('weatherTimeline');
-const weatherHours = [...document.querySelectorAll('.weather-hour')];
-const weatherGlow = document.getElementById('weatherGlow');
-const weatherComment = document.getElementById('weatherComment');
-const weatherCopy = [
-  'Днём хорошая погода — предлагаю больше прогулок',
-  'Солнце вышло — добавлю длинную прогулку без спешки',
-  'Закат в 19:45 — знаю красивую точку неподалёку',
-  'Вечером прохладнее — предлагаю уютный ужин и отдых дома'
-];
-const weatherColors = [
-  'radial-gradient(ellipse,rgba(116,204,255,.24),rgba(116,204,255,0) 70%)',
-  'radial-gradient(ellipse,rgba(255,190,45,.26),rgba(255,190,45,0) 70%)',
-  'radial-gradient(ellipse,rgba(255,128,95,.25),rgba(255,128,95,0) 70%)',
-  'radial-gradient(ellipse,rgba(51,78,111,.19),rgba(51,78,111,0) 70%)'
-];
-let weatherPhase = -1;
+const weatherPicture = weatherSec && weatherSec.querySelector('.weather-picture');
+const weatherRain = document.getElementById('weatherRain');
+const weatherTemp = weatherSec && weatherSec.querySelector('.weather-temp');
+const weatherTempOld = weatherSec && weatherSec.querySelector('.weather-temp-old');
+const weatherTempNew = weatherSec && weatherSec.querySelector('.weather-temp-new');
+const weatherTitle = weatherSec && weatherSec.querySelector('.weather-title');
 
-function setWeatherPhase(next, immediate = false) {
-  if (!weatherTimeline || !weatherComment || next === weatherPhase) return;
-  weatherPhase = next;
-  const active = weatherHours.filter(el => +el.dataset.weatherPhase === next);
-  const first = active[0], last = active[active.length - 1];
-  if (!first || !last) return;
-  const left = first.offsetLeft - 10;
-  const width = last.offsetLeft + last.offsetWidth - first.offsetLeft + 20;
-  const center = left + width / 2;
-  const duration = immediate || reduced ? 0 : .72;
+if (weatherSec) {
+  gsap.set(weatherSec, {autoAlpha:0});
+  gsap.set([weatherTemp, weatherTitle], {autoAlpha:0});
+  gsap.set(weatherTempNew, {autoAlpha:0, y:18});
+  gsap.set(weatherRain, {opacity:0});
 
-  const inactive = weatherHours.filter(el => +el.dataset.weatherPhase !== next);
-  gsap.to(inactive, {opacity:.17,scale:.94,y:0,duration,ease:'power3.out',overwrite:true});
-  if (!immediate && !reduced) {
-    gsap.fromTo(active,
-      {opacity:.38,scale:.96,y:10},
-      {opacity:1,scale:1,y:0,duration:.78,stagger:.045,ease:'back.out(1.8)',overwrite:true}
-    );
-  } else {
-    gsap.set(active,{opacity:1,scale:1,y:0});
+  const weatherStart = () => spacerHeight * (WEATHER_STAGE_IN / TRV_K);
+  const weatherEnd = () => spacerHeight * (WEATHER_STAGE_OUT / TRV_K);
+  const weatherTl = gsap.timeline({
+    defaults:{ease:'none'},
+    scrollTrigger:{
+      trigger:'.stage',
+      start:() => `top+=${weatherStart()} top`,
+      end:() => `top+=${weatherEnd()} top`,
+      scrub:reduced ? false : 1.15,
+      invalidateOnRefresh:true,
+      onEnter:() => gsap.killTweensOf(weatherSec),
+      onEnterBack:() => {
+        gsap.killTweensOf(weatherSec);
+        gsap.set(weatherSec,{autoAlpha:1,visibility:'visible'});
+      },
+      onLeave:() => gsap.to(weatherSec,{autoAlpha:0,duration:.24,ease:'power2.inOut',overwrite:true}),
+      onLeaveBack:() => gsap.to(weatherSec,{autoAlpha:0,duration:.20,ease:'power2.inOut',overwrite:true}),
+      snap:reduced ? false : {
+        // Средний стоп удерживает полноценный погодный кадр, а крайние
+        // состояния отвечают за чистый вход и выход без зависших полуслов.
+        snapTo:[0,.70,1],
+        duration:{min:.25,max:.7},
+        delay:.08,
+        ease:'power2.inOut',
+        directional:true
+      }
+    }
+  });
+
+  weatherTl
+    .set(weatherSec,{visibility:'visible'},0)
+    .to(weatherSec,{autoAlpha:1,duration:.14,ease:'power2.out'},0)
+    .fromTo(weatherPicture,{scale:1.035},{scale:1.012,duration:.82,ease:'sine.out'},0)
+    .fromTo(weatherTemp,{autoAlpha:0,x:-34},{autoAlpha:1,x:0,duration:.25,ease:'power2.out'},.11)
+    .fromTo(weatherTitle,{autoAlpha:0,x:36},{autoAlpha:1,x:0,duration:.28,ease:'power2.out'},.14)
+    .to(weatherTempOld,{autoAlpha:0,y:-18,duration:.18,ease:'power2.inOut'},.46)
+    .to(weatherTempNew,{autoAlpha:1,y:0,duration:.20,ease:'power2.inOut'},.47)
+    .to(weatherRain,{opacity:.42,duration:.53,ease:'sine.inOut'},.47);
+
+  if (reduced) {
+    weatherTl.progress(.56).pause();
   }
-  gsap.to(weatherGlow, {x:left,width,duration,ease:'expo.out',background:weatherColors[next],overwrite:true});
 
-  const swapCopy = () => {
-    weatherComment.textContent = weatherCopy[next];
-    weatherComment.dataset.phase = next;
-    gsap.set(weatherComment,{left:center});
-    gsap.to(weatherComment,{opacity:1,y:0,scale:1,duration:reduced ? 0 : .55,ease:'back.out(1.45)',overwrite:true});
-  };
-  if (immediate || reduced) swapCopy();
-  else gsap.to(weatherComment,{opacity:0,y:12,scale:.94,duration:.2,ease:'power2.in',overwrite:true,onComplete:swapCopy});
-
-  if (matchMedia('(max-width:900px)').matches) {
-    const shift = gsap.utils.clamp(-(1030 - innerWidth), 0, innerWidth * .5 - center);
-    gsap.to(weatherTimeline,{x:shift,duration,ease:'expo.out',overwrite:true});
-    gsap.to(document.querySelector('.weather-comment-row'),{x:shift,duration,ease:'expo.out',overwrite:true});
+  const weatherImg = weatherSec.querySelector('img');
+  if (weatherImg && weatherImg.decode) {
+    weatherImg.decode().catch(() => {}).finally(() => ScrollTrigger.refresh());
   }
 }
-
-// Экран погоды встаёт ровно после «Куда сходить» и уступает место
-// следующему разделу до появления «Вся поездка в одном месте».
-const WEATHER_STAGE_IN = CAP_START[0] + CAP_HOLD + 0.006;
-const WEATHER_STAGE_OUT = CAP_START[1] - 0.006;
-const WEATHER_BLEND = 0.032;
-let weatherWasActive = false;
-setWeatherPhase(0, true);
-gsap.ticker.add(() => {
-  if (!weatherSec) return;
-  // Та же сглаженная шкала, что двигает телефон и подписи: при резком колесе
-  // погода больше не перескакивает вперёд предыдущего экрана.
-  const oldProgress = Math.min(p * TRV_K, OLD_END);
-  const active = oldProgress >= WEATHER_STAGE_IN - WEATHER_BLEND &&
-    oldProgress < WEATHER_STAGE_OUT + WEATHER_BLEND;
-  if (active !== weatherWasActive) {
-    weatherWasActive = active;
-    weatherSec.classList.toggle('weather-in-stage', active);
-    if (!active) {
-      setWeatherStage({opacity:0,y:0,scale:1});
-      setWeatherHead({opacity:0,y:0,filter:'blur(0px)'});
-      setWeatherTimelineWrap({opacity:0,y:0,filter:'blur(0px)'});
-    }
-  }
-  if (!active) return;
-
-  // Погода не перекрывает телефон одним жёстким кадром: новый экран входит
-  // снизу сквозь лёгкий blur, а на выходе симметрично освобождает следующий.
-  const enter = smooth(clamp01(
-    (oldProgress - (WEATHER_STAGE_IN - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
-  ));
-  const leave = 1 - smooth(clamp01(
-    (oldProgress - (WEATHER_STAGE_OUT - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
-  ));
-  const weatherMix = enter * leave;
-  // Сначала белая подложка гасит прежний экран, затем проявляется контент.
-  // Благодаря задержке два крупных заголовка не читаются одновременно.
-  const contentEnter = smooth(clamp01((enter - 0.40) / 0.60));
-  const contentLeave = smooth(clamp01((leave - 0.32) / 0.68));
-  const contentMix = contentEnter * contentLeave;
-  setWeatherStage({
-    opacity: weatherMix,
-    y: 0,
-    scale: 0.996 + weatherMix * 0.004
-  });
-  const contentState = {
-    opacity: contentMix,
-    y: (1 - contentEnter) * 26 - (1 - contentLeave) * 18,
-    filter: `blur(${((1 - contentMix) * 5).toFixed(2)}px)`
-  };
-  setWeatherHead(contentState);
-  setWeatherTimelineWrap(contentState);
-
-  const raw = clamp01((oldProgress - WEATHER_STAGE_IN) / (WEATHER_STAGE_OUT - WEATHER_STAGE_IN));
-  setWeatherPhase(Math.min(3, Math.floor(raw * 4)));
-});
 
 const rutSec = document.querySelector('.routine');
 watchAnimatedSection(rutSec);
