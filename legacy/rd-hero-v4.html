@@ -1040,23 +1040,11 @@
     position:absolute;
     inset:0;
     z-index:6;
-    display:flex;
-    flex-wrap:wrap;
-    align-content:center;
-    justify-content:center;
-    gap:clamp(5px,.5vw,9px) clamp(6px,.6vw,11px);
-    box-sizing:border-box;
-    padding:clamp(72px,8vh,110px) clamp(18px,2.2vw,44px) clamp(34px,5vh,72px);
-    overflow:hidden;
     pointer-events:none;
   }
   .tag-pos{
-    position:relative;
-    flex:0 0 auto;
-    left:auto !important;
-    top:auto !important;
-    right:auto !important;
-    bottom:auto !important;
+    position:absolute;
+    transform:translate(-50%,-50%);
   }
   .tag{
     display:inline-block;
@@ -1070,13 +1058,6 @@
     font-weight:600;
     letter-spacing:-.01em;
     opacity:0;
-  }
-  /* Все теги в облаке равноправны: единый кегль и одинаковая высота плашки. */
-  .tag.tag-small{
-    padding:17px 28px;
-    background:#F1F3F5;
-    font-size:clamp(17px,1.75vw,28px);
-    font-weight:600;
   }
 
   /* --- промт пользователя на пустом экране --- */
@@ -2944,53 +2925,10 @@ const LOAD_IN = 0.44, LOAD_OUT= 0.556;   // «собираю план» держ
 
 const PROMPT_TEXT = 'Еду в Санкт-Петербург с ребёнком';
 
-// Дополнительный слой облака: 36 крупных + 72 компактных тега.
-// Позиции детерминированы, чтобы композиция не менялась при перезагрузке.
-const extraTagTexts = [
-  'Уикенд без машины','Поездка к озеру','Где встретить рассвет','Маленькие города России',
-  'Маршрут без толпы','Лучшие кофейни Москвы','В Карелию на машине','Домик в лесу',
-  'Горы и горячие источники','Пляж без туристов','Куда на майские','Путешествие с друзьями',
-  'Архитектура Петербурга','Тихий отель в центре','Где смотреть звёзды','На поезде к морю',
-  'Пикник за городом','Красивые дороги Алтая','Выходные у воды','Где попробовать хинкали',
-  'Поход налегке','Спа-отель на выходные','Маршрут по музеям','С детьми на природу',
-  'Куда поехать осенью','Секретные места Казани','Прогулка по набережной','Неделя без суеты',
-  'Ночь в глэмпинге','Красивые виды рядом','Где кататься на лыжах','Путешествие на поезде',
-  'Лучшие завтраки города','На море с друзьями','Водопады Кавказа','Куда сбежать в пятницу',
-  'Отдых без перелёта','Маяки и северное море','Фотогеничный маршрут','Где вкусно и недорого',
-  'Лесной отель с баней','Три дня без расписания','Путешествие для двоих','Куда за вдохновением',
-  'Рыбалка и тишина','Маршрут вдоль Волги','Старинные усадьбы','Пляжный отпуск зимой',
-  'Город для долгих прогулок','Панорамные рестораны','Уехать в горы завтра','Небанальный Сочи',
-  'Выходные в Калининграде','Куда поехать ночью','Лучшие рынки Тбилиси','Автопутешествие по Кавказу',
-  'Острова без визы','Где увидеть китов','Гастрономический маршрут','Тихие пляжи Дагестана',
-  'Веломаршрут на день','Отель с красивым видом','Путешествие с родителями','Куда на Новый год',
-  'Пять дней у океана','Поход к леднику','Горячий чай в горах','Лучшие закаты России',
-  'Куда улететь завтра','Поездка без чемодана','Городские каникулы','Спонтанный отпуск'
-];
 const tagsLayer = document.getElementById('tags');
-extraTagTexts.forEach((label, i) => {
-  const pos = document.createElement('div');
-  const tag = document.createElement('div');
-  pos.className = 'tag-pos';
-  tag.className = 'tag tag-small';
-  tag.textContent = label;
-  tagsLayer.appendChild(pos);
-  pos.appendChild(tag);
-});
-
-// Крупные и компактные плашки перемешаны, но стоят в обычном flex-потоке:
-// браузер сам гарантирует отсутствие пересечений при любом размере окна.
-const tagPositions = [...tagsLayer.querySelectorAll('.tag-pos')];
-tagPositions.forEach((pos, i) => { pos.style.order = String((i * 37) % tagPositions.length); });
 
 // облако тегов: направление разлёта считается от центра сцены один раз
 const TAGS_IN = 0.14, TAGS_SPREAD = 0.30, TAGS_OUT = 0.30;
-const tagPointer = { x: -10000, y: -10000, active: false };
-addEventListener('pointermove', e => {
-  tagPointer.x = e.clientX;
-  tagPointer.y = e.clientY;
-  tagPointer.active = true;
-}, { passive: true });
-document.documentElement.addEventListener('mouseleave', () => { tagPointer.active = false; });
 const tags = [...document.querySelectorAll('.tag-pos')].map(pos => {
   const el = pos.firstElementChild;
   const px = parseFloat(pos.style.left) / 100;
@@ -3301,43 +3239,20 @@ gsap.ticker.add(() => {
   // retn включает ракурс снизу только на возврате, когда корпус уже за кадром
   const retn = smooth(clamp01((p - BACK_IN) / 0.04)) * (1 - smooth(clamp01((p - BACK_OUT) / 0.05)));
 
-  // Теги проявляются плотным полем без пересечений и мягко реагируют на курсор.
-  // Все 108 тегов пересчитываются только в своей короткой фазе.
+  // Исходное облако тегов: разлетается радиально под растущую строку запроса.
   const tagsPhase = p > TAGS_IN - 0.02 && p < TAGS_OUT + 0.06;
   if (tagsPhase || tagsDirty) {
   const tIn  = smooth(clamp01((p - TAGS_IN) / 0.05));
+  const tSp  = smooth(clamp01((p - 0.215) / (TAGS_SPREAD - 0.215)));
   // гаснут до конца набора промта: к полной строке кадр должен быть чистым
   const tOut = smooth(clamp01((p - TAGS_OUT) / 0.035));
   tags.forEach(t => {
-    const baseX = t.homeX || t.px * innerWidth;
-    const baseY = t.homeY || t.py * innerHeight;
-    // Позиции держит flex-сетка: поэтому теги никогда не пересекаются.
-    // При появлении запроса они плавно исчезают, освобождая центр кадра.
-    const spreadX = 0;
-    const spreadY = 0;
-    let cursorTargetX = 0, cursorTargetY = 0;
-    let cursorNear = 0;
-    if (tagPointer.active && !reduced) {
-      const dx = baseX - tagPointer.x;
-      const dy = baseY - tagPointer.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      const radius = Math.min(180, innerWidth * .14);
-      if (dist < radius) {
-        cursorNear = Math.pow(1 - dist / radius, 2);
-        cursorTargetY = -2 * cursorNear;
-      }
-    }
-    // Только лёгкий подъём: геометрия сетки не ломается и соседи не пересекаются.
-    t.cursorVX = (t.cursorVX + (cursorTargetX - t.cursorX) * .13) * .72;
-    t.cursorVY = (t.cursorVY + (cursorTargetY - t.cursorY) * .13) * .72;
-    t.cursorX += t.cursorVX;
-    t.cursorY += t.cursorVY;
+    const push = (240 + 620 * t.near) * tSp;
     t.setC({
-      opacity: tIn * (1 - tOut),
-      x: spreadX + t.cursorX,
-      y: spreadY + t.cursorY,
-      scale: .96 + .04 * tIn,
-      filter: `brightness(${1 - cursorNear * .055})`
+      opacity: tIn * (1 - tOut) * (1 - 0.55 * tSp),
+      x: t.vx * push,
+      y: t.vy * push + Math.sin(p * 6 + t.seed) * 5 * tIn,
+      scale: 0.9 + 0.1 * tIn - 0.06 * tSp
     });
   });
   tagsDirty = tagsPhase;   // один сброс после выхода из фазы
