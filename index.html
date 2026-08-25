@@ -1,17 +1,301 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="План путешествия, внутри которого всё уже можно сделать.">
   <title>Путешествовать — легко</title>
-  <meta name="description" content="Персональный помощник, который берёт на себя всё: заезд, маршрут, активности, выезд.">
-  <!-- preload вернётся вместе с public/fonts/geologica-400.woff2 и @font-face в tokens.css:
-       сейчас файла нет, и preload давал 404 плюс предупреждение о неиспользованном ресурсе -->
-  <link rel="stylesheet" href="/src/styles/tokens.css">
   <link rel="stylesheet" href="/src/styles/scene.css">
 </head>
 <body>
-  <div id="app"></div>
+<header class="hdr site-header" id="siteHeader" data-theme="light">
+  <nav class="site-header__nav" aria-label="Главная навигация">
+    <div class="site-header__left">
+      <a class="logo-slot site-header__brand" id="logoSlot" href="#" aria-label="Luna — на главную">
+        <img loading="lazy" src="/assets/ui/luna-logo.svg" alt="Luna" width="156" height="43">
+      </a>
+      <a class="site-header__business hdr-item" id="hi0" href="#business">
+        <span>Для бизнеса</span>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 7.5h5v5M12.5 7.5l-5 5"/><circle cx="10" cy="10" r="8.25"/></svg>
+      </a>
+    </div>
+    <a class="site-header__download hdr-item" id="hi2" href="#download">
+      <svg class="site-header__apple" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M17.3413 6.2148C17.2314 6.29684 15.2908 7.34875 15.2908 9.68773C15.2908 12.3931 17.7601 13.3503 17.834 13.374C17.8227 13.4323 17.4417 14.6847 16.5321 15.9609C15.721 17.0839 14.8739 18.2051 13.5853 18.2051C12.2966 18.2051 11.965 17.4849 10.4774 17.4849C9.02763 17.4849 8.51217 18.2288 7.33343 18.2288C6.1547 18.2288 5.33224 17.1896 4.3866 15.9135C3.29125 14.4149 2.40625 12.0869 2.40625 9.87733C2.40625 6.3333 4.80162 4.45373 7.15909 4.45373C8.41173 4.45373 9.45591 5.24494 10.2424 5.24494C10.9909 5.24494 12.1583 4.40633 13.5834 4.40633C14.1235 4.40633 16.064 4.45373 17.3413 6.2148ZM12.9068 2.90595C13.4962 2.23325 13.9131 1.29984 13.9131 0.366435C13.9131 0.236998 13.9017 0.105737 13.8771 0C12.9182 0.0346381 11.7774 0.614371 11.0895 1.38188C10.5494 1.97255 10.0453 2.90595 10.0453 3.85212C10.0453 3.99432 10.0699 4.13652 10.0813 4.18209C10.1419 4.19303 10.2405 4.20579 10.339 4.20579C11.1994 4.20579 12.2815 3.65159 12.9068 2.90595Z"/></svg>
+      <span>Скачать</span>
+    </a>
+    <button class="site-header__menu hdr-item" id="menuTrigger" type="button" aria-label="Открыть меню" aria-controls="siteMenu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </nav>
+</header>
+<nav class="site-menu" id="siteMenu" aria-label="Основное меню" aria-hidden="true">
+  <div class="menu-top">
+    <span class="menu-brand" aria-label="Luna">luna</span>
+    <button class="menu-close" id="menuClose" type="button"><span>Закрыть</span><b aria-hidden="true">×</b></button>
+  </div>
+  <div class="menu-links">
+    <section class="menu-column">
+      <a class="menu-business-link" href="#business" data-menu-close>
+        <span>Для бизнеса</span>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 7.5h5v5M12.5 7.5l-5 5"/><circle cx="10" cy="10" r="8.25"/></svg>
+      </a>
+      <a href="#features" data-menu-close>Возможности</a>
+      <a href="#routes" data-menu-close>Маршруты</a>
+      <a href="#assistant" data-menu-close>Помощник</a>
+    </section>
+    <section class="menu-column">
+      <a href="#" data-menu-close>Главная</a>
+      <a href="#weatherSection" data-menu-close>Как это работает</a>
+      <a href="#footer" data-menu-close>Контакты</a>
+    </section>
+    <section class="menu-column">
+      <a class="menu-download-link" href="#download" data-menu-close>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M17.3413 6.2148C17.2314 6.29684 15.2908 7.34875 15.2908 9.68773C15.2908 12.3931 17.7601 13.3503 17.834 13.374C17.8227 13.4323 17.4417 14.6847 16.5321 15.9609C15.721 17.0839 14.8739 18.2051 13.5853 18.2051C12.2966 18.2051 11.965 17.4849 10.4774 17.4849C9.02763 17.4849 8.51217 18.2288 7.33343 18.2288C6.1547 18.2288 5.33224 17.1896 4.3866 15.9135C3.29125 14.4149 2.40625 12.0869 2.40625 9.87733C2.40625 6.3333 4.80162 4.45373 7.15909 4.45373C8.41173 4.45373 9.45591 5.24494 10.2424 5.24494C10.9909 5.24494 12.1583 4.40633 13.5834 4.40633C14.1235 4.40633 16.064 4.45373 17.3413 6.2148ZM12.9068 2.90595C13.4962 2.23325 13.9131 1.29984 13.9131 0.366435C13.9131 0.236998 13.9017 0.105737 13.8771 0C12.9182 0.0346381 11.7774 0.614371 11.0895 1.38188C10.5494 1.97255 10.0453 2.90595 10.0453 3.85212C10.0453 3.99432 10.0699 4.13652 10.0813 4.18209C10.1419 4.19303 10.2405 4.20579 10.339 4.20579C11.1994 4.20579 12.2815 3.65159 12.9068 2.90595Z"/></svg>
+        <span>Скачать</span>
+      </a>
+      <div class="menu-languages" aria-label="Выбор языка">
+        <button class="menu-language" type="button" data-language="en">EN</button>
+        <button class="menu-language is-on" type="button" data-language="ru">RU</button>
+      </div>
+    </section>
+  </div>
+  <p class="menu-note">Путешествовать — легко</p>
+</nav>
+
+<div class="scroll-indicator" id="scrollIndicator" aria-hidden="true">
+  <div class="scroll-indicator__marker" id="scrollIndicatorMarker">
+    <img loading="lazy" class="scroll-indicator__graphic" src="/assets/ui/scroll-indicator.svg" alt="" width="64" height="932" draggable="false">
+  </div>
+</div>
+
+<div class="pre" id="pre">
+  <div class="pre-blob" id="pb0" style="--w:46vw; left:-12vw; top:66vh"><div class="gimg g1"></div></div>
+  <div class="pre-blob" id="pb1" style="--w:36vw; left:58vw; top:88vh"><div class="gimg g2"></div></div>
+  <div class="pre-blob" id="pb2" style="--w:52vw; left:18vw; top:112vh"><div class="gimg g3"></div></div>
+  <div class="pre-logo" id="preLogo">
+<svg viewBox="0 0 353 231" fill="none" class="pre-logo-svg" xmlns="http://www.w3.org/2000/svg">
+<path fill="currentColor" d="M3.94844e-05 223.5C3.94844e-05 207.607 3.94844e-05 191.813 3.94844e-05 176.118C3.94844e-05 160.225 3.94844e-05 144.431 3.94844e-05 128.736C3.94844e-05 112.843 3.94844e-05 97.0487 3.94844e-05 81.354C3.94844e-05 67.8447 3.94844e-05 54.3353 3.94844e-05 40.826C3.94844e-05 27.118 3.94844e-05 13.5093 3.94844e-05 -1.77622e-05H103.108C103.108 8.34399 103.108 16.688 103.108 25.032C103.108 33.1773 103.108 41.422 103.108 49.766C103.108 78.5727 103.108 107.479 103.108 136.484C103.108 165.489 103.108 194.495 103.108 223.5H3.94844e-05ZM352.755 38.74C352.755 52.0507 352.755 65.4607 352.755 78.97C352.755 92.4793 352.755 105.989 352.755 119.498C352.755 131.021 352.755 142.643 352.755 154.364C352.755 165.887 352.755 177.409 352.755 188.932C352.755 200.455 352.755 211.977 352.755 223.5H249.647C249.647 215.156 249.647 206.713 249.647 198.17C249.647 189.627 249.647 181.085 249.647 172.542C249.647 163.801 249.647 155.357 249.647 147.212C249.647 128.736 249.647 110.657 249.647 92.976C249.647 75.096 249.647 57.0173 249.647 38.74H352.755ZM218.059 38.74C218.059 49.2693 218.059 59.898 218.059 70.626C218.059 81.1553 218.059 91.6847 218.059 102.214C218.059 112.743 218.059 123.372 218.059 134.1C218.059 138.471 218.755 142.047 220.145 144.828C221.735 147.411 223.721 149.298 226.105 150.49C228.688 151.483 231.37 151.98 234.151 151.98C236.933 151.98 239.714 151.483 242.495 150.49C245.475 149.497 247.859 148.305 249.647 146.914L225.807 220.52C220.245 223.301 213.391 225.586 205.245 227.374C197.299 229.162 188.955 230.056 180.213 230.056C172.267 230.056 164.419 229.063 156.671 227.076C148.923 225.288 141.871 222.209 135.513 217.838C129.355 213.467 124.388 207.706 120.613 200.554C116.839 193.402 114.951 184.462 114.951 173.734C114.951 159.43 114.951 145.126 114.951 130.822C114.951 116.518 114.951 102.214 114.951 87.91C114.951 79.7647 114.951 71.6193 114.951 63.474C114.951 55.13 114.951 46.8853 114.951 38.74H218.059Z"/>
+</svg>
+  </div>
+</div>
+
+<main class="site-shell" id="siteShell">
+<div class="stage">
+<div class="scene">
+  <div class="veil" id="veil"></div>
+  <div class="charge-bg" id="chargeBg"></div>
+  <div class="pulse-white" id="pulseWhite"></div>
+  <div class="aura" id="aura"><i></i></div>
+  <div class="bottom-glow" id="botGlow"><div class="gimg g3"></div></div>
+  <div class="hero-band" id="heroBand"></div>
+  <div class="hero-glow" id="heroGlow"><div class="gimg gh"></div></div>
+  <div class="hero">
+    <h1 id="heroH1">Путешествовать — легко</h1>
+    <p id="heroP">Путешествие планируется целиком: куда сходить, где поесть, что забронировать и чем заняться. План меняется по ходу поездки, а вся рутина остаётся за кадром</p>
+    <div class="scroll-cue" aria-hidden="true"><img loading="lazy" src="/assets/generated/428bbe296096.svg" width="58" height="38" alt=""></div>
+  </div>
+
+  <!-- шары: data-speed задаёт свою скорость параллакса -->
+  <!-- шары вайбов отключены: display:none в .orb; вернуть вместе с флагом orbsPhase -->
+  <div class="orb" id="orb0" data-speed="0.62" style="width:360px;height:360px; left:6%;  top:14%"><div class="gimg g1"></div><span>Культурный</span></div>
+  <div class="orb" id="orb1" data-speed="0.86" style="width:320px;height:320px; left:12%; top:52%"><div class="gimg g2"></div><span>Романтичный</span></div>
+  <div class="orb" id="orb2" data-speed="1.14" style="width:340px;height:340px; left:33%; top:74%"><div class="gimg g3"></div><span>Гастротур</span></div>
+  <div class="orb" id="orb3" data-speed="1.00" style="width:380px;height:380px; right:7%; top:48%"><div class="gimg g1"></div><span>Туристический</span></div>
+  <div class="orb" id="orb4" data-speed="1.42" style="width:400px;height:400px; right:4%; top:11%"><div class="gimg g2"></div><span>Тусовочный</span></div>
+
+  <div class="tags" id="tags">
+    <div class="tag-pos" style="left:11.7%; top:95.0%"><div class="tag">Хочу в горы на выходные</div></div>
+    <div class="tag-pos" style="left:87.9%; top:28.0%"><div class="tag">Куда поехать с ребёнком</div></div>
+    <div class="tag-pos" style="left:92.0%; top:16.5%"><div class="tag">Три дня в Казани</div></div>
+    <div class="tag-pos" style="left:49.1%; top:60.4%"><div class="tag">Море в сентябре</div></div>
+    <div class="tag-pos" style="left:50.8%; top:82.9%"><div class="tag">Гастротур по Питеру</div></div>
+    <div class="tag-pos" style="left:62.8%; top:49.4%"><div class="tag">Что посмотреть в Суздале</div></div>
+    <div class="tag-pos" style="left:75.1%; top:84.1%"><div class="tag">Романтические выходные</div></div>
+    <div class="tag-pos" style="left:24.3%; top:16.6%"><div class="tag">Еду один, хочу тишины</div></div>
+    <div class="tag-pos" style="left:86.9%; top:71.5%"><div class="tag">Алтай на неделю</div></div>
+    <div class="tag-pos" style="left:36.4%; top:94.3%"><div class="tag">Бюджетно на юг</div></div>
+    <div class="tag-pos" style="left:50.6%; top:38.7%"><div class="tag">Куда с собакой</div></div>
+    <div class="tag-pos" style="left:12.4%; top:50.4%"><div class="tag">Первый раз в Грузии</div></div>
+    <div class="tag-pos" style="left:63.2%; top:27.9%"><div class="tag">Отпуск без планирования</div></div>
+    <div class="tag-pos" style="left:86.7%; top:49.7%"><div class="tag">Тёплое море в ноябре</div></div>
+    <div class="tag-pos" style="left:92.0%; top:61.7%"><div class="tag">Байкал зимой</div></div>
+    <div class="tag-pos" style="left:87.9%; top:95.0%"><div class="tag">Выходные в Выборге</div></div>
+    <div class="tag-pos" style="left:12.1%; top:72.0%"><div class="tag">Куда без визы</div></div>
+    <div class="tag-pos" style="left:25.8%; top:60.6%"><div class="tag">Термальные источники</div></div>
+    <div class="tag-pos" style="left:37.2%; top:27.0%"><div class="tag">Сплав по реке</div></div>
+    <div class="tag-pos" style="left:92.0%; top:84.1%"><div class="tag">Экскурсии для подростка</div></div>
+    <div class="tag-pos" style="left:63.2%; top:72.3%"><div class="tag">Где поесть в Тбилиси</div></div>
+    <div class="tag-pos" style="left:37.7%; top:49.9%"><div class="tag">Пять дней в Армении</div></div>
+    <div class="tag-pos" style="left:75.2%; top:39.2%"><div class="tag">Дешёвые авиабилеты</div></div>
+    <div class="tag-pos" style="left:12.5%; top:28.2%"><div class="tag">Отель с бассейном</div></div>
+    <div class="tag-pos" style="left:62.7%; top:5.4%"><div class="tag">Северное сияние</div></div>
+    <div class="tag-pos" style="left:38.4%; top:5.0%"><div class="tag">Куда в марте</div></div>
+    <div class="tag-pos" style="left:73.9%; top:15.9%"><div class="tag">Винный тур</div></div>
+    <div class="tag-pos" style="left:92.0%; top:38.1%"><div class="tag">Пеший маршрут на два дня</div></div>
+    <div class="tag-pos" style="left:26.1%; top:38.6%"><div class="tag">Города Золотого кольца</div></div>
+    <div class="tag-pos" style="left:37.0%; top:71.9%"><div class="tag">Что делать в дождь</div></div>
+    <div class="tag-pos" style="left:13.5%; top:6.4%"><div class="tag">Куда с коляской</div></div>
+    <div class="tag-pos" style="left:73.9%; top:60.7%"><div class="tag">Поездка на машине</div></div>
+    <div class="tag-pos" style="left:49.3%; top:16.6%"><div class="tag">Хочу вулканы</div></div>
+    <div class="tag-pos" style="left:25.7%; top:83.7%"><div class="tag">Дайвинг для новичка</div></div>
+    <div class="tag-pos" style="left:61.4%; top:95.0%"><div class="tag">Куда в горы летом</div></div>
+    <div class="tag-pos" style="left:87.6%; top:5.0%"><div class="tag">Кемпинг с палаткой</div></div>
+  </div>
+
+  <div class="vibes" id="vibes">
+    <span style="left:4%;  top:11vh">Идеями</span>
+    <span style="left:17%; top:23vh">Вкусами</span>
+    <span style="left:29%; top:12vh">Видами</span>
+    <span style="right:18%; top:23vh">Прогулками</span>
+    <span style="right:4%;  top:11vh">Отдыхом</span>
+  </div>
+
+  <div class="swarm" id="swarm"></div>
+
+  <div class="influx" id="influx"></div>
+  <div class="plan-explosion" id="planExplosion" aria-hidden="true"></div>
+  <div class="fall" id="fall"></div>
+  <div class="demo-cursor" id="demoCursor"></div>
+
+  <!-- подсказка убрана: жест показывает серый кружок-восьмёрка -->
+  <div class="hint-move" id="hintMove" hidden>
+    <svg viewBox="0 0 24 24" fill="none"><path d="M6.3 2.8c-.9-.4-1.9.4-1.6 1.4l4.3 15.3c.3 1 1.6 1.1 2.1.2l2.5-4.6 4.9 3.4c.8.6 1.9-.1 1.8-1.1l-1.7-6.1c-.1-.4-.4-.7-.8-.8L6.3 2.8Z" fill="currentColor"/></svg>
+    <span>Поводите курсором</span>
+  </div>
+
+  <div class="prompt" id="prompt"><span class="prompt-q" id="promptQ"><span class="prompt-text" id="promptText"></span></span></div>
+
+  <div class="caption left"  id="cap0">Куда<br>сходить</div>
+  <div class="sidebox" id="side0">
+    <p>В плане появляются интересные места, рестораны и идеи на каждый день поездки</p>
+  </div>
+  <div class="ctags" id="ctags">
+    <span class="cchip">кафе</span>
+    <span class="cchip">достопримечательности</span>
+    <span class="cchip">рестораны</span>
+    <span class="cchip">исторические места</span>
+    <span class="cchip acc">события подстраиваются под погоду</span>
+  </div>
+  <div class="awave" id="awave">
+    <div class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <span>Про любое место расскажет аудиогид</span>
+  </div>
+  <div class="caption right" id="cap1"><span class="caption-heading">Вся поездка<br>в одном<br>месте</span><em>Всё важное для поездки: билеты, отель, регистрация на рейс и детали бронирования</em><div class="cchips"><span class="cchip">ранний заезд</span><span class="cchip">онлайн-регистрация</span><span class="cchip">уведомит, если рейс задержат</span><span class="cchip">напомнит о выезде</span></div></div>
+  <div class="caption left"  id="cap2"><span class="caption-heading">Помощник в приложении</span><em>Все, что раньше приходилось делать самостоятельно, теперь помощник выполняет в чате</em></div>
+  <div class="sidebox" id="side2">
+    <p>Агент сам подкидывает идеи по ходу поездки. Вечером свободно — предложит фильм в тему места. Много ходили за день — позовёт в спа. Ничего не навязывает: не хочется — просто пропустите.</p>
+    <div class="ticks">
+      <span class="tick"><u></u><b>Заезд в отель онлайн</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+      <span class="tick"><u></u><b>Еда в номер из ресторана</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+      <span class="tick"><u></u><b>Связь с администратором</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+      <span class="tick"><u></u><b>Столик в ресторане</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+    </div>
+  </div>
+  <div class="caption right" id="cap3"><span class="ln l1">Заряжаем</span><span class="ln l2">поездку</span></div>
+
+  <section class="weather-story" id="weatherStory" aria-label="События подстраиваются под погоду">
+    <div class="weather-layer weather-base" aria-hidden="true"></div>
+    <picture class="weather-layer weather-picture" aria-hidden="true">
+      <img loading="lazy" src="/assets/weather/weather-sky.avif" width="3000" height="1864" alt="" decoding="async">
+    </picture>
+    <div class="weather-layer weather-wash" aria-hidden="true"></div>
+    <div class="weather-layer weather-rain" id="weatherRain" aria-hidden="true"></div>
+    <div class="weather-layer weather-noise" aria-hidden="true"></div>
+    <div class="weather-composition">
+      <div class="weather-temp" aria-label="Температура меняется с двадцати до семнадцати градусов">
+        <span class="weather-temp-old">20°</span>
+        <span class="weather-temp-new">17°</span>
+      </div>
+      <h2 class="weather-title"><span>События</span><span>подстраиваются</span><span>под погоду</span></h2>
+    </div>
+  </section>
+
+  <img class="phone-glow" id="phoneGlow" src="/assets/generated/fcde74940fe3.svg" width="1831" height="1098" loading="lazy" alt="" aria-hidden="true">
+  <div class="roll-layer" id="rollLayer">
+  <div class="scroll-layer">
+    <div class="tilt-layer">
+      <div class="intro-layer" id="introLayer">
+      <div class="idle-y"><div class="idle-r">
+        <div class="box device-iphone-14-pro device-black">
+          <div class="flow" id="flow"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="rim-pulse" id="rimPulse"></div>
+          <div class="face back"></div>
+          <div class="rim"></div>
+          <div class="face front device-frame">
+            <div class="screen device-screen">
+              <iframe id="appFrame" src="/assets/embedded/plan-app.html" title="Чепош Парк" scrolling="no"></iframe>
+              <video id="heroVid" width="640" height="360" poster="/assets/media/hero-background.webp" src="/assets/media/hero-motion.mp4" muted loop playsinline preload="none"></video>
+            </div>
+            <div class="device-stripe" aria-hidden="true"></div>
+            <div class="device-header" aria-hidden="true"></div>
+            <div class="device-sensors" aria-hidden="true"></div>
+            <div class="device-btns" aria-hidden="true"></div>
+            <div class="device-power" aria-hidden="true"></div>
+            <div class="device-home" aria-hidden="true"></div>
+            <div class="loader" id="loader">
+              <div class="loader-ring"></div>
+              <div class="loader-t">Собираю план</div>
+            </div>
+            <div class="inflow" id="inflow"></div>
+            <div class="charge" id="chargeGlow"></div>
+            <div class="island-wrap">
+              <div class="island" id="island">
+                <div class="island-in" id="islandIn"><b><svg viewBox="0 0 95 95" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M47.4375 94.875C40.9089 94.875 34.7695 93.6322 29.0195 91.1465C23.2995 88.6908 18.2682 85.2917 13.9258 80.9492C9.58333 76.6068 6.16927 71.5755 3.68359 65.8555C1.22786 60.1055 0 53.9661 0 47.4375C0 40.8789 1.22786 34.7396 3.68359 29.0195C6.16927 23.2695 9.58333 18.2233 13.9258 13.8809C18.2682 9.53841 23.2995 6.13932 29.0195 3.68359C34.7695 1.22786 40.9089 0 47.4375 0C53.9961 0 60.1354 1.22786 65.8555 3.68359C71.6055 6.13932 76.6517 9.53841 80.9941 13.8809C85.3366 18.2233 88.7357 23.2695 91.1914 29.0195C93.6771 34.7396 94.9199 40.8789 94.9199 47.4375C94.9199 53.9661 93.6771 60.1055 91.1914 65.8555C88.7357 71.5755 85.3366 76.6068 80.9941 80.9492C76.6517 85.2917 71.6055 88.6908 65.8555 91.1465C60.1354 93.6322 53.9961 94.875 47.4375 94.875ZM42.4961 69.9434C43.4844 69.9434 44.3828 69.7188 45.1914 69.2695C46.0299 68.7904 46.7487 68.1165 47.3477 67.248L68.2363 35.3535C68.5957 34.7845 68.8802 34.2005 69.0898 33.6016C69.3294 33.0026 69.4492 32.4186 69.4492 31.8496C69.4492 30.472 68.9251 29.334 67.877 28.4355C66.8587 27.5371 65.6758 27.0879 64.3281 27.0879C62.5612 27.0879 61.0788 28.0462 59.8809 29.9629L42.4062 57.7695L34.5449 48.1562C33.946 47.4076 33.3171 46.8685 32.6582 46.5391C32.0293 46.2096 31.2956 46.0449 30.457 46.0449C29.1094 46.0449 27.9414 46.5391 26.9531 47.5273C25.9648 48.4857 25.4707 49.6536 25.4707 51.0312C25.4707 51.6901 25.5905 52.319 25.8301 52.918C26.0697 53.5169 26.444 54.1309 26.9531 54.7598L37.4648 67.3379C38.1836 68.2064 38.9473 68.8652 39.7559 69.3145C40.5645 69.7337 41.4779 69.9434 42.4961 69.9434Z" fill="black"/></svg></b>Поездка готова!</div>
+              </div>
+            </div>
+          </div>
+          <!-- слой .overlays снят: переход взяли на себя стадии внутри экрана -->
+        </div>
+      </div></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+
+
+</div>
+
+<div class="spacer"></div>
+</div>
+
+<!-- гигантская кнопка между сценой и «рутиной» -->
+<section class="go-band">
+  <button class="go-btn" type="button"><span class="go-t"><svg class="go-apple" viewBox="0 0 80 98" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M77.4545 33.4082C76.8845 33.8492 66.8206 39.5038 66.8206 52.0772C66.8206 66.6204 79.6265 71.7654 80.0098 71.8928C79.9509 72.2064 77.9754 78.939 73.258 85.799C69.0516 91.8358 64.6585 97.8628 57.9754 97.8628C51.2924 97.8628 49.5725 93.9918 41.8575 93.9918C34.3391 93.9918 31.6658 97.9902 25.5528 97.9902C19.4398 97.9902 15.1744 92.4042 10.2703 85.5442C4.58968 77.4886 0 64.974 0 53.0964C0 34.0452 12.4226 23.9414 24.6486 23.9414C31.145 23.9414 36.5602 28.1946 40.6388 28.1946C44.5209 28.1946 50.5749 23.6866 57.9656 23.6866C60.7666 23.6866 70.8305 23.9414 77.4545 33.4082ZM54.457 15.6212C57.5135 12.005 59.6757 6.9874 59.6757 1.9698C59.6757 1.274 59.6167 0.5684 59.4889 0C54.516 0.1862 48.5995 3.3026 45.0319 7.4284C42.231 10.6036 39.6167 15.6212 39.6167 20.7074C39.6167 21.4718 39.7445 22.2362 39.8034 22.4812C40.1179 22.54 40.629 22.6086 41.1401 22.6086C45.602 22.6086 51.2138 19.6294 54.457 15.6212Z" fill="currentColor"/></svg>Скачать</span></button>
+</section>
+
+<footer class="foot">
+  <div class="foot-top">
+    <div class="foot-brand">
+      <span class="foot-logo">luna</span>
+      <p class="foot-lead">Путешествия, которые складываются сами.</p>
+    </div>
+    <nav class="foot-col" aria-label="Навигация в подвале">
+      <b>Продукт</b>
+      <a href="#features">Возможности</a>
+      <a href="#routes">Маршруты</a>
+      <a href="#assistant">Помощник</a>
+      <a href="#download">Скачать</a>
+    </nav>
+    <div class="foot-col">
+      <b>Связаться</b>
+      <a href="mailto:hello@luna.travel">hello@luna.travel</a>
+      <a href="#">Telegram</a>
+      <a href="#">ВКонтакте</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Luna. Путешествовать — легко.</span>
+    <div class="foot-legal">
+      <a href="#">Конфиденциальность</a>
+      <a href="#">Условия использования</a>
+    </div>
+  </div>
+</footer>
+
+
+<div class="hud">прогресс <span id="p">0.00</span></div>
+</main>
   <script type="module" src="/src/scene/scene.js"></script>
 </body>
 </html>

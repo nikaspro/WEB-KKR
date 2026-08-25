@@ -15,9 +15,9 @@
     "html":       { "include": ["index.html", "**/index.html"] },
     "css":        { "include": ["**/*.css"] },
     "js":         { "include": ["**/*.js", "**/*.mjs"] },
-    "fonts":      { "include": ["fonts/*"] },
-    "hero":       { "include": ["media/hero-poster.webp", "media/hero-*.avif"] },
-    "critical":   { "include": ["index.html", "**/*.css", "fonts/*", "media/hero-poster.webp", "media/hero-*.avif"] },
+    "fonts":      { "include": ["**/fonts/*"] },
+    "hero":       { "include": ["**/media/hero-background.webp", "**/media/hero-*.avif"] },
+    "critical":   { "include": ["index.html", "**/*.css", "**/fonts/*", "**/media/hero-background.webp", "**/media/hero-*.avif"] },
     "total":      { "include": ["**/*"] }
   },
 

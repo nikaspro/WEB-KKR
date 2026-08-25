@@ -9,8 +9,9 @@ import { Script } from 'node:vm';
 
 const root = resolve('.');
 const entries = [
+  'index.html',
   'legacy/rd-hero-v4.html',
-  'legacy/assets/embedded/plan-app.html'
+  'public/assets/embedded/plan-app.html'
 ];
 const errors = [];
 let checkedScripts = 0;
@@ -22,9 +23,9 @@ function isLocal(ref) {
 
 function localPath(file, ref) {
   const clean = ref.split(/[?#]/, 1)[0];
-  return ref.startsWith('/')
-    ? join(root, clean.slice(1))
-    : resolve(dirname(join(root, file)), clean);
+  if (!ref.startsWith('/')) return resolve(dirname(join(root, file)), clean);
+  if (clean.startsWith('/assets/')) return join(root, 'public', clean.slice(1));
+  return join(root, clean.slice(1));
 }
 
 function checkFile(file) {

@@ -28,11 +28,14 @@ function walk(dir, acc = []) {
 
 // ---- матчер глобов: поддерживает * и ** ----
 function match(file, pattern) {
-  const rx = new RegExp('^' + pattern
+  const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*\//g, '(?:.*/)?')
-    .replace(/\*\*/g, '.*')
-    .replace(/\*/g, '[^/]*') + '$');
+    .replace(/\*\*\//g, '\u0000')
+    .replace(/\*\*/g, '\u0001')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\u0000/g, '(?:.*/)?')
+    .replace(/\u0001/g, '.*');
+  const rx = new RegExp(`^${escaped}$`);
   return rx.test(file);
 }
 
@@ -145,12 +148,12 @@ if (chk.forbidStaticWillChange) {
 const allow = new Set([...(cfg.thirdParty.allow || []), ...(cfg.thirdParty.selfOrigin || [])]);
 // Неймспейсы и словари это не загрузка ресурса.
 const NAMESPACE_HOSTS = new Set(['www.w3.org', 'w3.org', 'schema.org', 'www.schema.org']);
+const TEXT_ONLY_HOSTS = new Set(['gsap.com']);
 const textExt = textExt0;
 const seen = new Map();
 for (const f of files.filter(f => textExt.has(extname(f)))) {
   const txt = readFileSync(join(root, f), 'utf8');
-  // URL в лицензионном block comment не создаёт сетевой запрос. Например,
-  // локальный vendor/gsap.min.js содержит ссылку на текст лицензии gsap.com.
+  // URL в лицензионном block comment npm-бандла не создаёт сетевой запрос.
   const blockComments = [...txt.matchAll(/\/\*[\s\S]*?\*\//g)]
     .map(m => [m.index, m.index + m[0].length]);
   for (const m of txt.matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) {
@@ -159,7 +162,7 @@ for (const f of files.filter(f => textExt.has(extname(f)))) {
     if (allow.has(host)) continue;
     // XML-неймспейсы не являются загрузкой: не считаем их сторонним origin
     const before = txt.slice(Math.max(0, m.index - 40), m.index);
-    if (NAMESPACE_HOSTS.has(host) || /xmlns|xlink|@context/i.test(before)) continue;
+    if (NAMESPACE_HOSTS.has(host) || TEXT_ONLY_HOSTS.has(host) || /xmlns|xlink|@context/i.test(before)) continue;
     if (!seen.has(host)) seen.set(host, new Set());
     seen.get(host).add(f);
   }

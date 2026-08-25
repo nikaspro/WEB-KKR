@@ -15,19 +15,18 @@ npm run phases:check # карта окон фаз, код 1 при пересе�
 
 ## Структура
 
-Жирным — то, что уже есть; остальное появится по мере переноса сцены из `legacy/`.
-
 ```
 src/
-  scene/      # **phases.js**, **scene.js**; captions.js, influx.js, swarm.js — впереди
-  app-screen/ # экран приложения в телефоне — впереди
-  styles/     # **tokens.css**, **scene.css**
-public/       # впереди: fonts/ (Geologica woff2, сабсет кириллицы), media/ (WebP, AVIF, mp4)
+  scene/      # scene.js, phases.js
+  styles/     # scene.css, tokens.css
+public/
+  assets/     # локальные шрифты, медиа и экран приложения
 scripts/
-  **budget.mjs**       # гейт бюджета (голый Node, без зависимостей)
-  **phases-check.mjs** # карта окон фаз
+  budget.mjs       # гейт бюджета
+  phases-check.mjs # карта окон фаз
+  legacy-check.mjs # проверка HTML и локальных ассетов
 legacy/
-  **rd-hero-v4.html**  # монофайл-эталон до полного переноса на Vite
+  rd-hero-v4.html  # переход со старой ссылки на корневую версию
 ```
 
 ## Бюджет
@@ -35,5 +34,6 @@ legacy/
 Лимиты в `budget.json`. Гейт: JS ≤ 100 КБ, критический путь ≤ 300 КБ, вся страница ≤ 900 КБ (все цифры transferred brotli).
 
 Правила проекта — в [AGENTS.md](./AGENTS.md). Читать до первой правки.
+Правила анимации и подключения библиотеки — в [GSAP.md](./GSAP.md).
 
-`legacy/rd-hero-v4.html` под гейт не попадает: это эталон внешнего вида, а не отдача. Его долги — 312 КБ base64 внутри, Google Fonts и cdnjs снаружи, iframe — закрываются переносом, а не правкой монофайла.
+Рабочая версия собирается из `index.html`, `src/` и `public/assets/`. Внешних runtime-ресурсов и больших `data:` в выдаче нет.
