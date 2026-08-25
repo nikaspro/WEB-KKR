@@ -1154,8 +1154,8 @@
     background-size:contain;
     opacity:0;
     transform-origin:center;
-    filter:drop-shadow(0 9px 16px rgba(28,43,53,.10));
-    will-change:transform,opacity;
+    contain:layout paint style;
+    backface-visibility:hidden;
   }
   .influx i.is-photo{background-size:cover;background-color:#E4E8EC}
   .influx i.is-object{border-radius:0}
@@ -3193,6 +3193,7 @@ addEventListener('touchmove', e => {
 // Фотографии мест и пользовательские PNG смешаны в одном потоке с обеих сторон.
 // Форму не ломаем — только равномерно уменьшаем к экрану телефона.
 const INF_IN = 0.440, INF_OUT = 0.610;
+const INF_ITEM_WINDOW = 0.34;
 const influxEl = document.getElementById('influx');
 const INF_N = 192;
 const PLAN_ASSETS = [
@@ -3229,8 +3230,10 @@ const influx = (() => {
       size: INF_SCALES[i % INF_SCALES.length],
       // Перемешанные сменяющиеся группы: за весь проход прилетают все 192,
       // но в одном кадре они не образуют сплошную стену.
-      lag: (((i * 67) % INF_N) / INF_N) * 0.82,
-      rot: (i % 2 ? 1 : -1) * (5 + (i % 5) * 3)
+      // Последняя картинка должна полностью завершить путь к w=1.
+      lag: (((i * 67) % INF_N) / INF_N) * (1 - INF_ITEM_WINDOW),
+      rot: (i % 2 ? 1 : -1) * (5 + (i % 5) * 3),
+      visible: false
     });
   }
   gsap.set(influxEl.children, { xPercent: -50, yPercent: -50 });
@@ -3380,7 +3383,19 @@ gsap.ticker.add(() => {
   if (infPhase || influxDirty) {
     const w = clamp01((p - INF_IN) / (INF_OUT - INF_IN));
     influx.forEach(o => {
-      const t = clamp01((w - o.lag) / 0.30);
+      const rawT = (w - o.lag) / INF_ITEM_WINDOW;
+      // В каждый момент пересчитываем только активную треть потока. При
+      // выходе из своего окна элемент гарантированно скрывается, поэтому
+      // фотографии больше не могут остаться висеть после завершения фазы.
+      if (rawT <= 0 || rawT >= 1) {
+        if (o.visible) {
+          o.visible = false;
+          o.setC({ opacity: 0 });
+        }
+        return;
+      }
+      o.visible = true;
+      const t = rawT;
       const e = Math.pow(t, 1.7);                      // ускорение к телефону
       const fadeIn  = smooth(clamp01(t / 0.10));
       const fadeOut = smooth(clamp01((t - 0.90) / 0.10));
