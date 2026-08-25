@@ -275,6 +275,89 @@
     /* scale считает JS от фактического размера .screen */
   }
 
+  /* Devices.css / iPhone 14 Pro — адаптировано под наш живой 3D-корпус.
+     Оригинальная геометрия 428x868 масштабируется через --h, а экраном
+     остаются текущие iframe и video, поэтому скролл-сценарий не меняется. */
+  .box.device-iphone-14-pro{
+    --w:calc(var(--h) * 0.49309); /* 428 / 868 */
+    --r:calc(var(--h) * 0.07834); /* 68 / 868 */
+  }
+  .box.device-iphone-14-pro .device-frame{
+    background:#010101;
+    border:calc(var(--h) * 0.00115) solid #5c5956;
+    box-shadow:
+      inset 0 0 calc(var(--h) * 0.00461) calc(var(--h) * 0.00230) rgba(255,255,255,.76),
+      inset 0 0 0 calc(var(--h) * 0.00691) #76726f;
+  }
+  .box.device-iphone-14-pro .device-screen{
+    inset:calc(var(--h) * 0.02189); /* 19 / 868 */
+    border-radius:calc(var(--h) * 0.05645); /* 49 / 868 */
+  }
+  .box.device-iphone-14-pro .device-stripe,
+  .box.device-iphone-14-pro .device-header,
+  .box.device-iphone-14-pro .device-sensors,
+  .box.device-iphone-14-pro .device-btns,
+  .box.device-iphone-14-pro .device-power,
+  .box.device-iphone-14-pro .device-home{pointer-events:none}
+  .box.device-iphone-14-pro .device-stripe::before,
+  .box.device-iphone-14-pro .device-stripe::after{
+    content:''; position:absolute; left:0; width:100%;
+    height:calc(var(--h) * 0.00806);
+    border:solid rgba(1,1,1,.25);
+    border-width:0 calc(var(--h) * 0.00806);
+    z-index:9;
+  }
+  .box.device-iphone-14-pro .device-stripe::after{top:calc(var(--h) * 0.09793)}
+  .box.device-iphone-14-pro .device-stripe::before{bottom:calc(var(--h) * 0.09793)}
+  .box.device-iphone-14-pro .device-header{
+    position:absolute; z-index:10; top:calc(var(--h) * 0.03341); left:50%;
+    width:calc(var(--h) * 0.13825); height:calc(var(--h) * 0.04032);
+    border-radius:1000px; background:#010101; transform:translateX(-50%);
+  }
+  .box.device-iphone-14-pro .device-sensors::before,
+  .box.device-iphone-14-pro .device-sensors::after{content:'';position:absolute;z-index:11}
+  .box.device-iphone-14-pro .device-sensors::after{
+    top:calc(var(--h) * 0.03456); left:50%;
+    width:calc(var(--h) * 0.08525); height:calc(var(--h) * 0.03802);
+    margin-left:calc(var(--h) * -0.06912); border-radius:1000px; background:#010101;
+  }
+  .box.device-iphone-14-pro .device-sensors::before{
+    top:calc(var(--h) * 0.04839); left:50%;
+    width:calc(var(--h) * 0.01037); height:calc(var(--h) * 0.01037);
+    margin-left:calc(var(--h) * 0.04147); border-radius:50%;
+    background:radial-gradient(farthest-corner at 20% 20%,#6074bf 0,transparent 40%),radial-gradient(farthest-corner at 80% 80%,#513785 0,#24555e 20%,transparent 50%);
+    box-shadow:0 0 1px 1px rgba(255,255,255,.05);
+  }
+  .box.device-iphone-14-pro .device-btns,
+  .box.device-iphone-14-pro .device-btns::before,
+  .box.device-iphone-14-pro .device-btns::after,
+  .box.device-iphone-14-pro .device-power{
+    position:absolute; z-index:4; width:calc(var(--h) * 0.00346);
+    border-radius:calc(var(--h) * 0.00230); background:#5c5956;
+  }
+  .box.device-iphone-14-pro .device-btns{
+    top:calc(var(--h) * 0.13249); left:calc(var(--h) * -0.00230);
+    height:calc(var(--h) * 0.03687);
+  }
+  .box.device-iphone-14-pro .device-btns::before,
+  .box.device-iphone-14-pro .device-btns::after{
+    content:''; left:0; height:calc(var(--h) * 0.07143);
+  }
+  .box.device-iphone-14-pro .device-btns::after{top:calc(var(--h) * 0.06912)}
+  .box.device-iphone-14-pro .device-btns::before{top:calc(var(--h) * 0.16129)}
+  .box.device-iphone-14-pro .device-power{
+    top:calc(var(--h) * 0.23041); right:calc(var(--h) * -0.00230);
+    height:calc(var(--h) * 0.11521);
+  }
+  .box.device-iphone-14-pro .device-home::before,
+  .box.device-iphone-14-pro .device-home::after{
+    content:''; position:absolute; z-index:9;
+    width:calc(var(--h) * 0.00691); height:calc(var(--h) * 0.00691);
+    border:solid rgba(1,1,1,.25); border-width:calc(var(--h) * 0.00691) 0;
+  }
+  .box.device-iphone-14-pro .device-home::after{top:0;right:calc(var(--h) * 0.09908)}
+  .box.device-iphone-14-pro .device-home::before{bottom:0;left:calc(var(--h) * 0.09908)}
+
   /* место, куда садится карточка */
   .slot{align-self:stretch}
 
@@ -2197,16 +2280,22 @@
     <div class="tilt-layer">
       <div class="intro-layer" id="introLayer">
       <div class="idle-y"><div class="idle-r">
-        <div class="box">
+        <div class="box device-iphone-14-pro device-black">
           <div class="flow" id="flow"><i></i><i></i><i></i><i></i><i></i><i></i></div>
           <div class="rim-pulse" id="rimPulse"></div>
           <div class="face back"></div>
           <div class="rim"></div>
-          <div class="face front">
-            <div class="screen">
+          <div class="face front device-frame">
+            <div class="screen device-screen">
               <iframe id="appFrame" src="assets/embedded/plan-app.html" title="Чепош Парк" scrolling="no"></iframe>
               <video id="heroVid" src="assets/media/hero-motion.mp4" muted loop playsinline preload="none"></video>
             </div>
+            <div class="device-stripe" aria-hidden="true"></div>
+            <div class="device-header" aria-hidden="true"></div>
+            <div class="device-sensors" aria-hidden="true"></div>
+            <div class="device-btns" aria-hidden="true"></div>
+            <div class="device-power" aria-hidden="true"></div>
+            <div class="device-home" aria-hidden="true"></div>
             <div class="loader" id="loader">
               <div class="loader-ring"></div>
               <div class="loader-t">Собираю план</div>
@@ -2737,9 +2826,9 @@ function finishPreloader() {
     }, 'build+=0.12')
     .to(faceFront, { opacity: 1, duration: .45, ease: 'power2.out' }, 'build+=0.5')
     .to(screenEl, { opacity: 1, duration: .5, ease: 'power2.out' }, 'build+=0.66')
-    .to(islandEl, {
-      opacity: 1, scaleX: 1, duration: .5, ease: 'back.out(2.2)'
-    }, 'build+=0.82')
+    /* Верхний Dynamic Island теперь рисует оболочка Devices.css.
+       Финальное уведомление #island остаётся скрытым до своей scroll-фазы. */
+    .set(islandEl, { opacity: 0, scaleX: 1 }, 'build+=0.82')
     .add(() => {
       rimBuilt = true;   // дальше ресайз восстанавливает торец сразу на месте
       // после интро буквам ускорение не нужно, снимаем will-change и склеиваем слои
