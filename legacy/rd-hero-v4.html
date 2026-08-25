@@ -3374,7 +3374,9 @@ gsap.ticker.add(() => {
   setInflow(0);   // волна в экране убрана; вернуть: suck * 0.95 * (1 - smooth((p-0.80)/0.045))
   // зарядка: chg — заливка текста и плотность частиц, chgY — жёлтый фон
   const chg  = clamp01((p - CHG_IN) / (CHG_OUT - CHG_IN));
-  const chgY = smooth(clamp01(chg / 0.07));  // очень короткий кроссфейд: грязного цвета нет
+  // Смена тёмной сцены на жёлтую почти мгновенная: смешанный серо-зелёный
+  // кадр не задерживается при медленном скролле.
+  const chgY = smooth(clamp01(chg / 0.018));
   setChargeBg(chgY);
   setVeil(dk * (1 - Math.min(1, chgY * 2.2)));   // вуаль уходит с опережением: смеси нет
   cap3El.style.setProperty('--chg', ((1 - chg) * 100).toFixed(1) + '%');
