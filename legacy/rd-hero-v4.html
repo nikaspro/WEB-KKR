@@ -3304,22 +3304,15 @@ gsap.ticker.add(() => {
   const tagsPhase = p > TAGS_IN - 0.02 && p < TAGS_OUT + 0.06;
   if (tagsPhase || tagsDirty) {
   const tIn  = smooth(clamp01((p - TAGS_IN) / 0.05));
-  // При появлении центрального запроса облако снова разъезжается в стороны,
-  // освобождая широкое чистое окно под плашку.
-  const tagSpread = smooth(clamp01((p - (PR_IN - .005)) / (TAGS_SPREAD - PR_IN + .005)));
   // гаснут до конца набора промта: к полной строке кадр должен быть чистым
   const tOut = smooth(clamp01((p - TAGS_OUT) / 0.035));
   tags.forEach(t => {
     const baseX = t.homeX || t.px * innerWidth;
     const baseY = t.homeY || t.py * innerHeight;
-    const fromCenterX = baseX - innerWidth / 2;
-    const fromCenterY = baseY - innerHeight / 2;
-    const side = fromCenterX < 0 ? -1 : 1;
-    const centerNear = 1 - Math.min(1, Math.abs(fromCenterX) / (innerWidth * .5));
-    // Разъезжается всё облако, включая крайние плашки. Дополнительный импульс
-    // в центре сохраняет свободное место для крупного запроса.
-    const spreadX = side * innerWidth * (.095 + .19 * centerNear) * tagSpread;
-    const spreadY = Math.sign(fromCenterY || 1) * innerHeight * (.024 + .033 * centerNear) * tagSpread;
+    // Позиции держит flex-сетка: поэтому теги никогда не пересекаются.
+    // При появлении запроса они плавно исчезают, освобождая центр кадра.
+    const spreadX = 0;
+    const spreadY = 0;
     let cursorTargetX = 0, cursorTargetY = 0;
     let cursorNear = 0;
     if (tagPointer.active && !reduced) {
@@ -3329,7 +3322,7 @@ gsap.ticker.add(() => {
       const radius = Math.min(180, innerWidth * .14);
       if (dist < radius) {
         cursorNear = Math.pow(1 - dist / radius, 2);
-        cursorTargetY = -5 * cursorNear;
+        cursorTargetY = -2 * cursorNear;
       }
     }
     // Только лёгкий подъём: геометрия сетки не ломается и соседи не пересекаются.
@@ -3341,7 +3334,7 @@ gsap.ticker.add(() => {
       opacity: tIn * (1 - tOut),
       x: spreadX + t.cursorX,
       y: spreadY + t.cursorY,
-      scale: (.96 + .04 * tIn) * (1 - .06 * centerNear * tagSpread),
+      scale: .96 + .04 * tIn,
       filter: `brightness(${1 - cursorNear * .055})`
     });
   });
