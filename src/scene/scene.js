@@ -1,45 +1,92 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, SplitText);
 document.body.classList.add('is-loading');
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Сквозной прогресс страницы: индикатор движется внутри безопасного fixed-трека.
-// Используем общий GSAP ticker проекта вместо второго scroll-цикла/плагина.
+// Сквозной прогресс страницы: шкала неподвижна, меняется только длина рисок
+// вокруг активной позиции. Используем общий GSAP ticker проекта.
 const scrollIndicator = document.getElementById('scrollIndicator');
-const scrollIndicatorMarker = document.getElementById('scrollIndicatorMarker');
-const setScrollIndicatorY = scrollIndicatorMarker && gsap.quickSetter(scrollIndicatorMarker, 'y', 'px');
-let scrollIndicatorRange = 0;
+const scrollIndicatorScale = document.getElementById('scrollIndicatorScale');
+const INDICATOR = { step:12.6, minWidth:9, maxWidth:32, spread:2.5 };
+let scrollIndicatorLines = [];
+let scrollIndicatorTarget = 0;
 let scrollIndicatorProgress = 0;
 let scrollIndicatorDrawn = -1;
-function refreshScrollIndicator() {
-  if (!scrollIndicator || !scrollIndicatorMarker) return;
-  scrollIndicatorRange = Math.max(0, scrollIndicator.clientHeight - scrollIndicatorMarker.offsetHeight);
-  scrollIndicatorDrawn = -1;
+let scrollIndicatorResizePending = false;
+
+function updateScrollIndicatorTarget() {
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  scrollIndicatorTarget = maxScroll > 0
+    ? gsap.utils.clamp(0, 1, scrollY / maxScroll)
+    : 0;
 }
-refreshScrollIndicator();
-addEventListener('resize', refreshScrollIndicator, { passive:true });
-addEventListener('load', refreshScrollIndicator, { once:true, passive:true });
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshScrollIndicator);
+
+function buildScrollIndicator() {
+  scrollIndicatorResizePending = false;
+  if (!scrollIndicator || !scrollIndicatorScale) return;
+  const height = scrollIndicator.clientHeight;
+  if (height < INDICATOR.step) {
+    scrollIndicatorScale.replaceChildren();
+    scrollIndicatorLines = [];
+    return;
+  }
+  const count = Math.max(2, Math.floor((height - 3) / INDICATOR.step) + 1);
+  const usedHeight = (count - 1) * INDICATOR.step + 3;
+  const offset = (height - usedHeight) / 2;
+  const fragment = document.createDocumentFragment();
+  scrollIndicatorLines = Array.from({length:count}, (_, index) => {
+    const el = document.createElement('i');
+    el.className = 'scroll-indicator__line';
+    el.style.top = `${(offset + index * INDICATOR.step).toFixed(2)}px`;
+    fragment.appendChild(el);
+    return {
+      setWidth:gsap.quickSetter(el, 'width', 'px'),
+      setOpacity:gsap.quickSetter(el, 'opacity')
+    };
+  });
+  scrollIndicatorScale.replaceChildren(fragment);
+  scrollIndicatorDrawn = -1;
+  updateScrollIndicatorTarget();
+}
+
+function scheduleScrollIndicatorBuild() {
+  if (scrollIndicatorResizePending) return;
+  scrollIndicatorResizePending = true;
+  requestAnimationFrame(buildScrollIndicator);
+}
+
+buildScrollIndicator();
+updateScrollIndicatorTarget();
+addEventListener('scroll', updateScrollIndicatorTarget, { passive:true });
+addEventListener('resize', scheduleScrollIndicatorBuild, { passive:true });
+addEventListener('load', scheduleScrollIndicatorBuild, { once:true, passive:true });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateScrollIndicatorTarget);
 gsap.ticker.add(() => {
-  // У position:fixed offsetParent всегда null, поэтому видимость проверяем
-  // по адаптивному брейкпоинту, а не по offsetParent.
-  if (!setScrollIndicatorY || innerWidth <= 900) return;
-  const maxScroll = Math.max(1, document.documentElement.scrollHeight - innerHeight);
-  const target = gsap.utils.clamp(0, 1, scrollY / maxScroll);
-  scrollIndicatorProgress += (target - scrollIndicatorProgress) * (reduced ? 1 : 0.095);
+  if (!scrollIndicatorLines.length || innerWidth <= 900) return;
+  const delta = scrollIndicatorTarget - scrollIndicatorProgress;
+  scrollIndicatorProgress += delta * (reduced ? 1 : 0.12);
+  if (Math.abs(delta) < 0.00001) scrollIndicatorProgress = scrollIndicatorTarget;
   if (Math.abs(scrollIndicatorProgress - scrollIndicatorDrawn) < 0.00008) return;
   scrollIndicatorDrawn = scrollIndicatorProgress;
-  setScrollIndicatorY(scrollIndicatorRange * scrollIndicatorProgress);
+  const activeIndex = scrollIndicatorProgress * (scrollIndicatorLines.length - 1);
+  const variance = 2 * INDICATOR.spread * INDICATOR.spread;
+  scrollIndicatorLines.forEach((line, index) => {
+    const distance = Math.abs(index - activeIndex);
+    const influence = Math.exp(-(distance * distance) / variance);
+    line.setWidth(INDICATOR.minWidth + influence * (INDICATOR.maxWidth - INDICATOR.minWidth));
+    line.setOpacity(0.62 + influence * 0.38);
+  });
 });
 
 // Цвет единого хедера следует за активной сценой существующего scroll-сценария.
 const siteHeader = document.getElementById('siteHeader');
 function syncHeaderTheme() {
   if (!siteHeader) return;
-  const dark = ['is-loading','is-dark','menu-on-dark','menu-open']
+  const dark = ['is-loading','is-dark','trip-hub-active','menu-on-dark','menu-open']
     .some(className => document.body.classList.contains(className));
   siteHeader.dataset.theme = dark ? 'dark' : 'light';
 }
@@ -88,39 +135,16 @@ if (scrollCue) {
 }
 
 const box = document.querySelector('.box');
-// getPropertyValue у --d отдаёт строку calc(...), из неё число не достать.
-// коэффициенты держим в JS рядом с теми же значениями в CSS
-const RATIO = { w: 0.4840, d: 0.0620, r: 0.0694, inset: 0.0129 };   // d: было 0.0482, толще ради объёма
-const sliceZ = [];       // целевые позиции слоёв торца, нужны для сборки в интро
-let rimBuilt = false;    // после интро слои ставим сразу на место
-
-// объём: стопка копий скруглённой формы. пересобирается при ресайзе,
-// потому что толщина считается от высоты корпуса
-function buildRim() {
-  const D = box.offsetHeight * RATIO.d;
-  const N = Math.max(8, Math.round(D / 3.8));   // шаг 3.8px, стыков не видно
-  sliceZ.length = 0;
-  let html = '';
-  for (let i = 0; i < N; i++) {
-    const t = i / (N - 1), z = -D / 2 + t * D;
-    // шёлковый борт: ровный ход светлоты + узкий блик-фаска у лицевой кромки
-    const l = 11 + t * 8 + 7 * Math.pow(t, 7);
-    sliceZ.push(z);
-    // до интро transform не ставим: слои разъезжаются по z через GSAP.
-    // после интро сразу на место, иначе после ресайза торец схлопнется
-    const tr = rimBuilt ? `transform:translateZ(${z.toFixed(2)}px);` : '';
-    html += `<div class="slice" style="${tr}background:hsl(207 18% ${l.toFixed(1)}%)"></div>`;
-  }
-  document.querySelector('.rim').innerHTML = html;
-}
-buildRim();
-addEventListener('resize', buildRim);
+let rimPoseYaw = 0;
+let rimPosePitch = 0;
+let rimPoseHeight = box.offsetHeight;
+const RATIO = { r: 0.0694 };
 
 // Приложение из репозитория nikaspro/RD-APP (legacy/ChiposhPark.html).
 // Отдельный HTML не блокирует разбор лендинга, а iframe изолирует стили.
 const frame = document.getElementById('appFrame');
 let screenP = -1;   // объявлено до healFrame: он сбрасывает прогресс при перезаписи
-const APP_URL = '/assets/embedded/plan-app.html';
+const APP_URL = './assets/embedded/plan-app.html';
 // SS=1: суперсемплинг ломал геометрию экрана. плотность растра добираем
 // меньшим финальным масштабом, а не раздуванием документа
 const SS = 1;
@@ -128,6 +152,20 @@ frame.style.width  = (393 * SS) + 'px';
 frame.style.height = (812 * SS) + 'px';
 
 let screenReady = false;
+let appWeatherCold = false;
+function setAppWeatherEvents(cold, force = false) {
+  cold = !!cold;
+  if (!force && cold === appWeatherCold) return;
+  appWeatherCold = cold;
+  if (!screenReady) return;
+  try {
+    const w = frame.contentWindow;
+    if (w && typeof w.__setWeatherEvents === 'function') w.__setWeatherEvents(cold);
+    else if (w) w.postMessage({ weatherCold:cold }, '*');
+  } catch (err) {
+    frame.contentWindow.postMessage({ weatherCold:cold }, '*');
+  }
+}
 function writeApp() {
   screenReady = false;
   frame.src = APP_URL;
@@ -136,6 +174,7 @@ frame.addEventListener('load', () => {
   screenReady = true;
   screenP = -1;      // прогресс пошлём заново
   fitFrame();
+  setAppWeatherEvents(appWeatherCold, true);
 });
 
 // сторож: если кадр всё же оказался пустым, пишем заново.
@@ -169,7 +208,7 @@ addEventListener('resize', fitFrame);
 // прелоадер уходит, когда готовы и страница, и экран внутри
 const preStart = performance.now();
 function tryFinish() {
-  const wait = Math.max(0, 500 - (performance.now() - preStart));   // минимум 500мс
+  const wait = Math.max(0, 300 - (performance.now() - preStart));   // короткая страховка от вспышки загрузки
   setTimeout(() => { if (typeof finishPreloader === 'function') finishPreloader(); }, wait);
 }
 if (document.readyState === 'complete') tryFinish();
@@ -187,10 +226,75 @@ const CAP_TL_LEN = 1.45;
 const CAP_HOLD  = 0.070;
 const CAP_HOLD0 = 0.120;   // «Куда сходить» остаётся читаемым дольше
 const CAP_EXIT0 = 0.068;   // и уходит отдельным мягким GSAP-переходом
-const CAP_HOLD2 = 0.105;   // «помощник» держится дольше: под ним закрывается чек-лист
-const WEATHER_STAGE_IN = CAP_START[0] + CAP_HOLD0 + 0.008;
-const WEATHER_STAGE_OUT = CAP_START[1] - 0.008;
+const CAP_HOLD2 = 0.202;   // «помощник» закрывает старый кадр вплоть до старта зарядки
+const CAP0_CLEAR_TIME = CAP_START[0] + CAP_HOLD0 + CAP_EXIT0;
+const ASSISTANT_CLEAR_FADE = 0.032;
+const assistantBgEl = document.getElementById('assistantBg');
+const assistantCapEl = document.getElementById('cap2');
+const assistantSideEl = document.getElementById('side2');
+const assistantLeadEl = assistantCapEl.querySelector('em');
+const assistantChatEl = document.getElementById('assistantChat');
+const assistantExchanges = [...assistantChatEl.querySelectorAll('[data-assistant-exchange]')].map(el => {
+  const user = el.querySelector('[data-assistant-message="user"]');
+  const agent = el.querySelector('[data-assistant-message="agent"]');
+  return {
+    el,
+    user,
+    agent,
+    setExchange:gsap.quickSetter(el, 'css'),
+    setUser:gsap.quickSetter(user, 'css'),
+    setAgent:gsap.quickSetter(agent, 'css')
+  };
+});
+const setAssistantBg = gsap.quickSetter(assistantBgEl, 'css');
+const setAssistantCap = gsap.quickSetter(assistantCapEl, 'css');
+const setAssistantLead = gsap.quickSetter(assistantLeadEl, 'css');
+const setAssistantSide = gsap.quickSetter(assistantSideEl, 'css');
+const setAssistantChat = gsap.quickSetter(assistantChatEl, 'css');
+let assistantTitleWords = [];
+gsap.set(assistantBgEl, { opacity:0, scale:1.055 });
+gsap.set(assistantCapEl, { yPercent:0, y:0 });
+gsap.set(assistantExchanges.flatMap(item => [item.el, item.user, item.agent]), { autoAlpha:0 });
+function assistantClearAmount(value) {
+  const start = CAP_START[2];
+  const end = start + CAP_HOLD2;
+  const enter = smooth(clamp01((value - (start - ASSISTANT_CLEAR_FADE)) / ASSISTANT_CLEAR_FADE));
+  const leave = 1 - smooth(clamp01((value - end) / ASSISTANT_CLEAR_FADE));
+  return enter * leave;
+}
+// Погода начинается одновременно с уходом «Куда сходить»: отдельного белого
+// промежуточного положения телефона между этими композициями больше нет.
+const WEATHER_STAGE_IN = CAP_START[0] + CAP_HOLD0;
+const WEATHER_SCROLL_LEN = 0.460;
+const WEATHER_TIMELINE_HOLD = 0.350;
+const WEATHER_TIMELINE_LEN = 1 + WEATHER_TIMELINE_HOLD;
+const WEATHER_STAGE_OUT = WEATHER_STAGE_IN + WEATHER_SCROLL_LEN;
 const WEATHER_BLEND = 0.020;
+const WEATHER_FLIP_LEN = 0.075;
+// Погода, split и trip hub — отдельные scroll-отрезки. Пока они идут,
+// legacy-прогресс стоит на месте и следующие главы не сдвигаются.
+const SPLIT_SCROLL_LEN = 0.270;
+const SPLIT_STAGE_IN = WEATHER_STAGE_OUT;
+const SPLIT_STAGE_OUT = SPLIT_STAGE_IN + SPLIT_SCROLL_LEN;
+const TRIP_HUB_SCROLL_LEN = 0.130;
+const ASSISTANT_INTRO_SCROLL_LEN = 0.105;
+// Четырём диалогам выделен отдельный длинный участок. Legacy-период помощника
+// остаётся тем же, но проходит по нему медленнее, не сдвигая тайминги зарядки.
+const ASSISTANT_CHAT_SCROLL_LEN = 0.720;
+const ASSISTANT_CHAT_LEGACY_END = 1.240;
+const ASSISTANT_CHAT_LEGACY_LEN = ASSISTANT_CHAT_LEGACY_END - CAP_START[2];
+const ASSISTANT_CHAT_EXTRA = ASSISTANT_CHAT_SCROLL_LEN - ASSISTANT_CHAT_LEGACY_LEN;
+const BASE_EXTRA_SCROLL_LEN = WEATHER_SCROLL_LEN + SPLIT_SCROLL_LEN
+  + TRIP_HUB_SCROLL_LEN + ASSISTANT_INTRO_SCROLL_LEN;
+const EXTRA_SCROLL_LEN = BASE_EXTRA_SCROLL_LEN + ASSISTANT_CHAT_EXTRA;
+const TRIP_HUB_STAGE_IN = SPLIT_STAGE_OUT;
+const TRIP_HUB_STAGE_OUT = TRIP_HUB_STAGE_IN + TRIP_HUB_SCROLL_LEN;
+const ASSISTANT_STAGE_OUT = TRIP_HUB_STAGE_OUT + ASSISTANT_INTRO_SCROLL_LEN;
+const ASSISTANT_CHAT_STAGE_OUT = ASSISTANT_STAGE_OUT + ASSISTANT_CHAT_SCROLL_LEN;
+// После отдельного trip hub старый дубль «Вся поездка» больше не прокручиваем:
+// следующей сразу становится сцена помощника.
+const LEGACY_SKIP_LEN = CAP_START[2] - WEATHER_STAGE_IN;
+const TRIP_HUB_SCENE_OUT = TRIP_HUB_STAGE_OUT;
 const capTl = gsap.timeline({ paused: true, defaults: { ease: 'power2.out' } });
 
 // текстовые узлы заголовка режем на слова в масках; em и чипсы не трогаем
@@ -225,6 +329,13 @@ CAP_START.forEach((at, i) => {
   const end = at + hold;
   gsap.set(el, { autoAlpha: 0 });
   gsap.set(ws, { yPercent: 0 });
+  if (i === 2) {
+    // Появление помощника привязано к непрерывной virtualP ниже: legacy-p
+    // после отдельного trip hub перескакивает и не подходит для мягкого входа.
+    assistantTitleWords = ws;
+    gsap.set(ws, { autoAlpha:0, yPercent:115 });
+    return;
+  }
   if (i === 0) {
     capTl.set(el, { autoAlpha: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)' }, at)
       .to(el, {
@@ -269,8 +380,7 @@ function capExit0(sel, x, y) {
     }, end);
 }
 capExit0('#side0', -28, -10);
-capExit0('#awave', 34, -8);
-capSide('#side2', CAP_START[2], CAP_HOLD2);
+gsap.set('#side2', { autoAlpha:0 });
 
 // Облако тегов справа появляется и исчезает целиком вместе с надписью.
 gsap.set('#ctags', { autoAlpha: 0 });
@@ -287,13 +397,16 @@ capTl.progress(0).pause();
 
 // стартовая поза берётся с кадра: крупно, наклон в плоскости, сдвиг вправо-вниз
 const START = { rx: 22, ry: 0, rz: 0, sc: 1.58, x: 0, y: 220 };
+// На широком первом экране телефон освобождает левую колонку текста и
+// частично выходит за низ кадра, как в утверждённой композиции.
+const HERO_DESKTOP = { rx: 6, ry: -6, rz: 6, sc: 1.26, x: 0.13, y: 0.045 };
 // поза покоя: углы не уходят в ноль, иначе корпус читается плоским — торца не видно
 const REST  = { rx: 3, ry: -14, rz: 0 };
 // поза нырка и возврата: ракурс снизу, без бокового разворота и крена
 const DIVE  = { rx: 15, ry: -2, rz: 0, x: 0, y: 120 };
 const END_SCALE = 1.0;
 
-let pTarget = 0, p = 0, vTarget = 0, v = 0;
+let pTarget = 0, p = 0, virtualP = 0, legacyP = 0, vTarget = 0, v = 0;
 let lastP = 0;
 
 // ---- пятая фаза: шары, импульс, тёмная тема, финал ----
@@ -394,19 +507,15 @@ const hdrItems = ['hi0','hi2','menuTrigger'].map(id => document.getElementById(i
 gsap.set(hdrItems, { y: -14 });   // .from здесь не годится: в CSS opacity уже 0
 
 // телефон и текст ждут окончания интро
-// корпус собирается по слоям, а не проявляется целиком
-const faceBack  = document.querySelector('.face.back');
+// Градиентный контур и экран проявляются последовательно.
+const rimEl = document.querySelector('.rim');
 const faceFront = document.querySelector('.face.front');
-const rimSlices = [...document.querySelectorAll('.slice')];
 const screenEl  = document.querySelector('.screen');
-const islandEl  = document.getElementById('island');
 
 gsap.set(introLayer, { y: 150 });   // приезжает раньше: см. позицию build в таймлайне
-gsap.set(faceBack,  { opacity: 0, scale: .88 });
-gsap.set(rimSlices, { opacity: 0, z: 0 });
+gsap.set(rimEl, { opacity: 0, scale: .94 });
 gsap.set(faceFront, { opacity: 0 });
 gsap.set(screenEl,  { opacity: 0 });
-gsap.set(islandEl,  { opacity: 0, scaleX: .28 });   // центр держит обёртка
 const heroGlow = document.getElementById('heroGlow');
 // тикер пишет прозрачность каждый кадр, поэтому интро крутит отдельный множитель
 const glowIn = { v: 0, sc: 1.08 };
@@ -429,9 +538,9 @@ function finishPreloader() {
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
   tl.to(preBlobs.map(x => x.el), {
-      y: () => -(innerHeight * 2.1), duration: 0.7, ease: 'power2.inOut', stagger: .04
+      y: () => -(innerHeight * 2.1), duration: .45, ease: 'power2.inOut', stagger: .025
     }, 0)
-    .to(preLogo, { x: dx, y: dy, scale: k, duration: 0.6, ease: 'power4.inOut' }, .05)
+    .to(preLogo, { x: dx, y: dy, scale: k, duration: .4, ease: 'power4.inOut' }, .02)
     .add(() => {
       // подмена на статичный логотип шапки в момент совпадения геометрии
       logoSlot.style.opacity = 1;
@@ -440,36 +549,27 @@ function finishPreloader() {
       preEl.remove();
       document.body.classList.remove('is-loading');
     })
-    .to(hdrItems, { opacity: 1, y: 0, duration: .4, stagger: .05 }, '-=0.1')
-    .to(glowIn, { v: 1, sc: 1, duration: 1.6, ease: 'power2.out' }, 0)
-    .set([heroH1, heroP], { opacity: 1 })
+    .to(hdrItems, { opacity: 1, y: 0, duration: .28, stagger: .03 }, '-=.08')
+    .to(glowIn, { v: 1, sc: 1, duration: 1, ease: 'power2.out' }, 0)
+    .set([heroH1, heroP], { opacity: 1 }, .52)
     // мягкое проявление по буквам: только opacity, y и лёгкий блюр
     // подъём из-под маски: длинный expo.out и мелкий стаггер дают мягкий накат
     .to(h1Chars, {
       yPercent: 0,
-      duration: 1.25, ease: 'expo.out', stagger: .026
-    }, '-=0.2')
+      duration: .75, ease: 'expo.out', stagger: .014
+    }, .52)
     .to(pChars, {
       opacity: 1, y: 0,
-      duration: .9, ease: 'expo.out', stagger: .005
-    }, '-=0.75')
+      duration: .55, ease: 'expo.out', stagger: .003
+    }, .92)
     .addLabel('textDone')
-    // сборка: спинка, торец слоями, лицо, экран, шторка
-    .addLabel('build', '-=1.85')
-    .to(introLayer, { y: 0, duration: 1.5, ease: 'power2.out' }, 'build')
-    .to(faceBack, { opacity: 1, scale: 1, duration: .5, ease: 'power2.out' }, 'build')
-    .to(rimSlices, {
-      opacity: 1,
-      z: i => sliceZ[i],
-      duration: .55, ease: 'power2.out', stagger: .014
-    }, 'build+=0.12')
-    .to(faceFront, { opacity: 1, duration: .45, ease: 'power2.out' }, 'build+=0.5')
-    .to(screenEl, { opacity: 1, duration: .5, ease: 'power2.out' }, 'build+=0.66')
-    /* Верхний Dynamic Island теперь рисует оболочка Devices.css.
-       Финальное уведомление #island остаётся скрытым до своей scroll-фазы. */
-    .set(islandEl, { opacity: 0, scaleX: 1 }, 'build+=0.82')
+    // сборка: градиентный контур, лицо и экран
+    .addLabel('build', '-=1.15')
+    .to(introLayer, { y: 0, duration: 1, ease: 'power2.out' }, 'build')
+    .to(rimEl, { opacity: 1, scale: 1, duration: .36, ease: 'power2.out' }, 'build+=.08')
+    .to(faceFront, { opacity: 1, duration: .3, ease: 'power2.out' }, 'build+=.34')
+    .to(screenEl, { opacity: 1, duration: .34, ease: 'power2.out' }, 'build+=.45')
     .add(() => {
-      rimBuilt = true;   // дальше ресайз восстанавливает торец сразу на месте
       // после интро буквам ускорение не нужно, снимаем will-change и склеиваем слои
       gsap.set([...h1Chars, ...pChars], { clearProps: 'all' });
       heroH1.style.willChange = 'auto';
@@ -477,9 +577,9 @@ function finishPreloader() {
     })
     // Подсказка появляется только после полного проявления описания.
     .to(scrollCue, {
-      autoAlpha: 1, y: 0, duration: reduced ? .2 : .7, ease: 'power3.out'
-    }, 'textDone+=.12')
-    .add(() => { if (scrollCueLoop) scrollCueLoop.play(0); }, 'textDone+=.42');
+      autoAlpha: 1, y: 0, duration: reduced ? .15 : .4, ease: 'power3.out'
+    }, 'textDone+=.04')
+    .add(() => { if (scrollCueLoop) scrollCueLoop.play(0); }, 'textDone+=.18');
 }
 
 // полноэкранное меню
@@ -663,10 +763,11 @@ let tagsDirty = true, orbsDirty = true;   // один прогон после в
 const scrollLayerEl = document.querySelector('.scroll-layer');
 const rollLayerEl = document.getElementById('rollLayer');
 let isSharp = false;                      // класс .sharp снимает will-change в финале
+let phoneTransitionHidden = false;
 
-// v2: корпус уходит вниз, на пустом экране печатается промт,
-// потом текст сгружается в корпус, который приезжает снизу, и идёт загрузка
-const UP_IN   = 0.02, UP_OUT  = 0.11;   // прячется вниз до входа тегов
+// Корпус уходит вниз, на пустом экране печатается промт,
+// потом текст сгружается в корпус, который приезжает снизу, и идёт загрузка.
+const UP_IN   = 0.02, UP_OUT  = 0.11;
 const PR_IN   = 0.21, PR_OUT  = 0.29;   // промт: коротко удерживается перед возвратом телефона
 const BACK_IN = 0.26, BACK_OUT= 0.38;   // возврат снизу начинается раньше
 const LOAD_IN = 0.44, LOAD_OUT= 0.556;   // «собираю план» держится весь влёт карточек
@@ -686,9 +787,9 @@ const tags = [...document.querySelectorAll('.tag-pos')].map(pos => {
   return {
     setC: gsap.quickSetter(el, 'css'),
     pos,
-    vx: vx / len,                 // единичный вектор от центра
+    vx: vx / len,
     vy: vy / len,
-    near: 1 - Math.min(1, len / 0.62),   // чем ближе к центру, тем дальше улетает
+    near: 1 - Math.min(1, len / 0.62),
     seed: Math.random() * Math.PI * 2,
     px, py,
     cursorX: 0, cursorY: 0,
@@ -705,6 +806,7 @@ const refreshTagCenters = () => tags.forEach(t => {
 requestAnimationFrame(refreshTagCenters);
 document.fonts && document.fonts.ready.then(refreshTagCenters);
 addEventListener('resize', refreshTagCenters, { passive: true });
+
 const promptEl = document.getElementById('prompt');
 const promptQ  = document.getElementById('promptQ');
 const promptTextEl = document.getElementById('promptText');
@@ -726,21 +828,25 @@ const FIN_SCALE = 1.7;        // во сколько раз крупнее к к
 // Более короткий спейсер быстрее переводит к следующему экрану.
 const TRV_K   = 1.9;
 const OLD_END = 1.70;    // зарядке 900vh скролла
-const TRV_IN  = OLD_END / TRV_K;
+const TRV_VIRTUAL_IN = OLD_END + EXTRA_SCROLL_LEN - LEGACY_SKIP_LEN;
+const VIRTUAL_END = TRV_K + EXTRA_SCROLL_LEN - LEGACY_SKIP_LEN;
+const TRV_IN  = TRV_VIRTUAL_IN / VIRTUAL_END;
+function virtualToLegacy(value) {
+  if (value <= WEATHER_STAGE_IN) return value;
+  if (value < TRIP_HUB_STAGE_OUT) return WEATHER_STAGE_IN;
+  if (value < ASSISTANT_STAGE_OUT) return CAP_START[2];
+  if (value < ASSISTANT_CHAT_STAGE_OUT) {
+    const chatProgress = (value - ASSISTANT_STAGE_OUT) / ASSISTANT_CHAT_SCROLL_LEN;
+    return CAP_START[2] + chatProgress * ASSISTANT_CHAT_LEGACY_LEN;
+  }
+  return value - EXTRA_SCROLL_LEN + LEGACY_SKIP_LEN;
+}
 const TRV_RX  = 62;    // макро-питч: взгляд вдоль корпуса от нижнего торца
 const TRV_SC0 = 1.12;  // умеренный масштаб: растр экрана не мылится
-// финал проезда: корпус не выпрямляется во фронт, а остаётся в лёгком развороте,
-// поверх экрана появляется подтверждение «Поездка готова!»
+// финал проезда: корпус не выпрямляется во фронт, а остаётся в лёгком развороте
 const TRV_END = { rx: 6, ry: -14, rz: -4, sc: 1.32 };
-const ISL = { w: 127, h: 37, w2: 268, h2: 74 };   // поля по бокам поджаты
-const setIsland = gsap.quickSetter('#island', 'css');
-const setIslandIn = gsap.quickSetter('#islandIn', 'opacity');
-// нижнее пятно поднимается и растёт, пока идут надписи-бенефиты
-const BOT_IN = 0.44, BOT_FULL = 0.90;   // приходит после возврата корпуса: фаза промта чистая
-const setBot = gsap.quickSetter('#botGlow', 'css');
-
 // ---- фаза зарядки: скролл заливает текст, фон желтеет, частицы летят в корпус ----
-const CHG_IN = 1.240, CHG_OUT = 1.695;   // старт позже: перед ней успевает пройти помощник
+const CHG_IN = ASSISTANT_CHAT_LEGACY_END, CHG_OUT = 1.695;   // старт после длинного диалога помощника
 const setChargeBg = gsap.quickSetter('#chargeBg', 'opacity');
 const setPulse    = gsap.quickSetter('#pulseWhite', 'css');
 const cap3El  = document.getElementById('cap3');
@@ -860,11 +966,11 @@ const INF_ITEM_WINDOW = 0.34;
 const influxEl = document.getElementById('influx');
 const INF_N = 192;
 const PLAN_ASSETS = [
-  '/assets/plan-build/clothes.webp',
-  '/assets/plan-build/burger.webp',
-  '/assets/plan-build/croissant.webp',
-  '/assets/plan-build/bust.webp',
-  '/assets/plan-build/shell.webp'
+  './assets/plan-build/clothes.webp',
+  './assets/plan-build/burger.webp',
+  './assets/plan-build/croissant.webp',
+  './assets/plan-build/bust.webp',
+  './assets/plan-build/shell.webp'
 ];
 // В кульминации собранного плана эти же объекты вылетают из телефона.
 const explosionEl = document.getElementById('planExplosion');
@@ -930,33 +1036,20 @@ const influx = (() => {
 })();
 let influxDirty = true;
 
-// стартовое видео в корпусе: видно только на первом экране,
-// гаснет к нырку и ставится на паузу, чтобы не жечь кадры за кадром
-const heroVid = document.getElementById('heroVid');
-const setVid = gsap.quickSetter(heroVid, 'css');
-let vidOn = true;
-const VIDEO_CUT = 0.060;
-
-// Отдельный MP4 поддерживает range-запросы и не требует синхронного base64-декодирования.
-(function mountVideo() {
-  const kick = () => heroVid.play().catch(() => {});
-  heroVid.addEventListener('loadeddata', kick);
-  heroVid.addEventListener('canplay', kick);
-  // если автоплей всё же заблокирован — стартуем на первом касании
-  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
-    addEventListener(ev, kick, { once: true, passive: true }));
-  kick();
-})();
+// Статичный экран виден только в первом кадре, затем уступает место приложению.
+const heroShot = document.getElementById('heroShot');
+const setHeroShot = gsap.quickSetter(heroShot, 'css');
+let heroShotOn = true;
+const HERO_SHOT_CUT = 0.060;
 
 const setHero = gsap.quickSetter('.hero', 'css');
 const setGlow2 = gsap.quickSetter('#heroGlow', 'css');
-const setPhoneGlow = gsap.quickSetter('#phoneGlow', 'css');
 const setBand  = gsap.quickSetter('#heroBand', 'css');   // градиентная полоса главного экрана
 const setRoll     = gsap.quickSetter('#rollLayer', 'css');
 const setScroll   = gsap.quickSetter('.scroll-layer', 'css');
 const setTiltZ    = gsap.quickSetter('.tilt-layer', 'rotateZ', 'deg');
+const setWeatherFlip = gsap.quickSetter('#introLayer', 'rotateY', 'deg');
 
-const pEl = document.getElementById('p');
 const smooth = t => t * t * (3 - 2 * t);
 const clamp01 = t => gsap.utils.clamp(0, 1, t);
 
@@ -972,7 +1065,7 @@ function readProgress() {
 }
 p = pTarget = readProgress();
 
-let pDrawn = -1, pShown = '';
+let pDrawn = -1;
 gsap.ticker.add(() => {
   pTarget = readProgress();
   p += (pTarget - p) * (reduced ? 1 : 0.072);
@@ -987,8 +1080,12 @@ gsap.ticker.add(() => {
   // сквозной прогресс новой высоты и локальный прогресс проезда.
   // p ниже — старая шкала, чтобы не трогать все фазовые окна
   const pq  = p;
-  const trv = clamp01((pq - TRV_IN) / (1 - TRV_IN));
-  p = Math.min(pq * TRV_K, OLD_END);
+  virtualP = pq * VIRTUAL_END;
+  legacyP = Math.min(virtualToLegacy(virtualP), OLD_END);
+  const trv = clamp01(
+    (virtualP - TRV_VIRTUAL_IN) / (TRV_K - OLD_END)
+  );
+  p = legacyP;
 
   // поза едет от геройской к ровной по центру
   // в v2 корпус улетает за кадр, поэтому выпрямление привязано к возврату снизу
@@ -1011,33 +1108,32 @@ gsap.ticker.add(() => {
   // retn включает ракурс снизу только на возврате, когда корпус уже за кадром
   const retn = smooth(clamp01((p - BACK_IN) / 0.04)) * (1 - smooth(clamp01((p - BACK_OUT) / 0.05)));
 
-  // Исходное облако тегов: разлетается радиально под растущую строку запроса.
+  // Исходное облако тегов разлетается радиально под растущую строку запроса.
   const tagsPhase = p > TAGS_IN - 0.02 && p < TAGS_OUT + 0.06;
   if (tagsPhase || tagsDirty) {
-  const tIn  = smooth(clamp01((p - TAGS_IN) / 0.05));
-  const tSp  = smooth(clamp01((p - 0.215) / (TAGS_SPREAD - 0.215)));
-  // гаснут до конца набора промта: к полной строке кадр должен быть чистым
-  const tOut = smooth(clamp01((p - TAGS_OUT) / 0.035));
-  tags.forEach(t => {
-    const push = (240 + 620 * t.near) * tSp;
-    t.setC({
-      opacity: tIn * (1 - tOut) * (1 - 0.55 * tSp),
-      x: t.vx * push,
-      y: t.vy * push + Math.sin(p * 6 + t.seed) * 5 * tIn,
-      scale: 0.9 + 0.1 * tIn - 0.06 * tSp
+    const tIn  = smooth(clamp01((p - TAGS_IN) / 0.05));
+    const tSp  = smooth(clamp01((p - 0.215) / (TAGS_SPREAD - 0.215)));
+    // гаснут до конца набора промта: к полной строке кадр должен быть чистым
+    const tOut = smooth(clamp01((p - TAGS_OUT) / 0.035));
+    tags.forEach(t => {
+      const push = (240 + 620 * t.near) * tSp;
+      t.setC({
+        opacity: tIn * (1 - tOut) * (1 - 0.55 * tSp),
+        x: t.vx * push,
+        y: t.vy * push + Math.sin(p * 6 + t.seed) * 5 * tIn,
+        scale: 0.9 + 0.1 * tIn - 0.06 * tSp
+      });
     });
-  });
-  tagsDirty = tagsPhase;   // один сброс после выхода из фазы
+    tagsDirty = tagsPhase;
   }
 
-  // До точки переключения виден исключительно MP4. Затем кадр меняется
-  // целиком: видео исчезает, а приложение появляется без наложения слоёв.
-  const wantVid = p < VIDEO_CUT;
-  setVid({ opacity: wantVid ? 1 : 0 });
-  if (wantVid !== vidOn) {
-    vidOn = wantVid;
-    heroVid.style.visibility = vidOn ? 'visible' : 'hidden';
-    if (vidOn) heroVid.play().catch(() => {}); else heroVid.pause();
+  // До точки переключения виден статичный экран. Затем он исчезает целиком,
+  // а приложение появляется без наложения слоёв.
+  const wantHeroShot = p < HERO_SHOT_CUT;
+  setHeroShot({ opacity: wantHeroShot ? 1 : 0 });
+  if (wantHeroShot !== heroShotOn) {
+    heroShotOn = wantHeroShot;
+    heroShot.style.visibility = heroShotOn ? 'visible' : 'hidden';
   }
 
   // поток превью: летят к корпусу и гаснут у кромки
@@ -1084,7 +1180,7 @@ gsap.ticker.add(() => {
   setPrompt({
     opacity: prIn * (1 - prOut),
     x: 0,
-    y: prOut * innerHeight * 0.30,
+    y: -prOut * innerHeight * 0.16,
     rotation: 0,
     scale: 1 - 0.42 * prOut
   });
@@ -1128,6 +1224,91 @@ gsap.ticker.add(() => {
   const dk = smooth(clamp01((p - DARK_IN) / 0.024));
   // setVeil ниже, в блоке зарядки: ему нужен chgY
   setAura(0);   // градиент по краям убран; было smooth((p-DARK_IN-0.02)/0.05)*0.75
+
+  // Экраны не смешиваются: trip hub полностью закрывается на своём тёмном
+  // фоне. После границы отдельный scroll-отрезок раскрывает свечение и текст.
+  // Сплошная тёмная подложка уже лежит под trip hub и страхует границу от
+  // светлого кадра; само свечение до полного закрытия старого экрана равно нулю.
+  const assistantBaseOn = virtualP >= TRIP_HUB_STAGE_IN;
+  const assistantIntroOn = virtualP >= TRIP_HUB_SCENE_OUT;
+  const assistantIntro = reduced ? Number(assistantIntroOn) : clamp01(
+    (virtualP - TRIP_HUB_SCENE_OUT) / ASSISTANT_INTRO_SCROLL_LEN
+  );
+  const assistantLeave = smooth(clamp01(
+    (p - (CAP_START[2] + CAP_HOLD2 - .018)) / .040
+  ));
+  const assistantBgIn = smooth(clamp01(assistantIntro / .88));
+  const assistantBgOpacity = Number(assistantBaseOn) * (1 - assistantLeave);
+  setAssistantBg({
+    opacity:assistantBgOpacity
+  });
+  assistantBgEl.style.setProperty('--assistant-glow', assistantBgIn.toFixed(4));
+  assistantBgEl.style.setProperty(
+    '--assistant-glow-scale',
+    (1.055 - assistantBgIn * .055).toFixed(4)
+  );
+
+  const assistantTitleIn = smooth(clamp01((assistantIntro - .13) / .50));
+  const assistantLeadIn = smooth(clamp01((assistantIntro - .34) / .40));
+  const assistantSideIn = smooth(clamp01((assistantIntro - .45) / .43));
+  const assistantTextOut = 1 - assistantLeave;
+  setAssistantCap({
+    autoAlpha:assistantTitleIn * assistantTextOut,
+    y:(1 - assistantTitleIn) * 34 - assistantLeave * 24,
+    filter:`blur(${((1 - assistantTitleIn) * 8 + assistantLeave * 6).toFixed(2)}px)`
+  });
+  assistantTitleWords.forEach((word, index) => {
+    const wordIn = smooth(clamp01((assistantIntro - (.12 + index * .075)) / .44));
+    gsap.set(word, { autoAlpha:wordIn * assistantTextOut, yPercent:(1 - wordIn) * 115 });
+  });
+  setAssistantLead({
+    opacity:assistantLeadIn * assistantTextOut,
+    y:(1 - assistantLeadIn) * 18
+  });
+  setAssistantSide({
+    autoAlpha:assistantSideIn * assistantTextOut,
+    y:(1 - assistantSideIn) * 28 - assistantLeave * 18,
+    filter:`blur(${((1 - assistantSideIn) * 7 + assistantLeave * 5).toFixed(2)}px)`
+  });
+
+  // Большой диалог появляется после фонового вступления. Позиции полностью
+  // зависят от p, поэтому анимация одинаково чисто работает вниз и вверх.
+  const assistantChatProgress = clamp01(
+    (p - CAP_START[2]) / (CHG_IN - CAP_START[2])
+  );
+  const assistantMessagesOut = 1 - assistantLeave;
+  setAssistantChat({ autoAlpha:assistantMessagesOut });
+  const exchangeStarts = [.020, .225, .430, .635];
+  const exchangeSpan = .205;
+  assistantExchanges.forEach((exchange, index) => {
+    const local = clamp01((assistantChatProgress - exchangeStarts[index]) / exchangeSpan);
+    const exchangeIn = smooth(clamp01(local / .10));
+    const exchangeOut = smooth(clamp01((local - .89) / .11));
+    const exchangeVis = exchangeIn * (1 - exchangeOut) * assistantMessagesOut;
+    const userIn = smooth(clamp01((local - .025) / .190));
+    const agentIn = smooth(clamp01((local - .245) / .215));
+    exchange.setExchange({
+      autoAlpha:exchangeVis,
+      y:-exchangeOut * 46,
+      scale:1 - exchangeOut * .025,
+      filter:`blur(${(exchangeOut * 10).toFixed(2)}px)`
+    });
+    exchange.setUser({
+      autoAlpha:userIn,
+      x:(1 - userIn) * 110,
+      y:(1 - userIn) * 28,
+      scale:.94 + userIn * .06,
+      filter:`blur(${((1 - userIn) * 13).toFixed(2)}px)`
+    });
+    exchange.user.style.setProperty('--request-fill', smooth(clamp01((local - .14) / .38)).toFixed(4));
+    exchange.setAgent({
+      autoAlpha:agentIn,
+      x:(1 - agentIn) * -110,
+      y:(1 - agentIn) * 36,
+      scale:.935 + agentIn * .065,
+      filter:`blur(${((1 - agentIn) * 14).toFixed(2)}px)`
+    });
+  });
 
   // fl: общая громкость эффекта. появление света на рамке
   const fl = smooth(clamp01((p - (DARK_IN + 0.01)) / 0.05));
@@ -1214,7 +1395,8 @@ gsap.ticker.add(() => {
   // поэтому START.y не гасится и корпус не уезжает вверх
   const ezEff = ez * (1 - still);
   const invEff = 1 - ezEff;
-  const sc = (START.sc + (END_SCALE - START.sc) * ezEff) * (1 + (FIN_SCALE - 1) * fin) * mirSc;
+  const heroPose = innerWidth > 900 ? HERO_DESKTOP : START;
+  const sc = (heroPose.sc + (END_SCALE - heroPose.sc) * ezEff) * (1 + (FIN_SCALE - 1) * fin) * mirSc;
   // рост от верхнего края: компенсация ровно на половину прироста высоты.
   // корпус увеличивается на месте, никуда не переезжает
   const boxH = box.offsetHeight;
@@ -1227,19 +1409,50 @@ gsap.ticker.add(() => {
                -(boxH             * sc / 2) * Math.sin(mirRX * Math.PI / 180);
 
   // roll на внешнем слое: применяется в системе экрана, после yaw и pitch
-  let rzV = (START.rz * invEff + REST.rz * ezEff) * (1 - fin) * (1 - retn) + dZ + mirRZ + FLOW.rz * fl;
+  let rzV = (heroPose.rz * invEff + REST.rz * ezEff) * (1 - fin) * (1 - retn) + dZ + mirRZ + FLOW.rz * fl;
   // нырок идёт в геройской позе, ракурс снизу включается только на возврате
-  let rxV = (START.rx * invEff + REST.rx * ezEff) * (1 - fin) * (1 - retn) + dX + DIVE.rx * retn + mirRX + FLOW.rx * fl;
-  let ryV = (START.ry * invEff + REST.ry * ezEff) * (1 - fin) * (1 - retn) + dY + DIVE.ry * retn + mirRY + FLOW.ry * fl;
-  const heroPhoneY = Math.max(300, innerHeight * 0.24);
-  let xV  = START.x * invEff * (1 - fin) * (1 - retn) + dPx + mirX;
+  let rxV = (heroPose.rx * invEff + REST.rx * ezEff) * (1 - fin) * (1 - retn) + dX + DIVE.rx * retn + mirRX + FLOW.rx * fl;
+  let ryV = (heroPose.ry * invEff + REST.ry * ezEff) * (1 - fin) * (1 - retn) + dY + DIVE.ry * retn + mirRY + FLOW.ry * fl;
+  const heroPhoneX = innerWidth > 900 ? innerWidth * heroPose.x : START.x;
+  const heroPhoneY = innerWidth > 900 ? innerHeight * heroPose.y : Math.max(520, innerHeight * 0.50);
+  let xV  = heroPhoneX * invEff * (1 - fin) * (1 - retn) + dPx + mirX;
   let yV  = heroPhoneY * invEff * (1 - fin) * (1 - retn) + dPy + DIVE.y * retn + yFin + yStage + mirY
           + innerHeight * 0.01 * fl;   // тёмная фаза: низ в кадре целиком
   let zV  = mirZ;
   let scV = sc;
 
-  // На экране сборки корпус остаётся в геометрическом центре. Дополнительный
-  // сдвиг вправо ломал композицию на широких окнах и стягивал поток в одну сторону.
+  // Кадр «Куда сходить»: корпус занимает 70% высоты и стоит точно по центру.
+  // Это самостоятельная поза, чтобы сетка текста и чипов сохраняла пропорции
+  // референса независимо от размера desktop-вьюпорта.
+  const weatherPoseIn = smooth(clamp01(
+    (virtualP - (WEATHER_STAGE_IN - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
+  ));
+  const cap0Phone = innerWidth > 900
+    ? smooth(clamp01((p - (CAP_START[0] - .040)) / .040))
+      * (1 - weatherPoseIn)
+    : 0;
+  if (cap0Phone > .0001) {
+    scV += (.84 - scV) * cap0Phone;
+    xV += (0 - xV) * cap0Phone;
+    yV += (0 - yV) * cap0Phone;
+  }
+
+  // Финал зарядки: весь мокап выпрямляется и занимает 62–68vh. Экран и корпус
+  // отдельно не трансформируются — меняются только внешние GSAP-слои телефона.
+  const chargePhone = smooth(clamp01((p - (CHG_IN - .035)) / .065))
+                    * (1 - smooth(clamp01(trv / .12)));
+  if (chargePhone > .0001) {
+    const heightRatio = innerWidth <= 520 ? .62 : innerWidth <= 900 ? .66 : .68;
+    const targetHeight = Math.min(innerHeight * heightRatio, innerWidth * .24 / .49309);
+    const chargeScale = gsap.utils.clamp(.72, 1.35, targetHeight / boxH);
+    rzV += (0 - rzV) * chargePhone;
+    rxV += (1.5 - rxV) * chargePhone;
+    ryV += (-2 - ryV) * chargePhone;
+    xV += (0 - xV) * chargePhone;
+    yV += (-innerHeight * .02 - yV) * chargePhone;
+    zV += (0 - zV) * chargePhone;
+    scV += (chargeScale - scV) * chargePhone;
+  }
 
   // проезд: w вводит в макро, e ведёт камеру вдоль корпуса и выпрямляет перспективу.
   // корпус скользит вниз сквозь кадр — это и есть движение камеры вдоль длины
@@ -1254,38 +1467,119 @@ gsap.ticker.add(() => {
   // Погодный экран продолжает движение того же DOM-телефона. На входе он
   // мягко встаёт по центру и выпрямляется, поэтому между сценами нет дубля.
   if (!reduced) {
-    const weatherEnter = smooth(clamp01(
-      (p - (WEATHER_STAGE_IN - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
-    ));
     const weatherLeave = 1 - smooth(clamp01(
-      (p - (WEATHER_STAGE_OUT - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
+      (virtualP - (WEATHER_STAGE_OUT - WEATHER_BLEND)) / (WEATHER_BLEND * 2)
     ));
-    const weatherPhone = weatherEnter * weatherLeave;
+    const weatherPhone = weatherPoseIn * weatherLeave;
     if (weatherPhone > 0.0001) {
-      const weatherScale = innerWidth <= 520 ? 0.68 : innerWidth <= 900 ? 0.76 : 0.86;
+      const weatherScale = innerWidth <= 520 ? 0.74 : 0.86;
       rzV += (0 - rzV) * weatherPhone;
       rxV += (0 - rxV) * weatherPhone;
       ryV += (0 - ryV) * weatherPhone;
       xV  += (0 - xV) * weatherPhone;
-      yV  += ((innerWidth <= 900 ? innerHeight * 0.025 : 0) - yV) * weatherPhone;
+      const weatherY = innerWidth <= 900 ? -innerHeight * 0.015 : -innerHeight * 0.025;
+      yV  += (weatherY - yV) * weatherPhone;
       zV  += (0 - zV) * weatherPhone;
       scV += (weatherScale - scV) * weatherPhone;
     }
   }
+  // После погодного кадра телефон без остановки продолжает движение вверх.
+  // Раньше здесь была отдельная крупная поза (-52vh и scale 2.24), поэтому
+  // нижняя часть корпуса зависала у верхнего края на протяжении всей сцены.
+  const splitPhone = virtualP >= SPLIT_STAGE_IN && virtualP < TRIP_HUB_SCENE_OUT ? 1 : 0;
+  if (splitPhone > 0.0001) {
+    const weatherScale = innerWidth <= 520 ? 0.74 : 0.86;
+    const weatherY = innerWidth <= 900 ? -innerHeight * 0.015 : -innerHeight * 0.025;
+    const splitExit = smooth(clamp01(
+      (virtualP - SPLIT_STAGE_IN) / (SPLIT_SCROLL_LEN * 0.34)
+    ));
+    const splitScale = weatherScale * (1 - splitExit * 0.06);
+    const exitY = -innerHeight - boxH * splitScale;
+    const splitY = weatherY + (exitY - weatherY) * splitExit;
+    rzV += (0 - rzV) * splitPhone;
+    rxV += (0 - rxV) * splitPhone;
+    ryV += (0 - ryV) * splitPhone;
+    xV += (0 - xV) * splitPhone;
+    yV += (splitY - yV) * splitPhone;
+    zV += (0 - zV) * splitPhone;
+    scV += (splitScale - scV) * splitPhone;
+  }
+  // Та же модель физически покидает split-кадр через верх. Тёмная сцена
+  // появляется под ней, поэтому opacity телефона не участвует в переходе.
+  const hubEnter = smooth(clamp01(
+    (virtualP - (TRIP_HUB_STAGE_IN - .040)) / .080
+  ));
+  // Телефон доезжает за верхнюю границу и остаётся там до полного ухода
+  // «Помощника». Раньше hubLeave уменьшал коэффициент ещё до границы сцен,
+  // из-за чего модель на несколько кадров возвращалась в старую позу.
+  const hubPhoneReturn = smooth(clamp01(
+    (p - (CAP_START[2] + CAP_HOLD2)) / ASSISTANT_CLEAR_FADE
+  ));
+  const hubPhone = hubEnter * (1 - hubPhoneReturn);
+  if (hubPhone > .0001) {
+    const hubScale = (innerWidth <= 520 ? .74 : .86) * .94;
+    // Запас включает высоту кадра: к появлению следующего заголовка корпус
+    // гарантированно проходит выше верхней кромки, даже на высоких экранах.
+    const hubY = -innerHeight - boxH * hubScale;
+    rzV += (0 - rzV) * hubPhone;
+    rxV += (0 - rxV) * hubPhone;
+    ryV += (0 - ryV) * hubPhone;
+    xV += (0 - xV) * hubPhone;
+    yV += (hubY - yV) * hubPhone;
+    zV += (0 - zV) * hubPhone;
+    scV += (hubScale - scV) * hubPhone;
+  }
   // белая волна: круг растёт из корпуса сразу за импульсом
   setPulse({ scale: smooth(clamp01((trv - 0.12) / 0.22)) });
 
+  // Между «Куда сходить» и погодой телефон не задерживается в третьей позе:
+  // На входе в погоду телефон делает полуповорот через ребро.
+  // В середине +90° меняется на -90° (обе позы одинаково узкие), поэтому
+  // суммарный путь равен 180°, а финальный экран снова смотрит вперёд.
+  const weatherFlipStart = WEATHER_STAGE_IN - WEATHER_BLEND;
+  const weatherFlip = smooth(clamp01(
+    (virtualP - weatherFlipStart) / WEATHER_FLIP_LEN
+  ));
+  const weatherFlipActive = virtualP >= weatherFlipStart
+    && virtualP < weatherFlipStart + WEATHER_FLIP_LEN;
+  const weatherFlipAngle = weatherFlip <= .5
+    ? weatherFlip * 180
+    : (weatherFlip - 1) * 180;
+  setWeatherFlip(reduced || !weatherFlipActive ? 0 : weatherFlipAngle);
+
   setRoll({ rotateZ: rzV });
+  // Независимый guard использует ту же virtualP, что и полноэкранные главы.
+  // Поэтому даже при быстром скролле телефон уже невидим до снятия trip hub.
+  const hubPhoneGuardIn = smooth(clamp01(
+    (virtualP - (TRIP_HUB_STAGE_IN + .018)) / .030
+  ));
+  const hubPhoneGuard = hubPhoneGuardIn * (1 - hubPhoneReturn);
+  // Guard только скрывает уже уехавший за экран корпус. В opacity его не
+  // подмешиваем: иначе iframe становился полупрозрачным на фоне split-сцены.
+  const insertedPhone = virtualP >= WEATHER_STAGE_IN - WEATHER_BLEND
+    && virtualP < TRIP_HUB_SCENE_OUT;
+  const phoneClear = assistantClearAmount(p);
+  const assistantPhoneHideEnd = CAP_START[2] + CAP_HOLD2 + ASSISTANT_CLEAR_FADE;
+  const wantPhoneTransitionHidden = virtualP >= TRIP_HUB_STAGE_IN + .048
+    && p < assistantPhoneHideEnd;
+  if (wantPhoneTransitionHidden !== phoneTransitionHidden) {
+    phoneTransitionHidden = wantPhoneTransitionHidden;
+    rollLayerEl.classList.toggle('is-transition-hidden', phoneTransitionHidden);
+  }
   setScroll({
     rotateX: rxV,
     rotateY: ryV,
     x: xV,
     y: yV,
     z: zV,
-    opacity: 1 - smooth(clamp01((away - 0.55) / 0.35)),
+    opacity: insertedPhone
+      ? 1
+      : (1 - phoneClear) * (1 - smooth(clamp01((away - 0.55) / 0.35))),
     scale: scV
   });
-
+  rimPoseYaw = ryV;
+  rimPosePitch = rxV;
+  rimPoseHeight = boxH;
   // в приближении снимаем ускорение слоя: иначе текст внутри мылится.
   // переключаем один раз на смене состояния, а не каждый кадр
   // с зарядки поза заморожена: снимаем will-change, слой перерастрируется
@@ -1299,18 +1593,6 @@ gsap.ticker.add(() => {
     rollLayerEl.classList.toggle('sharp', isSharp);
   }
 
-  // Подтверждение появляется поверх экрана без имитации Dynamic Island.
-  const isl = smooth(clamp01((trv - 0.36) / 0.20));   // уведомление после импульса и остановки
-  const toast = clamp01((isl - 0.34) / 0.34);
-  setIsland({
-    width:  ISL.w + (ISL.w2 - ISL.w) * isl,
-    height: ISL.h + (ISL.h2 - ISL.h) * isl,
-    borderRadius: (18 + 24 * isl) + 'px',
-    opacity: toast,
-    y: (1 - toast) * -12
-  });
-  setIslandIn(clamp01((isl - 0.45) / 0.4));
-
   vTarget = gsap.utils.clamp(-9, 9, (p - lastP) * 340);
   lastP = p;
   v += (vTarget - v) * 0.07;   // догоняет медленнее, отсюда ощущение веса
@@ -1318,6 +1600,13 @@ gsap.ticker.add(() => {
 
   // герой уходит, пока телефон едет к центру
   const hero = 1 - smooth(clamp01((p - 0.012) / 0.055));   // уходит до появления тегов: пересечения нет
+  // Первый экран получает собственную холодную палитру корпуса. Отдельный
+  // класс не даёт синему ободку затронуть погодные и последующие сцены.
+  document.body.classList.toggle('hero-rim-blue', hero > .02);
+  // Тон меняется один раз для всего корпуса, а не отдельно над каждым цветом
+  // фона. Поэтому на границах секций не возникает вертикальных швов.
+  const rimDarkMix = Math.max(hero, dk * (1 - chgY));
+  box.style.setProperty('--rim-lightness', `${(52 - rimDarkMix * 34).toFixed(2)}%`);
   setHero({ opacity: hero, y: (1 - hero) * -60 });
   const wantMenuOnDark = hero > .42 || wantDark;
   if (wantMenuOnDark !== menuOnDark) {
@@ -1331,23 +1620,20 @@ gsap.ticker.add(() => {
   });
   // полоса живёт вместе с героем: тот же вход и тот же уход
   setBand({ opacity: hero * glowIn.v * (1 - dk), y: (1 - hero) * -90 });
-  setPhoneGlow({
-    opacity: hero * glowIn.v * (1 - dk) * .9,
-    y: (1 - hero) * 34,
-    scale: .96 + glowIn.v * .04
-  });
-
-  // растёт от четверти до полного размера, дальше держится
-  const bg = smooth(clamp01((p - BOT_IN) / (BOT_FULL - BOT_IN)));
-  // пятно уходит заранее, к 0.68: на входе в «ИИ-идеи» жёлтого уже нет
-  const botOut = smooth(clamp01((p - 0.86) / 0.05));
-  setBot({
-    // на тёмной теме пятна гасим: их жёлто-зелёный оттенок пробивался сквозь вуаль
-    opacity: Math.min(1, bg * 1.35) * (1 - dk) * (1 - botOut),
-    scale: .12 + .88 * bg              // раздувается из центра, без сдвига
-  });
-
-  capTl.time(gsap.utils.clamp(0, CAP_TL_LEN, p));   // абсолютная позиция, не доля
+  // Во время вставных weather/split/hub-сцен legacy-прогресс стоит на месте.
+  // Доводим только предыдущую подпись до конца выхода, чтобы она не оставалась
+  // замороженной под следующими полноэкранными слоями.
+  const cap0Settle = virtualP > WEATHER_STAGE_IN && virtualP < TRIP_HUB_STAGE_OUT
+    ? smooth(clamp01((virtualP - WEATHER_STAGE_IN) / WEATHER_BLEND))
+    : 0;
+  const captionP = p + (CAP0_CLEAR_TIME - p) * cap0Settle;
+  capTl.time(gsap.utils.clamp(0, CAP_TL_LEN, captionP));   // абсолютная позиция, не доля
+  document.body.classList.toggle(
+    'cap0-layout',
+    p >= CAP_START[0] - .006
+      && p <= CAP_START[0] + CAP_HOLD0 + .014
+      && virtualP <= WEATHER_STAGE_IN + .006
+  );
 
   // шары вайбов убраны из сценария; вернуть — снять false и display:none у .orb
   const orbsPhase = false && p > ORBS_IN - 0.02;
@@ -1378,12 +1664,30 @@ gsap.ticker.add(() => {
     }
   }
 
-  const nextShown = pq.toFixed(2);
-  if (nextShown !== pShown) {
-    pShown = nextShown;
-    pEl.textContent = nextShown;
-  }
   p = pq;   // сглаживание наверху работает в шкале q
+});
+
+// Спокойный CSS-поворот .idle-r продолжается даже после остановки скролла.
+// Этот лёгкий тикер соединяет его с основной позой сцены и переносит толщину
+// на ту грань, которая в данный момент отворачивается от зрителя.
+gsap.ticker.add(() => {
+  if (phoneTransitionHidden) return;
+  const idlePhase = (performance.now() / 9100 + 2.3 / 9.1) % 1;
+  const idleWave = Math.cos(idlePhase * Math.PI * 2);
+  const visualYaw = rimPoseYaw - idleWave * 5;
+  const visualPitch = rimPosePitch + idleWave * 2.4;
+  const rimYaw = gsap.utils.clamp(-1, 1, -visualYaw / 8);
+  const rimPitch = gsap.utils.clamp(-1, 1, visualPitch / 10);
+  const rimBase = rimPoseHeight * .004;
+  const rimRange = rimPoseHeight * .017;
+  const rimLeft = .10 + (1 - rimYaw) * .45;
+  const rimRight = .10 + (1 + rimYaw) * .45;
+  const rimTop = gsap.utils.clamp(.08, .72, .26 - rimPitch * .34);
+  const rimBottom = gsap.utils.clamp(.16, .90, .46 + rimPitch * .44);
+  box.style.setProperty('--rim-left', `${(rimBase + rimLeft * rimRange).toFixed(2)}px`);
+  box.style.setProperty('--rim-right', `${(rimBase + rimRight * rimRange).toFixed(2)}px`);
+  box.style.setProperty('--rim-top', `${(rimBase + rimTop * rimRange).toFixed(2)}px`);
+  box.style.setProperty('--rim-bottom', `${(rimBase + rimBottom * rimRange).toFixed(2)}px`);
 });
 
 // После завершения белой волны объекты непрерывно рождаются внутри телефона
@@ -1391,7 +1695,9 @@ gsap.ticker.add(() => {
 // объект почти точка, у края экрана он становится в несколько раз крупнее.
 let explosionLoopOn = false;
 gsap.ticker.add(() => {
-  const travelP = clamp01((p - TRV_IN) / (1 - TRV_IN));
+  const travelP = clamp01(
+    (virtualP - TRV_VIRTUAL_IN) / (TRV_K - OLD_END)
+  );
   const whiteReady = reduced ? 0 : smooth(clamp01((travelP - 0.36) / 0.07));
 
   if (whiteReady <= 0.001) {
@@ -1439,7 +1745,7 @@ if (DEMO_ON) gsap.ticker.add(() => {
     if (demoOn) { demoOn = false; setDemo({ opacity: 0 }); }
     return;
   }
-  const pOldD = Math.min(p * TRV_K, OLD_END);
+  const pOldD = legacyP;
   const w = smooth(clamp01((pOldD - (LOAD_IN - 0.05)) / 0.03))
           * (1 - smooth(clamp01((pOldD - (LOAD_OUT - 0.01)) / 0.035)));
   if (w <= 0.001) {
@@ -1463,7 +1769,7 @@ const swarmEl  = document.getElementById('swarm');
 const chargeEl = document.getElementById('chargeGlow');
 let mxS = innerWidth / 2, myS = innerHeight / 2;
 addEventListener('mousemove', e => { mxS = e.clientX; myS = e.clientY; });
-const SWARM_N = 176;  // плотность сохраняется, но DOM и расчётов заметно меньше
+const SWARM_N = 84;
 const swarm = [];
 let swarmBuilt = false, swarmOn = false;
 // удары частиц: дрожь корпуса и вспышка обводки
@@ -1475,7 +1781,7 @@ function buildSwarm() {
   swarmBuilt = true;
   for (let i = 0; i < SWARM_N; i++) {
     const el = document.createElement('i');
-    const size = 14 + Math.random() * 44;    // только мелкие: крупные убраны
+    const size = 8 + Math.random() * 28;
     el.style.width = el.style.height = size.toFixed(0) + 'px';
     el.style.margin = (-size / 2).toFixed(0) + 'px 0 0 ' + (-size / 2).toFixed(0) + 'px';
     swarmEl.appendChild(el);
@@ -1506,8 +1812,13 @@ function buildSwarm() {
 }
 
 gsap.ticker.add((time, deltaMS) => {
-  const pOld = Math.min(p * TRV_K, OLD_END);
-  const on = pOld > DARK_IN - 0.01 && pOld < 1.72;
+  const pOld = legacyP;
+  const swarmTravel = clamp01(
+    (virtualP - TRV_VIRTUAL_IN) / (TRV_K - OLD_END)
+  );
+  // Старый экран помощника с телефоном и роем удалён: частицы создаются только
+  // с началом следующей, жёлтой главы зарядки.
+  const on = !reduced && pOld >= CHG_IN && swarmTravel < .14;
   if (!on) {
     if (swarmOn) {
       swarmOn = false;
@@ -1523,7 +1834,9 @@ gsap.ticker.add((time, deltaMS) => {
 
   const t = performance.now() / 1000;
   const vis = smooth(clamp01((pOld - DARK_IN) / 0.03))
-            * (1 - smooth(clamp01((pOld - 1.672) / 0.025)));
+            * (1 - smooth(clamp01(swarmTravel / .12)))
+            * (1 - assistantClearAmount(pOld))
+            * smooth(clamp01((pOld - CHG_IN) / .028));
   // mSt: 0 — тёмная фаза, светлячки дрейфуют за корпусом; 1 — жёлтая, струя сверху
   const mSt = smooth(clamp01((pOld - CHG_IN) / 0.035));
   // на жёлтом плотность растёт со скроллом; на тёмной светятся все
@@ -1591,7 +1904,7 @@ gsap.ticker.add((time, deltaMS) => {
     o.setC({
       x: o.px - innerWidth / 2,
       y: o.py - innerHeight / 2,
-      opacity: vis * (0.55 + Math.min(0.4, spdNow * 0.03)),   // разгон подсвечивает
+      opacity: vis * (0.34 + Math.min(0.28, spdNow * 0.025)),
       scale: 0.9 + 0.25 * Math.sin(t * o.spd2 + o.seed * 9) * (1 - mSt * eligible)
            + Math.min(0.25, spdNow * 0.015)
     });
@@ -1685,65 +1998,802 @@ function watchAnimatedSection(el) {
 // существующим телефоном, а ScrollTrigger отвечает только за драматургию слоя.
 const weatherSec = document.getElementById('weatherStory');
 const weatherPicture = weatherSec && weatherSec.querySelector('.weather-picture');
-const weatherRain = document.getElementById('weatherRain');
+const weatherDarkPicture = document.getElementById('weatherDarkPicture');
 const weatherTemp = weatherSec && weatherSec.querySelector('.weather-temp');
-const weatherTempOld = weatherSec && weatherSec.querySelector('.weather-temp-old');
-const weatherTempNew = weatherSec && weatherSec.querySelector('.weather-temp-new');
+const weatherTempReel = weatherSec && weatherSec.querySelector('.weather-temp-reel');
 const weatherTitle = weatherSec && weatherSec.querySelector('.weather-title');
+const weatherTitleLines = weatherTitle ? [...weatherTitle.children] : [];
 
 if (weatherSec) {
   gsap.set(weatherSec, {autoAlpha:0});
-  gsap.set([weatherTemp, weatherTitle], {autoAlpha:0});
-  gsap.set(weatherTempNew, {autoAlpha:0, y:18});
-  gsap.set(weatherRain, {opacity:0});
+  gsap.set(weatherTemp, {autoAlpha:0, scale:.96});
+  gsap.set(weatherTempReel, {yPercent:0});
+  gsap.set(weatherTitleLines, {
+    autoAlpha:0, y:46, scale:.96,
+    transformOrigin:'0 50%'
+  });
+  gsap.set(weatherDarkPicture, {opacity:0});
 
-  const weatherStart = () => spacerHeight * (WEATHER_STAGE_IN / TRV_K);
-  const weatherEnd = () => spacerHeight * (WEATHER_STAGE_OUT / TRV_K);
+  let weatherExitTween = null;
+  const stopWeatherExit = () => {
+    if (!weatherExitTween) return;
+    weatherExitTween.kill();
+    weatherExitTween = null;
+  };
+  const hideWeather = duration => {
+    stopWeatherExit();
+    document.body.classList.remove('weather-active');
+    document.body.classList.remove('weather-storm');
+    box.classList.remove('is-weather-storm');
+    weatherExitTween = gsap.to(weatherSec, {
+      autoAlpha:0,
+      duration,
+      ease:'power2.inOut',
+      onComplete:() => { weatherExitTween = null; }
+    });
+  };
+
+  const enterWeather = () => {
+    stopWeatherExit();
+    document.body.classList.add('weather-active');
+  };
+  const weatherStart = () => spacerHeight * (WEATHER_STAGE_IN / VIRTUAL_END);
+  const weatherEnd = () => spacerHeight * (WEATHER_STAGE_OUT / VIRTUAL_END);
   const weatherTl = gsap.timeline({
     defaults:{ease:'none'},
     scrollTrigger:{
       trigger:'.stage',
       start:() => `top+=${weatherStart()} top`,
       end:() => `top+=${weatherEnd()} top`,
-      scrub:reduced ? false : 1.15,
+      scrub:reduced ? false : 1.35,
       invalidateOnRefresh:true,
-      onEnter:() => gsap.killTweensOf(weatherSec),
+      onEnter:enterWeather,
       onEnterBack:() => {
-        gsap.killTweensOf(weatherSec);
+        enterWeather();
         gsap.set(weatherSec,{autoAlpha:1,visibility:'visible'});
       },
-      onLeave:() => gsap.to(weatherSec,{autoAlpha:0,duration:.24,ease:'power2.inOut',overwrite:true}),
-      onLeaveBack:() => gsap.to(weatherSec,{autoAlpha:0,duration:.20,ease:'power2.inOut',overwrite:true}),
-      snap:reduced ? false : {
-        // Средний стоп удерживает полноценный погодный кадр, а крайние
-        // состояния отвечают за чистый вход и выход без зависших полуслов.
-        snapTo:[0,.70,1],
-        duration:{min:.25,max:.7},
-        delay:.08,
-        ease:'power2.inOut',
-        directional:true
+      onUpdate:self => {
+        const weatherTime = self.progress * WEATHER_TIMELINE_LEN;
+        const storm = weatherTime > .99;
+        // Карточки в телефоне меняются вместе со стартом барабана погоды.
+        // При обратном скролле возвращается исходный набор.
+        setAppWeatherEvents(weatherTime > .40);
+        document.body.classList.toggle('weather-storm', storm);
+        box.classList.toggle('is-weather-storm', storm);
+      },
+      onLeave:() => hideWeather(.24),
+      onLeaveBack:() => {
+        setAppWeatherEvents(false);
+        hideWeather(.20);
       }
     }
   });
 
   weatherTl
     .set(weatherSec,{visibility:'visible'},0)
-    .to(weatherSec,{autoAlpha:1,duration:.14,ease:'power2.out'},0)
+    .to(weatherSec,{autoAlpha:1,duration:.24,ease:'sine.inOut'},0)
     .fromTo(weatherPicture,{scale:1.035},{scale:1.012,duration:.82,ease:'sine.out'},0)
-    .fromTo(weatherTemp,{autoAlpha:0,x:-34},{autoAlpha:1,x:0,duration:.25,ease:'power2.out'},.11)
-    .fromTo(weatherTitle,{autoAlpha:0,x:36},{autoAlpha:1,x:0,duration:.28,ease:'power2.out'},.14)
-    .to(weatherTempOld,{autoAlpha:0,y:-18,duration:.18,ease:'power2.inOut'},.46)
-    .to(weatherTempNew,{autoAlpha:1,y:0,duration:.20,ease:'power2.inOut'},.47)
-    .to(weatherRain,{opacity:.42,duration:.53,ease:'sine.inOut'},.47);
+    .to(weatherTemp,{autoAlpha:1,scale:1,duration:.28,ease:'power3.out'},.10)
+    .to(weatherTitleLines,{
+      autoAlpha:1,y:0,scale:1,duration:.32,stagger:.065,ease:'power3.out'
+    },.18)
+    // Вертикальный барабан последовательно показывает 20°, 19°, 18°, 17° и 16°.
+    .to(weatherTempReel,{yPercent:-80,duration:.40,ease:'power2.inOut'},.40)
+    // Фон меняется только после полной фиксации 16°.
+    .to(weatherDarkPicture,{opacity:1,duration:.18,ease:'sine.inOut'},.82)
+    .to(weatherTitleLines,{y:-8,duration:.12,stagger:.02,ease:'sine.inOut'},.82)
+    .to(weatherTitle,{color:'#FFFFFF',duration:.18,ease:'sine.inOut'},.82)
+    // Финальный погодный кадр удерживается до перехода к следующей главе.
+    .to({hold:0}, {hold:1,duration:WEATHER_TIMELINE_HOLD}, 1);
 
   if (reduced) {
-    weatherTl.progress(.56).pause();
+    weatherTl.progress(1).pause();
   }
 
-  const weatherImg = weatherSec.querySelector('img');
-  if (weatherImg && weatherImg.decode) {
-    weatherImg.decode().catch(() => {}).finally(() => ScrollTrigger.refresh());
+  const weatherImages = [...weatherSec.querySelectorAll('img')];
+  Promise.allSettled(weatherImages.map(img => img.decode ? img.decode() : Promise.resolve()))
+    .finally(() => ScrollTrigger.refresh());
+}
+
+// ---- split-глава: текст слева, нативное аудио справа ----
+const splitSec = document.getElementById('splitStory');
+const splitLeft = splitSec && splitSec.querySelector('.split-half--left');
+const splitRight = splitSec && splitSec.querySelector('.split-half--right');
+const splitTrail = document.getElementById('splitTextTrail');
+const splitAudio = document.getElementById('splitAudio');
+const splitAudioControl = document.getElementById('splitAudioControl');
+const splitAudioProgress = document.getElementById('splitAudioProgress');
+const tripHub = document.getElementById('tripHub');
+const tripHubTitle = document.getElementById('tripHubTitle');
+const tripHubContent = tripHub && tripHub.querySelector('.trip-hub__content');
+const tripHubList = tripHub && tripHub.querySelector('.trip-hub__list');
+const tripHubItems = tripHub ? [...tripHub.querySelectorAll('[data-trip-index]')] : [];
+const tripHubPreview = document.getElementById('tripHubPreview');
+const tripHubPreviewCards = tripHubPreview
+  ? [...tripHubPreview.querySelectorAll('[data-trip-preview-card]')]
+  : [];
+const tripHubTitleSplit = tripHubTitle
+  ? SplitText.create(tripHubTitle, {
+      type:'lines',
+      mask:'lines',
+      linesClass:'trip-hub__title-line',
+      aria:'auto'
+    })
+  : null;
+const tripHubTitleLines = tripHubTitleSplit ? tripHubTitleSplit.lines : [];
+
+if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudioControl
+    && tripHub && tripHubTitle && tripHubContent && tripHubList && tripHubItems.length
+    && tripHubPreview && tripHubPreviewCards.length === 2) {
+  const splitBackgrounds = {
+    left:splitLeft.querySelector('.split-half__active-bg'),
+    right:splitRight.querySelector('.split-half__active-bg')
+  };
+  const splitHeadings = {
+    left:splitLeft.querySelector('.split-heading'),
+    right:splitRight.querySelector('.split-heading')
+  };
+  const finePointer = matchMedia('(hover:hover) and (pointer:fine)').matches && !reduced;
+  const textTrailConfig = Object.freeze({ spawnDistance:100, maxItems:8, width:80, height:50 });
+  const splitColors = Object.freeze({ active:'#35DFB5', neutral:'#F7F8F7', ink:'#14202A' });
+  const letterSources = [
+    'a.svg','b.svg','v.svg','g.svg','d.svg','e.svg','zh.svg','z.svg','i.svg','k.svg',
+    'l.svg','l-1.svg','m.svg','n.svg','o.svg','p.svg','r.svg','s.svg','t.svg'
+  ].map(name => `./assets/split-letters/${name}`);
+  const activeTrailItems = new Set();
+  let splitSceneActive = false;
+  let activeSide = 'left';
+  let letterIndex = 0;
+  let trailDistance = 0;
+  let trailHasPoint = false;
+  let trailX = 0;
+  let trailY = 0;
+  let audioRaf = 0;
+  let audioVolumeTween = null;
+  let tripHubActive = false;
+  let tripHubRowsActive = false;
+  let tripHubPreviewSlot = 0;
+  let tripHubPreviewShown = false;
+  let tripHubImagesWarmed = false;
+  let destroyed = false;
+  const hubTitleFrom = reduced
+    ? { autoAlpha:0 }
+    : { autoAlpha:0, yPercent:72, rotationX:-7, scale:.992, transformPerspective:1000 };
+
+  splitSec.classList.toggle('is-fine-pointer', finePointer);
+  // Фоны и заголовки остаются внутри split-секции, а два интерактивных слоя
+  // переносятся в общий scene stacking context, чтобы рисоваться поверх телефона.
+  sceneEl.append(splitTrail, splitAudioControl);
+  gsap.set(splitSec, { autoAlpha:0 });
+  gsap.set(tripHub, { autoAlpha:0 });
+  gsap.set(tripHubTitle, { autoAlpha:0 });
+  gsap.set(tripHubTitleLines, hubTitleFrom);
+  gsap.set(tripHubItems, reduced
+    ? { autoAlpha:1, y:0 }
+    : { autoAlpha:0, y:34 });
+  gsap.set(tripHubPreview, { autoAlpha:0 });
+  gsap.set(tripHubPreviewCards, { autoAlpha:0 });
+  gsap.set(splitBackgrounds.left, { opacity:0 });
+  gsap.set(splitBackgrounds.right, { opacity:0 });
+  gsap.set(splitLeft, { backgroundColor:splitColors.active });
+  gsap.set(splitRight, { backgroundColor:splitColors.neutral });
+  gsap.set(splitHeadings.left, { color:'#FFFFFF' });
+  gsap.set(splitHeadings.right, { color:splitColors.ink });
+  gsap.set(splitAudioControl, {
+    x:innerWidth * .75,
+    y:innerHeight * .55,
+    xPercent:-50,
+    yPercent:-50
+  });
+  letterSources.forEach(src => {
+    const letter = new Image();
+    letter.decoding = 'async';
+    letter.src = src;
+  });
+
+  function showTripHubPreview(index) {
+    if (!finePointer || !tripHubActive) return;
+    const src = tripHubItems[index].dataset.tripImage;
+    if (!src) return;
+    const nextSlot = tripHubPreviewShown ? 1 - tripHubPreviewSlot : tripHubPreviewSlot;
+    const incoming = tripHubPreviewCards[nextSlot];
+    const outgoing = tripHubPreviewCards[1 - nextSlot];
+    const blurImage = incoming.querySelector('.trip-hub__preview-image--blur');
+    const sharpImage = incoming.querySelector('.trip-hub__preview-image--sharp');
+    [blurImage, sharpImage].forEach(image => {
+      if (image.getAttribute('src') !== src) image.setAttribute('src', src);
+    });
+    gsap.killTweensOf([tripHubPreview, incoming, outgoing, blurImage, sharpImage]);
+    gsap.set(tripHubPreview, { autoAlpha:1 });
+    gsap.set(incoming, { autoAlpha:0 });
+    gsap.set(blurImage, { opacity:1 });
+    gsap.set(sharpImage, { opacity:0 });
+    gsap.to(outgoing, {
+      autoAlpha:0,
+      duration:.30,
+      ease:'power2.out',
+      overwrite:true
+    });
+    gsap.to(incoming, {
+      autoAlpha:1,
+      duration:.34,
+      ease:'power2.out',
+      overwrite:'auto'
+    });
+    gsap.to(sharpImage, { opacity:1, duration:.78, delay:.08, ease:'power2.out' });
+    gsap.to(blurImage, { opacity:0, duration:.78, delay:.08, ease:'power2.out' });
+    tripHubPreviewSlot = nextSlot;
+    tripHubPreviewShown = true;
   }
+
+  function hideTripHubPreview() {
+    if (!tripHubPreviewShown) return;
+    tripHubPreviewShown = false;
+    gsap.to(tripHubPreview, {
+      autoAlpha:0,
+      duration:.34,
+      ease:'power2.out',
+      overwrite:true
+    });
+  }
+
+  function warmTripHubImages() {
+    if (tripHubImagesWarmed) return;
+    tripHubImagesWarmed = true;
+    new Set(tripHubItems.map(item => item.dataset.tripImage).filter(Boolean)).forEach(src => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = src;
+    });
+  }
+
+  function setTripHubFeature(index = -1) {
+    const next = Number.isInteger(index) && index >= 0
+      ? gsap.utils.clamp(0, tripHubItems.length - 1, index)
+      : -1;
+    tripHubItems.forEach((item, itemIndex) => {
+      const active = itemIndex === next;
+      item.classList.toggle('is-active', active);
+    });
+    if (next < 0) hideTripHubPreview();
+  }
+
+  const tripHubItemHandlers = tripHubItems.map((item, index) => {
+    const activate = () => {
+      setTripHubFeature(index);
+      if (finePointer) showTripHubPreview(index);
+    };
+    item.addEventListener('pointerenter', activate);
+    return { item, activate };
+  });
+  function clearTripHubHover() {
+    setTripHubFeature();
+  }
+  tripHubList.addEventListener('pointerleave', clearTripHubHover);
+
+  const tripHubIntro = reduced ? null : gsap.timeline({ paused:true })
+    .to(tripHubItems, {
+      autoAlpha:1,
+      y:0,
+      duration:.58,
+      stagger:.085,
+      ease:'power3.out'
+    });
+  function setTripHubRowsActive(active) {
+    if (reduced || active === tripHubRowsActive) return;
+    tripHubRowsActive = active;
+    if (active) tripHubIntro.restart();
+    else tripHubIntro.pause(0);
+  }
+
+  setTripHubFeature();
+
+  const cursorX = gsap.quickTo(splitAudioControl, 'x', {
+    duration:reduced ? 0 : .18,
+    ease:'power3.out'
+  });
+  const cursorY = gsap.quickTo(splitAudioControl, 'y', {
+    duration:reduced ? 0 : .18,
+    ease:'power3.out'
+  });
+
+  function setAudioProgress(value) {
+    if (!splitAudioProgress) return;
+    splitAudioProgress.style.strokeDashoffset = String(100 - clamp01(value) * 100);
+  }
+
+  function syncAudioState() {
+    const playing = !splitAudio.paused && !splitAudio.ended;
+    splitAudioControl.classList.toggle('is-playing', playing);
+    splitAudioControl.setAttribute('aria-pressed', String(playing));
+    splitAudioControl.setAttribute('aria-label', playing ? 'Поставить аудио на паузу' : 'Воспроизвести аудио');
+  }
+
+  function stopAudioProgress() {
+    if (!audioRaf) return;
+    cancelAnimationFrame(audioRaf);
+    audioRaf = 0;
+  }
+
+  function drawAudioProgress() {
+    const duration = Number.isFinite(splitAudio.duration) ? splitAudio.duration : 0;
+    setAudioProgress(duration > 0 ? splitAudio.currentTime / duration : 0);
+    if (!splitAudio.paused && !splitAudio.ended) {
+      audioRaf = requestAnimationFrame(drawAudioProgress);
+    } else {
+      audioRaf = 0;
+    }
+  }
+
+  function startAudioProgress() {
+    stopAudioProgress();
+    audioRaf = requestAnimationFrame(drawAudioProgress);
+  }
+
+  function finishAudioStop() {
+    splitAudio.pause();
+    try { splitAudio.currentTime = 0; } catch (err) { /* metadata ещё не загружены */ }
+    splitAudio.volume = 1;
+    splitAudioControl.classList.remove('has-progress');
+    setAudioProgress(0);
+    stopAudioProgress();
+    syncAudioState();
+  }
+
+  function stopSplitAudio({ immediate = false } = {}) {
+    if (audioVolumeTween) {
+      audioVolumeTween.kill();
+      audioVolumeTween = null;
+    }
+    if (immediate || splitAudio.paused) {
+      finishAudioStop();
+      return;
+    }
+    audioVolumeTween = gsap.to(splitAudio, {
+      volume:0,
+      duration:.20,
+      ease:'sine.inOut',
+      onComplete:() => {
+        audioVolumeTween = null;
+        finishAudioStop();
+      }
+    });
+  }
+
+  const configuredAudioSrc = (splitAudio.dataset.audioSrc || '').trim();
+  if (configuredAudioSrc) splitAudio.src = configuredAudioSrc;
+
+  function toggleSplitAudio() {
+    setActiveSide('right');
+    const hasSource = Boolean(splitAudio.currentSrc || splitAudio.getAttribute('src'));
+    if (!hasSource) return;
+    if (splitAudio.paused || splitAudio.ended) {
+      splitAudio.volume = 1;
+      splitAudio.play().catch(() => syncAudioState());
+    } else {
+      splitAudio.pause();
+    }
+  }
+
+  function clearTextTrail() {
+    activeTrailItems.forEach(item => {
+      item.timeline.kill();
+      item.element.remove();
+    });
+    activeTrailItems.clear();
+    trailDistance = 0;
+    trailHasPoint = false;
+  }
+
+  function removeOldestTrailItem() {
+    const oldest = activeTrailItems.values().next().value;
+    if (!oldest) return;
+    oldest.timeline.kill();
+    oldest.element.remove();
+    activeTrailItems.delete(oldest);
+  }
+
+  function createTextTrailItem(clientX, clientY, deltaX, deltaY) {
+    if (!finePointer || !splitSceneActive || activeSide !== 'left' || !splitTrail) return;
+    while (activeTrailItems.size >= textTrailConfig.maxItems) removeOldestTrailItem();
+
+    const rect = splitLeft.getBoundingClientRect();
+    const x = gsap.utils.clamp(0, rect.width, clientX - rect.left);
+    const y = gsap.utils.clamp(0, rect.height, clientY - rect.top);
+    const floorY = Math.max(textTrailConfig.height * .5, rect.height - textTrailConfig.height * .55);
+    const element = document.createElement('img');
+    element.className = 'split-trail__item';
+    element.src = letterSources[letterIndex];
+    element.alt = '';
+    element.decoding = 'async';
+    element.draggable = false;
+    letterIndex = (letterIndex + 1) % letterSources.length;
+    element.style.setProperty('--trail-width', `${textTrailConfig.width}px`);
+    element.style.setProperty('--trail-height', `${textTrailConfig.height}px`);
+    splitTrail.appendChild(element);
+
+    const item = { element, timeline:null };
+    const timeline = gsap.timeline({
+      onComplete:() => {
+        activeTrailItems.delete(item);
+        element.remove();
+        timeline.kill();
+      }
+    });
+    item.timeline = timeline;
+    activeTrailItems.add(item);
+
+    timeline
+      .fromTo(element, {
+        x, y, xPercent:-50, yPercent:-50,
+        scale:.72, rotation:(Math.random() - .5) * 18, opacity:0
+      }, {
+        scale:1, opacity:1, duration:.30, ease:'elastic.out(1.4,.72)'
+      }, 0)
+      .to(element, {
+        x:x + deltaX * 1.8,
+        y:floorY,
+        rotation:(Math.random() - .5) * 20,
+        duration:.58,
+        ease:'power2.in'
+      }, 0)
+      .to(element, {
+        x:`+=${deltaX * 1.15}`,
+        y:Math.max(textTrailConfig.height, floorY - 82),
+        rotation:(Math.random() - .5) * 30,
+        duration:.27,
+        ease:'power2.out'
+      })
+      .to(element, { y:floorY, duration:.32, ease:'power2.in' })
+      .to(element, {
+        y:rect.height + textTrailConfig.height,
+        opacity:0,
+        duration:.20,
+        ease:'power1.in'
+      });
+  }
+
+  function resetTrailPoint(clientX, clientY) {
+    trailHasPoint = true;
+    trailX = clientX;
+    trailY = clientY;
+    trailDistance = 0;
+  }
+
+  function clearTrailPoint() {
+    trailHasPoint = false;
+    trailDistance = 0;
+  }
+
+  function syncSplitInteractionClasses() {
+    const audioVisible = splitSceneActive && (!finePointer || activeSide === 'right');
+    const cursorReady = splitSec.classList.contains('is-cursor-ready');
+    document.body.classList.toggle('split-left-active', splitSceneActive && activeSide === 'left');
+    document.body.classList.toggle(
+      'split-audio-cursor',
+      splitSceneActive && finePointer && activeSide === 'right' && cursorReady
+    );
+    splitAudioControl.classList.toggle('is-visible', audioVisible);
+  }
+
+  function setActiveSide(nextSide, immediate = false) {
+    if (nextSide !== 'left' && nextSide !== 'right') return;
+    if (nextSide === activeSide) {
+      syncSplitInteractionClasses();
+      return;
+    }
+    activeSide = nextSide;
+    const duration = immediate || reduced ? 0 : .25;
+    const targets = [splitLeft, splitRight, splitHeadings.left, splitHeadings.right];
+    gsap.killTweensOf(targets);
+    gsap.to(splitLeft, {
+      backgroundColor:nextSide === 'left' ? splitColors.active : splitColors.neutral,
+      duration,
+      ease:'power2.out',
+      delay:0,
+      overwrite:'auto'
+    });
+    gsap.to(splitRight, {
+      backgroundColor:nextSide === 'right' ? splitColors.active : splitColors.neutral,
+      duration,
+      ease:'power2.out',
+      delay:0,
+      overwrite:'auto'
+    });
+    gsap.to(splitHeadings.left, {
+      color:nextSide === 'left' ? '#FFFFFF' : splitColors.ink,
+      duration,
+      ease:'power2.out',
+      delay:0,
+      overwrite:'auto'
+    });
+    gsap.to(splitHeadings.right, {
+      color:nextSide === 'right' ? '#FFFFFF' : splitColors.ink,
+      duration,
+      ease:'power2.out',
+      delay:0,
+      overwrite:'auto'
+    });
+    if (nextSide !== 'left') clearTrailPoint();
+    syncSplitInteractionClasses();
+  }
+
+  function resolveSide(clientX, rect) {
+    return clientX - rect.left < rect.width / 2 ? 'left' : 'right';
+  }
+
+  function placeAudioControl(clientX, clientY, immediate = false) {
+    const rect = splitSec.getBoundingClientRect();
+    const radius = splitAudioControl.offsetWidth * .5 + 8;
+    const x = gsap.utils.clamp(rect.width * .5 + radius, rect.width - radius, clientX - rect.left);
+    const y = gsap.utils.clamp(Math.max(92, radius), rect.height - radius, clientY - rect.top);
+    splitSec.classList.add('is-cursor-ready');
+    syncSplitInteractionClasses();
+    if (immediate || reduced) {
+      gsap.set(splitAudioControl, { x, y });
+    } else {
+      cursorX(x);
+      cursorY(y);
+    }
+  }
+
+  function placeTouchAudioControl() {
+    const rect = splitSec.getBoundingClientRect();
+    const x = innerWidth <= 900 ? rect.width * .78 : rect.width * .72;
+    const y = innerWidth <= 900 ? rect.height * .72 : rect.height * .54;
+    gsap.set(splitAudioControl, { x, y });
+  }
+
+  function onSplitPointerMove(event) {
+    if (!splitSceneActive || !finePointer) return;
+    const rect = splitSec.getBoundingClientRect();
+    if (
+      event.clientX < rect.left || event.clientX > rect.right ||
+      event.clientY < rect.top || event.clientY > rect.bottom
+    ) return;
+    const nextSide = resolveSide(event.clientX, rect);
+    setActiveSide(nextSide);
+    if (nextSide === 'right') {
+      placeAudioControl(event.clientX, event.clientY);
+      clearTrailPoint();
+      return;
+    }
+    if (nextSide !== 'left') return;
+    if (!trailHasPoint) {
+      resetTrailPoint(event.clientX, event.clientY);
+      return;
+    }
+    const deltaX = event.clientX - trailX;
+    const deltaY = event.clientY - trailY;
+    trailDistance += Math.hypot(deltaX, deltaY);
+    if (trailDistance >= textTrailConfig.spawnDistance) {
+      trailDistance %= textTrailConfig.spawnDistance;
+      createTextTrailItem(event.clientX, event.clientY, deltaX, deltaY);
+    }
+    trailX = event.clientX;
+    trailY = event.clientY;
+  }
+
+  function onHalfPointerUp(event) {
+    if (event.pointerType === 'mouse') return;
+    const side = event.currentTarget.dataset.splitSide;
+    setActiveSide(side);
+  }
+
+  function setSplitSceneActive(active) {
+    if (active === splitSceneActive) return;
+    splitSceneActive = active;
+    splitSec.classList.toggle('is-active', active);
+    document.body.classList.toggle('split-active', active);
+    if (active) {
+      setActiveSide('left', true);
+      placeTouchAudioControl();
+    } else {
+      splitSec.classList.remove('is-cursor-ready');
+      syncSplitInteractionClasses();
+      clearTextTrail();
+      stopSplitAudio();
+    }
+    syncHeaderTheme();
+  }
+
+  function setTripHubActive(active) {
+    if (active === tripHubActive) return;
+    tripHubActive = active;
+    tripHub.classList.toggle('is-active', active);
+    document.body.classList.toggle('trip-hub-active', active);
+    if (active) warmTripHubImages();
+    if (!active) setTripHubRowsActive(false);
+    setTripHubFeature();
+    syncHeaderTheme();
+  }
+
+  function onAudioFocus() {
+    if (!splitSceneActive) return;
+    setActiveSide('right');
+    placeTouchAudioControl();
+  }
+
+  function onAudioPlay() {
+    splitAudioControl.classList.add('has-progress');
+    syncAudioState();
+    startAudioProgress();
+  }
+
+  function onAudioPause() {
+    syncAudioState();
+    stopAudioProgress();
+  }
+
+  let bridgedFrameDocument = null;
+  function onFramePointerMove(event) {
+    const rect = frame.getBoundingClientRect();
+    const scaleX = rect.width / Math.max(1, frame.clientWidth);
+    const scaleY = rect.height / Math.max(1, frame.clientHeight);
+    onSplitPointerMove({
+      clientX:rect.left + event.clientX * scaleX,
+      clientY:rect.top + event.clientY * scaleY
+    });
+  }
+  function bindFramePointerBridge() {
+    if (bridgedFrameDocument) {
+      bridgedFrameDocument.removeEventListener('pointermove', onFramePointerMove);
+      bridgedFrameDocument = null;
+    }
+    try {
+      bridgedFrameDocument = frame.contentDocument;
+      bridgedFrameDocument && bridgedFrameDocument.addEventListener(
+        'pointermove', onFramePointerMove, { passive:true }
+      );
+    } catch (err) {
+      bridgedFrameDocument = null;
+    }
+  }
+
+  addEventListener('pointermove', onSplitPointerMove, { passive:true });
+  frame.addEventListener('load', bindFramePointerBridge);
+  bindFramePointerBridge();
+  splitLeft.addEventListener('pointerup', onHalfPointerUp);
+  splitRight.addEventListener('pointerup', onHalfPointerUp);
+  splitAudioControl.addEventListener('click', toggleSplitAudio);
+  splitAudioControl.addEventListener('focus', onAudioFocus);
+  splitAudio.addEventListener('play', onAudioPlay);
+  splitAudio.addEventListener('pause', onAudioPause);
+  splitAudio.addEventListener('ended', finishAudioStop);
+  splitAudio.addEventListener('loadedmetadata', drawAudioProgress);
+
+  const onVisibilityChange = () => {
+    if (document.hidden) stopSplitAudio();
+  };
+  const onOtherMediaPlay = event => {
+    if (event.target !== splitAudio) stopSplitAudio();
+  };
+  const onSplitResize = () => {
+    if (!finePointer || !splitSec.classList.contains('is-cursor-ready')) placeTouchAudioControl();
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  document.addEventListener('play', onOtherMediaPlay, true);
+  addEventListener('resize', onSplitResize, { passive:true });
+
+  const splitTimelineStart = SPLIT_STAGE_IN - .012;
+  const splitTimelineEnd = TRIP_HUB_SCENE_OUT + .012;
+  const splitPhase = value => clamp01(
+    (value - splitTimelineStart) / (splitTimelineEnd - splitTimelineStart)
+  );
+  const splitCutIn = splitPhase(SPLIT_STAGE_IN);
+  const splitCutOut = splitPhase(TRIP_HUB_STAGE_IN);
+  const hubCutOut = splitPhase(TRIP_HUB_SCENE_OUT);
+  const hubContentOutStart = splitPhase(TRIP_HUB_SCENE_OUT - .050);
+  // Тёмный экран мягко накрывает предыдущую главу до появления контента.
+  const hubTransitionStart = splitPhase(TRIP_HUB_STAGE_IN - .045);
+  const hubTransitionEnd = splitPhase(TRIP_HUB_STAGE_IN + .010);
+  const hubTransitionDuration = hubTransitionEnd - hubTransitionStart;
+  // После перехода оставляем короткую паузу и только затем раскрываем заголовок.
+  const hubTitleInStart = splitPhase(TRIP_HUB_STAGE_IN + .026);
+  const hubTitleInEnd = splitPhase(TRIP_HUB_STAGE_IN + .068);
+  const hubLineStagger = reduced ? 0 : .014;
+  const hubLineDuration = Math.max(.01, hubTitleInEnd - hubTitleInStart - hubLineStagger);
+  const hubRowsInStart = splitPhase(TRIP_HUB_STAGE_IN + .082);
+  const splitStart = () => spacerHeight * (splitTimelineStart / VIRTUAL_END);
+  const splitEnd = () => spacerHeight * (splitTimelineEnd / VIRTUAL_END);
+  const splitTl = gsap.timeline({
+    defaults:{ease:'none'},
+    scrollTrigger:{
+      trigger:'.stage',
+      start:() => `top+=${splitStart()} top`,
+      end:() => `top+=${splitEnd()} top`,
+      scrub:reduced ? true : .72,
+      invalidateOnRefresh:true,
+      onToggle:self => {
+        if (!self.isActive) {
+          setSplitSceneActive(false);
+          setTripHubActive(false);
+        }
+      },
+      onUpdate:self => {
+        setSplitSceneActive(self.progress >= splitCutIn && self.progress < hubTransitionStart);
+        setTripHubActive(self.progress >= hubTransitionStart && self.progress < hubCutOut);
+        setTripHubRowsActive(self.progress >= hubRowsInStart && self.progress < hubCutOut);
+      }
+    }
+  });
+  splitTl
+    .set([splitSec, tripHub], { visibility:'visible' }, 0)
+    .set(splitSec, { autoAlpha:1 }, splitCutIn)
+    .fromTo(tripHub, { autoAlpha:0 }, {
+      autoAlpha:1,
+      duration:hubTransitionDuration,
+      ease:'power2.inOut',
+      immediateRender:false
+    }, hubTransitionStart)
+    // Предыдущий экран убирается только после того, как тёмная глава его закрыла.
+    .set(splitSec, { autoAlpha:0 }, hubTransitionEnd)
+    .set(tripHubTitle, { autoAlpha:1 }, hubTitleInStart)
+    .fromTo(tripHubTitleLines, hubTitleFrom, {
+      autoAlpha:1,
+      yPercent:0,
+      rotationX:0,
+      scale:1,
+      duration:hubLineDuration,
+      stagger:hubLineStagger,
+      ease:'power4.out'
+    }, hubTitleInStart);
+  splitTl
+    .to([tripHubTitle, tripHubList], {
+      autoAlpha:0,
+      filter:'blur(8px)',
+      duration:Math.max(.01, hubCutOut - hubContentOutStart),
+      ease:'power3.in'
+    }, hubContentOutStart)
+    .set(tripHub, { autoAlpha:0 }, hubCutOut);
+
+  function destroySplitScene() {
+    if (destroyed) return;
+    destroyed = true;
+    setSplitSceneActive(false);
+    setTripHubActive(false);
+    stopSplitAudio({ immediate:true });
+    clearTextTrail();
+    tripHubTitleSplit && tripHubTitleSplit.revert();
+    tripHubIntro && tripHubIntro.kill();
+    tripHubItemHandlers.forEach(({ item, activate }) => {
+      item.removeEventListener('pointerenter', activate);
+    });
+    tripHubList.removeEventListener('pointerleave', clearTripHubHover);
+    gsap.killTweensOf([tripHubPreview, ...tripHubPreviewCards]);
+    splitTl.scrollTrigger && splitTl.scrollTrigger.kill();
+    splitTl.kill();
+    removeEventListener('pointermove', onSplitPointerMove);
+    frame.removeEventListener('load', bindFramePointerBridge);
+    if (bridgedFrameDocument) {
+      bridgedFrameDocument.removeEventListener('pointermove', onFramePointerMove);
+      bridgedFrameDocument = null;
+    }
+    splitLeft.removeEventListener('pointerup', onHalfPointerUp);
+    splitRight.removeEventListener('pointerup', onHalfPointerUp);
+    splitAudioControl.removeEventListener('click', toggleSplitAudio);
+    splitAudioControl.removeEventListener('focus', onAudioFocus);
+    splitAudio.removeEventListener('play', onAudioPlay);
+    splitAudio.removeEventListener('pause', onAudioPause);
+    splitAudio.removeEventListener('ended', finishAudioStop);
+    splitAudio.removeEventListener('loadedmetadata', drawAudioProgress);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    document.removeEventListener('play', onOtherMediaPlay, true);
+    removeEventListener('resize', onSplitResize);
+  }
+
+  const splitObserver = new MutationObserver(() => {
+    if (!document.documentElement.contains(splitSec)) {
+      splitObserver.disconnect();
+      destroySplitScene();
+    }
+  });
+  if (document.documentElement) {
+    splitObserver.observe(document.documentElement, { childList:true, subtree:true });
+  }
+  addEventListener('pagehide', destroySplitScene, { once:true });
+  syncAudioState();
+  setAudioProgress(0);
 }
 
 const rutSec = document.querySelector('.routine');

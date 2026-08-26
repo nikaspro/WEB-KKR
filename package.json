@@ -8,6 +8,7 @@
     "dev":    "vite",
     "build":  "vite build",
     "preview":"vite preview",
+    "package:portable":"npm run build && node scripts/portable-package.mjs",
     "budget": "node scripts/budget.mjs",
     "phases:check": "node scripts/phases-check.mjs",
     "legacy:check": "node scripts/legacy-check.mjs"

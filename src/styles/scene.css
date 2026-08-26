@@ -1,27 +1,37 @@
 @font-face{
     font-family:'Onest';
-    src:url('/assets/fonts/onest-cyrillic.woff2') format('woff2');
+    src:url('/assets/fonts/onest.woff2') format('woff2');
     font-style:normal;
     font-weight:100 900;
     font-display:swap;
-    unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
   }
   @font-face{
-    font-family:'Onest';
-    src:url('/assets/fonts/onest-latin.woff2') format('woff2');
+    font-family:'SF Pro Expanded';
+    src:url('/assets/fonts/sf-pro-expanded-medium.woff2') format('woff2');
     font-style:normal;
-    font-weight:100 900;
+    font-weight:500;
     font-display:swap;
-    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  }
+  @property --ghost-hue{
+    syntax:'<angle>';
+    inherits:true;
+    initial-value:168deg;
+  }
+  @property --rim-spin{
+    syntax:'<angle>';
+    inherits:true;
+    initial-value:0deg;
   }
   :root{
     --ink:#14202A;
     --accent:#0FA5D8;
     --page:#FFFFFF;
+    --charge-bg:#EFFF5D;
     --pad:clamp(24px,5vw,96px);   /* боковые отступы страницы */
     /* заголовки разделов: Climate Crisis с Google Fonts, фолбэк системный */
     --display:'Onest',system-ui,sans-serif;
     --display-cc:'Onest',system-ui,sans-serif;   /* прежний шрифт заголовков */
+    --heading:'SF Pro Expanded','Onest',system-ui,sans-serif;
     --face-side:#12202B;
   }
   *{box-sizing:border-box}
@@ -46,7 +56,22 @@
   .roll-layer,.scroll-layer,.tilt-layer,.intro-layer{transform-style:preserve-3d}
   /* корпус выше свечения: без индекса он рисовался под .aura (z-index 1),
      потому что положительный индекс всегда выше auto */
-  .roll-layer{position:relative;z-index:6;}
+  .roll-layer{
+    position:relative;
+    z-index:6;
+    transition:opacity .24s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s;
+  }
+  body.trip-hub-active .roll-layer{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .24s cubic-bezier(.4,0,.2,1),visibility 0s linear .24s;
+  }
+  .roll-layer.is-transition-hidden{
+    opacity:0!important;
+    visibility:hidden;
+    pointer-events:none;
+  }
   .roll-layer.sharp{}
   .scroll-layer{}
   .scroll-layer.sharp{}
@@ -62,11 +87,44 @@
        толщина и радиус производные, чтобы корпус не терял вид на любом размере */
     --h:clamp(560px, 78vh, 1000px);
     --w:calc(var(--h) * 0.4840);
-    --d:calc(var(--h) * 0.0620);   /* было 0.0482: корпус толще, объём читается */
+    --d:0px;
     --r:calc(var(--h) * 0.0694);
+    --rim-top:calc(var(--h) * .0035);
+    --rim-right:calc(var(--h) * .010);
+    --rim-bottom:calc(var(--h) * .008);
+    --rim-left:calc(var(--h) * .004);
+    --ghost-hue:168deg;
+    --rim-hue:160deg;
+    --rim-lightness:52%;
+    --rim-cyan:72,211,226;
+    --rim-green:61,255,136;
+    --rim-spin:0deg;
     position:relative; width:var(--w); height:var(--h);
     transform-style:preserve-3d;
+    animation:
+      ghostHue 22s linear infinite,
+      rimRun 12.4s linear -3.1s infinite;
   }
+  @keyframes ghostHue{to{--ghost-hue:528deg}}
+  /* Нерегулярный обход: разная скорость, короткие возвраты и паузы.
+     Конечная точка кратна 360°, поэтому между циклами нет скачка. */
+  @keyframes rimRun{
+    0%  {--rim-spin:0deg;   animation-timing-function:cubic-bezier(.55,.02,.35,1)}
+    7%  {--rim-spin:48deg;  animation-timing-function:ease-in-out}
+    14% {--rim-spin:20deg;  animation-timing-function:cubic-bezier(.2,.8,.25,1)}
+    27% {--rim-spin:160deg; animation-timing-function:ease-out}
+    34% {--rim-spin:174deg; animation-timing-function:cubic-bezier(.15,.75,.3,1)}
+    43% {--rim-spin:312deg; animation-timing-function:ease-in-out}
+    52% {--rim-spin:268deg; animation-timing-function:cubic-bezier(.2,.8,.25,1)}
+    66% {--rim-spin:478deg; animation-timing-function:ease-out}
+    73% {--rim-spin:492deg; animation-timing-function:cubic-bezier(.15,.72,.35,1)}
+    83% {--rim-spin:618deg; animation-timing-function:ease-in-out}
+    90% {--rim-spin:584deg; animation-timing-function:cubic-bezier(.18,.78,.3,1)}
+    100%{--rim-spin:720deg}
+  }
+  /* На светлой теме — стабильная mint/cyan-палитра из референса.
+     В тёмных главах остаётся медленная футуристичная смена hue. */
+  body.menu-on-dark .box{--rim-hue:var(--ghost-hue)}
   /* --- поток по рамке ---
      пятно света физически идёт по контуру корпуса через offset-path.
      два пятна: одно поднимается по правой стороне, второе по левой,
@@ -139,9 +197,172 @@
   }
   @media (prefers-reduced-motion:reduce){
     .inflow::after{animation:none}
+    .box{animation:none}
+    .roll-layer{transition:none}
   }
 
-  .rim{position:absolute;inset:0;transform-style:preserve-3d}
+  .rim{
+    position:absolute;
+    inset:0;
+    z-index:10;
+    border-radius:var(--r);
+    /* Blur цветной ленты обрезается по внешнему силуэту и раскрывается
+       только внутрь корпуса — внешняя форма остаётся собранной. */
+    overflow:hidden;
+    pointer-events:none;
+  }
+  /* Весь объём корпуса — одна непрерывная градиентная лента. */
+  .rim::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    padding:var(--rim-top) var(--rim-right) var(--rim-bottom) var(--rim-left);
+    border-radius:inherit;
+    /* Широкое световое облако покрывает весь периметр: у него нет пустого
+       участка, только мягко перемещающийся максимум яркости. Второй слой
+       добавляет стеклу светлую фаску и едва заметную глубину. */
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(var(--rim-cyan),.28) 0deg,
+        rgba(var(--rim-cyan),.48) 70deg,
+        rgba(var(--rim-green),.74) 154deg,
+        rgba(var(--rim-cyan),.52) 232deg,
+        rgba(var(--rim-green),.34) 310deg,
+        rgba(var(--rim-cyan),.28) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,255,.16),
+        rgba(255,255,255,.025) 34%,
+        rgba(0,0,0,.07) 72%,
+        rgba(255,255,255,.08));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    filter:
+      blur(14px)
+      drop-shadow(0 0 20px rgba(var(--rim-cyan),.25))
+      drop-shadow(0 0 30px rgba(var(--rim-green),.18));
+    opacity:.86;
+  }
+  /* Первый экран: холодный ободок из референса — тёмный teal слева,
+     cyan на переходе и плотный electric blue на яркой стороне. */
+  body.hero-rim-blue .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(4,55,68,.82) 0deg,
+        rgba(32,211,228,.94) 68deg,
+        rgba(29,113,255,.98) 142deg,
+        rgba(16,25,255,1) 226deg,
+        rgba(20,91,155,.92) 302deg,
+        rgba(4,55,68,.82) 360deg),
+      linear-gradient(125deg,
+        rgba(174,249,255,.30),
+        rgba(37,157,255,.08) 34%,
+        rgba(4,8,76,.25) 72%,
+        rgba(83,229,255,.18));
+    /* Blur после кольцевой маски раздувался внутрь экрана при 3D-наклоне
+       и создавал овальные цветные пятна. Сам conic-gradient уже плавный,
+       поэтому оставляем только компактное равномерное свечение. */
+    filter:
+      drop-shadow(0 0 4px rgba(38,211,235,.30))
+      drop-shadow(0 0 7px rgba(20,39,255,.20));
+    opacity:.94;
+  }
+  body.hero-rim-blue .rim::after{
+    filter:none;
+    opacity:.025;
+  }
+  /* «Заряжаем поездку»: лимонное стекло в тон жёлтой сцене. Тёплая
+     полутень сохраняет объём корпуса, не превращаясь в чёрный контур. */
+  body.is-charge .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(231,245,76,.72) 0deg,
+        rgba(255,255,220,.94) 72deg,
+        rgba(247,255,126,.88) 154deg,
+        rgba(206,223,55,.68) 236deg,
+        rgba(255,255,196,.90) 310deg,
+        rgba(231,245,76,.72) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,239,.42),
+        rgba(248,255,144,.12) 34%,
+        rgba(151,166,36,.18) 72%,
+        rgba(255,255,213,.28));
+    filter:
+      blur(10px)
+      drop-shadow(0 0 16px rgba(248,255,129,.36))
+      drop-shadow(0 8px 22px rgba(153,168,39,.16));
+    opacity:.92;
+  }
+  body.weather-active:not(.weather-storm) .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(112,211,255,.30) 0deg,
+        rgba(112,211,255,.50) 70deg,
+        rgba(201,242,255,.76) 154deg,
+        rgba(112,211,255,.54) 232deg,
+        rgba(201,242,255,.38) 310deg,
+        rgba(112,211,255,.30) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,255,.18),
+        rgba(255,255,255,.035) 34%,
+        rgba(54,137,176,.07) 72%,
+        rgba(255,255,255,.10));
+    filter:
+      blur(14px)
+      drop-shadow(0 0 20px rgba(112,211,255,.27))
+      drop-shadow(0 0 30px rgba(201,242,255,.20));
+  }
+  body.weather-storm .rim::before,
+  .box.is-weather-storm .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(7,15,23,.52) 0deg,
+        rgba(201,230,248,.34) 58deg,
+        rgba(47,69,87,.30) 126deg,
+        rgba(3,9,15,.58) 202deg,
+        rgba(151,188,214,.26) 278deg,
+        rgba(7,15,23,.52) 360deg),
+      linear-gradient(125deg,
+        rgba(236,248,255,.34),
+        rgba(139,174,198,.10) 31%,
+        rgba(4,11,18,.34) 69%,
+        rgba(225,242,252,.18));
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    filter:
+      blur(6px)
+      drop-shadow(0 4px 10px rgba(2,8,14,.32))
+      drop-shadow(0 0 12px rgba(185,220,241,.12));
+    opacity:.82;
+  }
+  /* Мелкое монохромное зерно добавляет материалу тактильность, но не
+     образует ещё один контур: используется та же маска и та же толщина. */
+  .rim::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    padding:var(--rim-top) var(--rim-right) var(--rim-bottom) var(--rim-left);
+    border-radius:inherit;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.72'/%3E%3C/svg%3E");
+    background-size:96px 96px;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    mix-blend-mode:soft-light;
+    filter:blur(3px);
+    opacity:.04;
+    pointer-events:none;
+  }
+  body.weather-storm .rim::after,
+  .box.is-weather-storm .rim::after{
+    mix-blend-mode:overlay;
+    filter:blur(4px) contrast(112%) brightness(1.18);
+    opacity:.10;
+  }
   /* вспышка обводки при въезде частиц: статичная тень, анимируется только opacity */
   .rim-pulse{
     position:absolute;
@@ -157,95 +378,32 @@
   }
 
   .face{position:absolute;inset:0;border-radius:var(--r);backface-visibility:hidden}
-  .slice{position:absolute;inset:0;border-radius:var(--r);background:var(--face-side);backface-visibility:hidden}
-  /* will-change на слайсах не нужен: они не анимируются сами, их везёт родитель */
 
   .front{
-    background:
-      radial-gradient(120% 90% at 18% 6%, rgba(255,255,255,.10), rgba(255,255,255,0) 46%),
-      radial-gradient(150% 120% at 86% 98%, rgba(125,168,198,.09), rgba(0,0,0,0) 54%),
-      linear-gradient(155deg, #26363F 0%, #1F2E3A 44%, #192734 100%);
+    background:transparent;
     transform:translateZ(calc(var(--d)/2));
     overflow:hidden;
   }
-  /* блики по кромке: тонкая световая фаска поверх скругления.
-     трогает только внешние ~2px рамки, до экрана (инсет 1.3% высоты) не достаёт */
-  .front::after{
-    content:'';
-    position:absolute; inset:0;
-    border-radius:inherit;
-    pointer-events:none;
-    z-index:8;
-    box-shadow:
-      inset 0 1.5px 1px rgba(255,255,255,.16),
-      inset 1px 0 1px rgba(255,255,255,.05),
-      inset -1px 0 1px rgba(255,255,255,.04),
-      inset 0 -1px 1px rgba(255,255,255,.06);
-  }
-  .back{
-    background:
-      radial-gradient(120% 90% at 22% 8%, rgba(255,255,255,.06), rgba(255,255,255,0) 48%),
-      linear-gradient(160deg, #14222E 0%, #0C151D 56%, #0A121A 100%);
-    transform:translateZ(calc(var(--d)/-2)) rotateY(180deg);
-  }
-
-  /* Финальная подпись — отдельное уведомление поверх экрана, не «чёлка». */
-  .island-wrap{
-    position:absolute;
-    top:calc(var(--h) * .13);
-    left:0; right:0;
-    display:flex;
-    justify-content:center;
-    z-index:7;              /* выше панели загрузки: она перекрывала шторку */
-    pointer-events:none;
-  }
-  .island{
-    position:relative;
-    width:calc(var(--h) * 0.1494);
-    height:calc(var(--h) * 0.0435);
-    flex:0 0 auto;
-    border-radius:1000px;
-    background:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-  }
-  .island-in{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    padding:0 4px;
-    white-space:nowrap;
-    opacity:0;
-    color:#fff;
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    font-size:15px;
-    font-weight:600;
-    letter-spacing:-.01em;
-  }
-  .island-in b{
-    width:18px;height:18px;flex:0 0 18px;
-    display:block;
-    color:#23D741;
-  }
-  .island-in b svg{display:block;width:100%;height:100%}
-
   /* --- экран: реальное приложение в iframe --- */
   .screen{
     position:absolute; inset:calc(var(--h) * 0.0129);
     border-radius:calc(var(--r) - var(--h) * 0.0129);
     overflow:hidden;
-    background:#E6E7EB;
+    background:#fff;
+    opacity:1;
+    filter:none;
+    mix-blend-mode:normal;
+    isolation:isolate;
   }
-  /* стартовое видео: живая запись приложения на первом экране.
-     лежит поверх iframe и уходит вместе с нырком корпуса */
-  .screen video{
+  /* Стартовый экран лежит поверх iframe и уходит вместе с нырком корпуса. */
+  .screen .hero-shot{
     position:absolute;
-    inset:0;
+    top:0;
+    left:0;
     width:100%;
     height:100%;
     object-fit:cover;
+    object-position:center top;
     display:block;
     z-index:2;
   }
@@ -258,93 +416,31 @@
     /* размер задаёт JS: экран рендерится с запасом по плотности,
        иначе на масштабе финала растр не тянет */
     border:0;
+    opacity:1;
+    filter:none;
+    mix-blend-mode:normal;
+    background:#fff;
     transform-origin:0 0;
     /* scale считает JS от фактического размера .screen */
   }
-
-  /* Devices.css / iPhone 14 Pro — адаптировано под наш живой 3D-корпус.
-     Оригинальная геометрия 428x868 масштабируется через --h, а экраном
-     остаются текущие iframe и video, поэтому скролл-сценарий не меняется. */
+  /* От исходной iPhone-геометрии остаются только пропорции и скругление. */
   .box.device-iphone-14-pro{
     --w:calc(var(--h) * 0.49309); /* 428 / 868 */
     --r:calc(var(--h) * 0.07834); /* 68 / 868 */
   }
   .box.device-iphone-14-pro .device-frame{
-    background:#010101;
-    border:calc(var(--h) * 0.00115) solid #5c5956;
-    box-shadow:
-      inset 0 0 calc(var(--h) * 0.00461) calc(var(--h) * 0.00230) rgba(255,255,255,.76),
-      inset 0 0 0 calc(var(--h) * 0.00691) #76726f;
+    /* Непрозрачная подложка не даёт карточкам сцены просвечивать сквозь
+       узкий зазор между приложением и единым стеклянным ободком. */
+    background:#fff;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    border:0;
+    box-shadow:none;
   }
   .box.device-iphone-14-pro .device-screen{
-    inset:calc(var(--h) * 0.02189); /* 19 / 868 */
-    border-radius:calc(var(--h) * 0.05645); /* 49 / 868 */
+    inset:calc(var(--h) * .0045);
+    border-radius:calc(var(--r) - var(--h) * .0045);
   }
-  .box.device-iphone-14-pro .device-stripe,
-  .box.device-iphone-14-pro .device-header,
-  .box.device-iphone-14-pro .device-sensors,
-  .box.device-iphone-14-pro .device-btns,
-  .box.device-iphone-14-pro .device-power,
-  .box.device-iphone-14-pro .device-home{pointer-events:none}
-  .box.device-iphone-14-pro .device-stripe::before,
-  .box.device-iphone-14-pro .device-stripe::after{
-    content:''; position:absolute; left:0; width:100%;
-    height:calc(var(--h) * 0.00806);
-    border:solid rgba(1,1,1,.25);
-    border-width:0 calc(var(--h) * 0.00806);
-    z-index:9;
-  }
-  .box.device-iphone-14-pro .device-stripe::after{top:calc(var(--h) * 0.09793)}
-  .box.device-iphone-14-pro .device-stripe::before{bottom:calc(var(--h) * 0.09793)}
-  .box.device-iphone-14-pro .device-header{
-    position:absolute; z-index:10; top:calc(var(--h) * 0.03341); left:50%;
-    width:calc(var(--h) * 0.13825); height:calc(var(--h) * 0.04032);
-    border-radius:1000px; background:#010101; transform:translateX(-50%);
-  }
-  .box.device-iphone-14-pro .device-sensors::before,
-  .box.device-iphone-14-pro .device-sensors::after{content:'';position:absolute;z-index:11}
-  .box.device-iphone-14-pro .device-sensors::after{
-    top:calc(var(--h) * 0.03456); left:50%;
-    width:calc(var(--h) * 0.08525); height:calc(var(--h) * 0.03802);
-    margin-left:calc(var(--h) * -0.06912); border-radius:1000px; background:#010101;
-  }
-  .box.device-iphone-14-pro .device-sensors::before{
-    top:calc(var(--h) * 0.04839); left:50%;
-    width:calc(var(--h) * 0.01037); height:calc(var(--h) * 0.01037);
-    margin-left:calc(var(--h) * 0.04147); border-radius:50%;
-    background:radial-gradient(farthest-corner at 20% 20%,#6074bf 0,transparent 40%),radial-gradient(farthest-corner at 80% 80%,#513785 0,#24555e 20%,transparent 50%);
-    box-shadow:0 0 1px 1px rgba(255,255,255,.05);
-  }
-  .box.device-iphone-14-pro .device-btns,
-  .box.device-iphone-14-pro .device-btns::before,
-  .box.device-iphone-14-pro .device-btns::after,
-  .box.device-iphone-14-pro .device-power{
-    position:absolute; z-index:4; width:calc(var(--h) * 0.00346);
-    border-radius:calc(var(--h) * 0.00230); background:#5c5956;
-  }
-  .box.device-iphone-14-pro .device-btns{
-    top:calc(var(--h) * 0.13249); left:calc(var(--h) * -0.00230);
-    height:calc(var(--h) * 0.03687);
-  }
-  .box.device-iphone-14-pro .device-btns::before,
-  .box.device-iphone-14-pro .device-btns::after{
-    content:''; left:0; height:calc(var(--h) * 0.07143);
-  }
-  .box.device-iphone-14-pro .device-btns::after{top:calc(var(--h) * 0.06912)}
-  .box.device-iphone-14-pro .device-btns::before{top:calc(var(--h) * 0.16129)}
-  .box.device-iphone-14-pro .device-power{
-    top:calc(var(--h) * 0.23041); right:calc(var(--h) * -0.00230);
-    height:calc(var(--h) * 0.11521);
-  }
-  .box.device-iphone-14-pro .device-home::before,
-  .box.device-iphone-14-pro .device-home::after{
-    content:''; position:absolute; z-index:9;
-    width:calc(var(--h) * 0.00691); height:calc(var(--h) * 0.00691);
-    border:solid rgba(1,1,1,.25); border-width:calc(var(--h) * 0.00691) 0;
-  }
-  .box.device-iphone-14-pro .device-home::after{top:0;right:calc(var(--h) * 0.09908)}
-  .box.device-iphone-14-pro .device-home::before{bottom:0;left:calc(var(--h) * 0.09908)}
-
   /* место, куда садится карточка */
   .slot{align-self:stretch}
 
@@ -410,34 +506,12 @@
       radial-gradient(closest-side at 34% 66%, rgba(120,240,190,.24), transparent 64%);
   }
   /* маска гасит прямую кромку картинки: у исходника градиент обрезан прямоугольником */
-  .hero-glow .gimg,
-  .bottom-glow .gimg{
+  .hero-glow .gimg{
     position:absolute;
     inset:0;
     -webkit-mask-image:radial-gradient(closest-side, #000 42%, rgba(0,0,0,.35) 72%, transparent 100%);
     mask-image:radial-gradient(closest-side, #000 42%, rgba(0,0,0,.35) 72%, transparent 100%);
   }
-
-  /* --- нижнее пятно: растёт, пока идут бенефиты --- */
-  .bottom-glow{
-    position:absolute;
-    left:50%;
-    top:50%;
-    width:min(140vw,1900px);
-    height:min(140vw,1900px);
-    margin-left:min(-70vw,-950px);    /* центрирование не трансформом: его пишет GSAP */
-    margin-top:min(-70vw,-950px);
-    z-index:0;                        /* самый низ, под свечением */
-    transform-origin:50% 50%;         /* растёт из центра сцены */
-    /* цвет поверх картинки: пятно заметнее, фильтры не нужны */
-    background:
-      radial-gradient(closest-side, rgba(15,165,216,.20), transparent 70%),
-      radial-gradient(closest-side at 40% 60%, rgba(120,240,190,.22), transparent 66%);
-    z-index:0;
-    opacity:0;
-    pointer-events:none;
-  }
-
 
   /* --- тёмная тема с раздела «ИИ-идеи» --- */
   .veil{
@@ -447,6 +521,27 @@
     background:radial-gradient(120% 90% at 50% 32%, #131820 0%, #05070A 72%);
     opacity:0;
     pointer-events:none;
+  }
+  .assistant-bg{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    opacity:0;
+    overflow:hidden;
+    pointer-events:none;
+    background:#070D11;
+  }
+  .assistant-bg::after{
+    content:'';
+    position:absolute;
+    inset:-3%;
+    opacity:var(--assistant-glow,0);
+    transform:scale(var(--assistant-glow-scale,1.055));
+    transform-origin:68% 18%;
+    background:url('/assets/generated/assistant-blue-glow.svg') center/cover no-repeat;
+  }
+  @media(max-width:900px){
+    .assistant-bg::after{inset:-7%;background-position:58% 14%}
   }
 
   /* --- магический свет по периметру ---
@@ -545,17 +640,6 @@
   @media (min-width:700px){
     .box{--h:clamp(500px,min(78vh,54vw),1000px)}
   }
-  .phone-glow{
-    position:absolute;
-    left:50%;
-    top:76%;
-    z-index:5;
-    width:min(122vw,1831px);
-    height:auto;
-    opacity:0;
-    pointer-events:none;
-    transform:translate(-50%,-50%);
-  }
   body.menu-open{overflow-x:hidden}
   .site-menu{
     position:fixed;
@@ -622,7 +706,7 @@
     background:transparent;
     color:#fff;
     font:600 13px/1 'Onest',system-ui,sans-serif;
-    cursor:pointer;
+    cursor:default;
   }
   .menu-close > span{display:none}
   .menu-close b{
@@ -739,14 +823,15 @@
     padding-right:24px;
     font-family:'Onest',system-ui,sans-serif;
   }
-  .hdr,.hdr *,.hero,.hero *{font-family:'Onest',system-ui,sans-serif}
+  .hdr,.hdr *{font-family:'Onest',system-ui,sans-serif}
+  .hero,.hero *{font-family:var(--heading)}
   .hero h1{
     margin:0;
     font-kerning:normal;
     text-rendering:optimizeLegibility;
     transform:translateZ(0);
-    font-family:'Onest',system-ui,sans-serif;
-    font-weight:700;
+    font-family:var(--heading);
+    font-weight:500;
     text-transform:none;
     font-size:clamp(62px,6.84vw,102.61px);
     /* внутри маски строчный бокс полный, иначе overflow срезает буквы.
@@ -804,32 +889,59 @@
   .hero{
     left:0;
     right:0;
-    top:15vh;
-    z-index:7;
+    top:20vh;
+    z-index:5;
     max-width:none;
     padding:0 var(--pad);
-    text-align:center;
+    text-align:left;
   }
   .hero h1{
     color:#fff;
-    font-size:clamp(72px,8.4vw,176px);
+    font-size:clamp(43px,4.13vw,88px);
     line-height:.94;
     letter-spacing:-.045em;
     white-space:nowrap;
+    text-align:left;
+  }
+  .hero p,
+  .hero p *{
+    font-family:'Onest',system-ui,sans-serif;
   }
   .hero p{
-    margin:26px auto 0;
-    max-width:min(980px,72vw);
+    margin:46px 0 0;
+    max-width:min(760px,42vw);
     color:#fff;
     font-size:clamp(20px,1.35vw,28px);
-    font-weight:500;
+    font-weight:400;
     line-height:1.35;
     letter-spacing:-.01em;
-    text-align:center;
+    text-align:left;
   }
+  .hero-download{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:min(520px,36vw);
+    height:clamp(92px,7vw,120px);
+    margin-top:clamp(34px,3vw,52px);
+    border-radius:999px;
+    background:#0400FA;
+    box-shadow:0 18px 52px rgba(4,0,250,.34);
+    color:#fff;
+    font:600 clamp(24px,1.65vw,32px)/1 'Onest',system-ui,sans-serif;
+    text-decoration:none;
+    pointer-events:auto;
+    transition:transform .24s cubic-bezier(.22,1,.36,1),box-shadow .24s ease;
+  }
+  .hero-download:hover{transform:translateY(-4px);box-shadow:0 24px 62px rgba(4,0,250,.46)}
+  .hero-download:active{transform:translateY(0) scale(.98)}
+  .hero-download:focus-visible{outline:3px solid #fff;outline-offset:5px}
   .scroll-cue{
+    position:absolute;
+    left:var(--pad);
+    top:calc(80vh - 80px);
     width:48px;
-    margin:44px auto 0;
+    margin:0;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -852,9 +964,13 @@
   }
   @media (max-width:900px){
     .hero{top:16vh}
-    .hero h1{white-space:normal;font-size:clamp(48px,12vw,74px)}
+    .hero h1{white-space:normal;font-size:clamp(22px,5.8vw,44px)}
+    .hero p{max-width:min(620px,86vw)}
+    .hero-download{width:min(342px,86vw);height:76px;margin-top:26px;font-size:22px}
+    .scroll-cue{top:calc(84vh - 68px)}
     .hero-band::after{width:max(230vw,190vh);transform:translate(-50%,-68%) rotate(-15deg)}
   }
+  @media (prefers-reduced-motion:reduce){.hero-download{transition:none}}
 
   /* маски строк и слов: буквы выныривают из-за края.
      padding с отрицательным margin нужен, чтобы не срезало выносные элементы */
@@ -928,7 +1044,6 @@
   .gimg{background-repeat:no-repeat;background-position:center;background-size:contain}
   .g1{background-image:url(/assets/generated/d5ef11bace0f.webp)}
   .g2{background-image:url(/assets/generated/fb27c9fff4b8.webp)}
-  .g3{background-image:url(/assets/generated/2b206c3e4e47.webp)}
   .gh{background-image:url(/assets/generated/f3e457f0870b.webp)}
 
   /* --- облако тегов: расходится, освобождая центр под промт --- */
@@ -1072,7 +1187,7 @@
     position:absolute;
     inset:0;
     z-index:1;
-    background:#EFFF5D;
+    background:var(--charge-bg);
     opacity:0;
     pointer-events:none;
   }
@@ -1089,21 +1204,17 @@
     pointer-events:none;
   }
 
-  /* вайбы поездки: разбросаны сверху, приходят по скроллу зарядки */
-  .vibes{position:absolute;inset:0;z-index:4;pointer-events:none}
+  /* Подписи занимают свободные зоны вокруг корпуса и лежат над заголовком. */
+  .vibes{position:absolute;inset:0;z-index:5;pointer-events:none}
   .vibes span{
     position:absolute;
     font-family:var(--display);
-    font-weight:900;
-    font-size:clamp(20px,2.3vw,44px);
-    text-transform:lowercase;
-    color:var(--ink);
+    font-weight:650;
+    font-size:clamp(17px,min(1.45vw,2.5vh),28px);
+    letter-spacing:-.035em;
+    color:#070B0C;
     opacity:0;
   }
-  /* корпус занимает центр: на узких экранах средние подписи убираем,
-     иначе их режет телефон */
-  @media (max-width:1500px){ .vibes span:nth-child(3){display:none} }
-  @media (max-width:1180px){ .vibes span:nth-child(2),.vibes span:nth-child(4){display:none} }
 
   /* на жёлтом screen-блендинг слепнет: частицы переходят на плотный акцент */
   /* на жёлтом бирюза мутнела в оливу; #5DFF5D в тон фону остаётся чистым */
@@ -1253,7 +1364,12 @@
     margin:-.30em -.12em -.26em -.05em;
   }
   .caption .cw>i{display:inline-block;font-style:normal;}
-  .caption-heading{display:block}
+  .caption-heading{
+    display:block;
+    font-family:var(--heading);
+    font-weight:500;
+  }
+  #cap0{font-family:var(--heading);font-weight:500}
   .caption.left {right:calc(50% + 190px); text-align:right}
   .caption.right{left: calc(50% + 190px); text-align:left}
   /* «Чем заняться»: блок правее и ниже центра, как на фото */
@@ -1267,16 +1383,115 @@
   }
   #cap1 em{margin-top:28px;max-width:25em}
   #cap1 .cchips{margin-top:26px}
-  /* «помощник в приложении»: блок слева, под ним чек-лист */
+  /* «Помощник»: оставляем короткое пояснение, основной сюжет идёт сообщениями. */
   #cap2{
-    top:50%;
-    transform:translateY(-50%);
+    top:24vh;
+    transform:none;
     left:clamp(72px,8vw,150px); right:auto;
     text-align:left;
-    width:min(39vw,680px);
-    font-size:clamp(66px,5.8vw,102px);
+    width:min(30vw,510px);
+    font-size:inherit;
   }
-  #cap2 em{margin-top:20px}
+  #cap2 .caption-heading{display:none}
+  #cap2 em{
+    margin:0;
+    max-width:19em;
+    color:rgba(255,255,255,.66);
+    font-size:clamp(21px,1.65vw,30px);
+    font-weight:500;
+    line-height:1.34;
+    letter-spacing:-.025em;
+  }
+  body.is-dark #cap2 em{color:rgba(255,255,255,.66)}
+  .assistant-chat{
+    position:absolute;
+    z-index:4;
+    left:38vw;
+    right:clamp(62px,7vw,140px);
+    top:23vh;
+    height:min(67vh,720px);
+    pointer-events:none;
+  }
+  .assistant-exchange{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    gap:clamp(24px,3.4vh,42px);
+    opacity:0;
+    pointer-events:none;
+  }
+  .assistant-message{
+    position:relative;
+    box-sizing:border-box;
+    margin:0;
+    opacity:0;
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+  }
+  .assistant-message p{margin:0}
+  .assistant-message__label{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:clamp(13px,1.5vh,18px);
+    font:650 clamp(13px,.9vw,16px)/1 'Onest',system-ui,sans-serif;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .assistant-message--user{
+    isolation:isolate;
+    overflow:hidden;
+    align-self:flex-end;
+    width:min(77%,760px);
+    padding:clamp(28px,3.1vw,48px) clamp(32px,3.6vw,58px);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:clamp(30px,2.8vw,48px) clamp(30px,2.8vw,48px) 12px clamp(30px,2.8vw,48px);
+    color:#fff;
+    background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.055));
+    box-shadow:0 30px 80px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.10);
+    font:500 clamp(34px,3.25vw,62px)/1.02 var(--heading);
+    letter-spacing:-.045em;
+  }
+  .assistant-message--user::before{
+    content:'';
+    position:absolute;
+    z-index:-1;
+    inset:0;
+    background:linear-gradient(110deg,rgba(151,255,226,.27),rgba(114,222,255,.16));
+    transform:scaleX(var(--request-fill,0));
+    transform-origin:left center;
+  }
+  .assistant-message--user .assistant-message__label{color:rgba(255,255,255,.54)}
+  .assistant-message--agent{
+    align-self:flex-start;
+    width:min(92%,920px);
+    padding:clamp(30px,3.35vw,54px) clamp(34px,4vw,66px);
+    border:1px solid rgba(255,255,255,.58);
+    border-radius:12px clamp(32px,3vw,52px) clamp(32px,3vw,52px) clamp(32px,3vw,52px);
+    color:#101626;
+    background:
+      radial-gradient(circle at 92% 10%,rgba(89,84,255,.20),transparent 38%),
+      linear-gradient(135deg,rgba(255,255,255,.98),rgba(225,231,255,.94));
+    box-shadow:0 34px 110px rgba(11,5,100,.34),0 0 90px rgba(52,45,255,.18);
+    font:500 clamp(31px,2.85vw,54px)/1.08 var(--heading);
+    letter-spacing:-.045em;
+  }
+  .assistant-message--agent strong{font-weight:700}
+  .assistant-message--agent .assistant-message__label{color:rgba(16,22,38,.54)}
+  .assistant-message--agent .assistant-message__label i{
+    width:9px;height:9px;border-radius:50%;
+    background:#433CFF;
+    box-shadow:0 0 0 5px rgba(67,60,255,.12),0 0 18px rgba(67,60,255,.72);
+  }
+  @media(max-width:900px){
+    #cap2{left:24px;right:24px;top:15vh;bottom:auto!important;width:auto}
+    #cap2 em{font-size:clamp(18px,4.6vw,24px);max-width:25em}
+    .assistant-chat{left:20px;right:20px;top:34vh;height:58vh}
+    .assistant-exchange{gap:18px}
+    .assistant-message--user{width:88%;padding:24px 26px;font-size:clamp(27px,7vw,38px)}
+    .assistant-message--agent{width:96%;padding:26px 28px;font-size:clamp(25px,6.4vw,35px)}
+  }
   .ticks{display:flex;flex-direction:column;align-items:flex-start;gap:9px;margin-top:26px}
   .tick{
     position:relative;
@@ -1322,8 +1537,8 @@
   .tick s svg{display:block;flex:0 0 auto;width:17px;height:17px;margin-left:9px}
   body.is-dark .tick{background:rgba(255,255,255,.10);color:#fff}
   /* «куда сходить»: заголовок слева, абзац ниже, теги справа — по макету */
-  #cap0{left:clamp(88px,9.5vw,180px); right:auto; top:32vh; text-align:left; width:min(32vw,560px)}
-  #side0{left:clamp(88px,9.5vw,180px); top:56.5vh; width:min(29vw,460px)}
+  #cap0{left:9.6vw;right:auto;top:32.6vh;text-align:left;width:min(31.5vw,472px)}
+  #side0{left:9.6vw;top:56.8vh;width:min(30.5vw,458px)}
   #side0 p{margin:0}   /* без верхнего отступа: абзац встаёт ровно по линии чипсов */
   /* чипсы: внутри заголовков и отдельным облаком справа */
   .cchips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
@@ -1344,9 +1559,9 @@
   .cchip.acc{background:linear-gradient(135deg,#D1FFEB,#D1FFFA)}
   .ctags{
     position:absolute;
-    left:calc(50% + min(17vw,300px));
+    left:68.2vw;
     right:auto;
-    top:55vh;
+    top:58.7vh;
     align-content:flex-start;
     z-index:5;
     width:min(31vw,500px);
@@ -1357,57 +1572,28 @@
     opacity:0;
     pointer-events:none;
   }
-  /* аудиодорожка: столбики дышат, подпись про аудиогид */
-  .awave{
-    position:absolute;
-    left:calc(50% + min(17vw,300px));
-    right:auto;
-    top:46vh;
-    z-index:5;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;   /* по левому краю, как чипсы ниже */
-    width:min(31vw,500px);
-    gap:10px;
-    opacity:0;
-    pointer-events:none;
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-  }
-  .awave .bars{display:flex;align-items:center;gap:5px;height:31px}
-  .awave .bars i{
-    width:5px;
-    border-radius:3px;
-    background:var(--ink);
-    height:24%;
-    animation:awb 1.1s ease-in-out infinite;
-  }
-  .awave .bars i:nth-child(1){animation-delay:0s}
-  .awave .bars i:nth-child(2){animation-delay:.14s}
-  .awave .bars i:nth-child(3){animation-delay:.28s}
-  .awave .bars i:nth-child(4){animation-delay:.07s}
-  .awave .bars i:nth-child(5){animation-delay:.21s}
-  .awave .bars i:nth-child(6){animation-delay:.35s}
-  .awave .bars i:nth-child(7){animation-delay:.17s}
-  @keyframes awb{0%,100%{height:22%}50%{height:96%}}
-  @media (prefers-reduced-motion:reduce){.awave .bars i{animation:none;height:60%}}
-  .awave span{font-size:clamp(17px,1.25vw,20px);font-weight:500;letter-spacing:-.015em;color:#56616A}
-  @media (max-width:1180px){.ctags,.awave{display:none}}
+  @media (max-width:1180px){.ctags{display:none}}
   @media (max-aspect-ratio:4/3) and (min-width:1181px){
     #cap1{left:calc(50% + 205px);width:min(32vw,570px);font-size:clamp(76px,5.7vw,94px)}
   }
-  /* «Заряжаем / поездку»: две строки, каждая во всю ширину, за корпусом (z:4 < 6) */
+  /* «Заряжаем / поездку»: две строки с безопасными полями под корпусом телефона. */
   #cap3{
-    left:0; right:0;
+    left:5vw; right:5vw;
     top:50%;
     width:auto;
+    box-sizing:border-box;
+    z-index:4;
+    translate:0 -50%;
     text-align:center;
     white-space:nowrap;
-    line-height:0.83;
+    line-height:0.84;
+    letter-spacing:-.075em;
   }
   #cap3 .ln{
     display:block;
-    font-family:var(--display-cc);
-    font-weight:400;              /* у Climate Crisis одно начертание */
+    font-family:var(--heading);
+    max-width:100%;
+    font-weight:700;
     /* заливка зарядки: граница едет по скроллу через --chg (пишет тикер).
        незалитая часть плотнее: на .55 огромный кегль читался тонким */
     background:linear-gradient(90deg, #14202A 48%, rgba(20,32,42,.30) 52%);
@@ -1417,9 +1603,11 @@
     background-clip:text;
     color:transparent;
   }
-  /* во всю ширину: у Geologica буквы уже, чем у Climate Crisis, поэтому кегль выше */
-  #cap3 .l1{font-size:clamp(56px,12.2vw,240px)}
-  #cap3 .l2{font-size:clamp(60px,14.0vw,270px)}
+  #cap3 .l1{font-size:clamp(60px,min(12.5vw,25vh),320px)}
+  #cap3 .l2{font-size:clamp(66px,min(14.4vw,27vh),350px)}
+  @media (min-width:901px) and (min-aspect-ratio:16/9){
+    #cap3{top:47%;line-height:.78}
+  }
   /* боковой блок: пояснение справа от корпуса */
   .sidebox{
     position:absolute;
@@ -1472,10 +1660,20 @@
     .caption,.caption.left,.caption.right{
       width:auto;left:0;right:0;top:auto;bottom:7vh;text-align:center;font-size:34px;
     }
+    #cap3{top:55%;bottom:auto;line-height:.82}
+    #cap3 .l1{font-size:min(12.5vw,10vh,88px)}
+    #cap3 .l2{font-size:min(14.4vw,11vh,96px)}
+    .vibes span{display:block;font-size:clamp(14px,3.6vw,18px)}
+    .vibes span:nth-child(1){left:5%!important;top:18vh!important}
+    .vibes span:nth-child(2){left:6%!important;top:36vh!important}
+    .vibes span:nth-child(3){left:29%!important;top:26vh!important}
+    .vibes span:nth-child(4){right:5%!important;top:37vh!important}
+    .vibes span:nth-child(5){right:5%!important;top:19vh!important}
   }
 
-  /* Короче путь между сценами: следующая фаза наступает без длинного пустого прокрута. */
-  .spacer{height:1220vh}
+  /* Дополнительная длина отдана четырём диалогам помощника. Пропорция сохраняет
+     прежнюю скорость всех глав до и после него. */
+  .spacer{height:1860vh}
 
   /* сцена и спейсер в одной обёртке: sticky заканчивается на её границе,
      дальше страница идёт обычным потоком */
@@ -1483,6 +1681,12 @@
 
   /* Погода продолжает pinned-сцену «Куда сходить». Фон находится в том же
      stacking context, поэтому один живой телефон проходит поверх него без дубля. */
+  body.weather-active #cap0,
+  body.weather-active #side0,
+  body.weather-active #ctags{
+    opacity:0!important;
+    visibility:hidden!important;
+  }
   .weather-story{
     position:absolute;
     inset:0;
@@ -1498,27 +1702,16 @@
   .weather-layer{position:absolute;inset:-1px;pointer-events:none}
   .weather-base{
     z-index:0;
-    background:linear-gradient(128deg,#BDF3FF 0%,#69C8FF 100%);
+    background:linear-gradient(128deg,#D8F6FF 0%,#92D9F8 100%);
   }
   .weather-picture{z-index:1;display:block;margin:0;overflow:hidden}
+  .weather-picture--dark{z-index:2;opacity:0}
   .weather-picture img{
     width:100%;height:100%;display:block;object-fit:cover;object-position:center;
     transform:scale(1.015);
   }
-  .weather-wash{
-    z-index:2;
-    background:linear-gradient(128deg,rgba(189,243,255,.52),rgba(105,200,255,.34));
-    mix-blend-mode:screen;
-  }
-  .weather-rain{
-    z-index:3;
-    opacity:0;
-    background:
-      radial-gradient(circle at 70% 18%,rgba(83,142,177,.18),transparent 44%),
-      linear-gradient(122deg,rgba(33,69,92,.54),rgba(20,54,77,.30));
-  }
   .weather-noise{
-    z-index:4;
+    z-index:3;
     opacity:.25;
     background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.62'/%3E%3C/svg%3E");
     background-size:180px 180px;
@@ -1527,27 +1720,49 @@
   .weather-composition{position:absolute;inset:0;z-index:5}
   .weather-temp{
     position:absolute;
-    left:clamp(28px,7.2vw,138px);
-    top:50%;
-    width:min(34vw,650px);
-    height:clamp(210px,33vmin,410px);
+    left:clamp(44px,9.5vw,190px);
+    top:48%;
+    width:min(38vw,760px);
+    height:clamp(280px,40vmin,500px);
     color:#fff;
-    font:750 clamp(190px,28vmin,390px)/.78 'Onest',system-ui,sans-serif;
-    letter-spacing:-.085em;
+    font:500 clamp(230px,36vmin,470px)/.78 var(--heading);
+    font-kerning:none;
+    letter-spacing:0;
     white-space:nowrap;
-    transform:translateY(-48%);
+    overflow:hidden;
+    perspective:900px;
+    perspective-origin:50% 50%;
+    transform:translateY(-50%);
     text-shadow:0 10px 45px rgba(54,136,183,.12);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%,#000 87%,transparent 100%);
+    mask-image:linear-gradient(180deg,transparent 0,#000 13%,#000 87%,transparent 100%);
   }
-  .weather-temp span{position:absolute;inset:0;display:flex;align-items:center}
-  .weather-temp-new{opacity:0}
+  .weather-temp-reel{
+    width:100%;
+    height:500%;
+    display:flex;
+    flex-direction:column;
+    transform-style:preserve-3d;
+  }
+  .weather-temp-reel span{
+    position:relative;
+    inset:auto;
+    display:flex;
+    flex:0 0 20%;
+    align-items:center;
+    transform-style:preserve-3d;
+    transform-origin:50% 50%;
+    backface-visibility:hidden;
+  }
   .weather-title{
     position:absolute;
-    right:clamp(34px,6.2vw,124px);
-    top:50%;
-    width:min(31vw,560px);
+    left:65vw;
+    right:auto;
+    top:48%;
+    width:min(34vw,620px);
     margin:0;
     color:#183242;
-    font:700 clamp(46px,5.1vmin,82px)/.91 'Onest',system-ui,sans-serif;
+    font:500 clamp(46px,5.1vmin,82px)/.91 var(--heading);
     letter-spacing:-.052em;
     transform:translateY(-42%);
   }
@@ -1555,7 +1770,7 @@
   @media(max-width:900px){
     .weather-picture img{object-position:58% center}
     .weather-temp{
-      left:18px;top:25%;width:auto;height:auto;
+      left:18px;top:25%;width:auto;height:clamp(112px,32vw,210px);
       font-size:clamp(112px,32vw,210px);transform:none;
     }
     .weather-title{
@@ -1573,6 +1788,368 @@
   }
   @media(prefers-reduced-motion:reduce){
     .weather-picture img{transform:none!important}
+  }
+
+  /* Следующая глава использует тот же sticky-контекст и тот же телефон.
+     Порядок слоёв: фон 1, trail 2, заголовки 3, телефон 6, аудио 7. */
+  .split-story{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    overflow:hidden;
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    isolation:isolate;
+    contain:layout paint;
+    background:#F7F8F7;
+  }
+  .split-story.is-active{pointer-events:auto}
+  .split-half{
+    position:relative;
+    min-width:0;
+    overflow:hidden;
+    background:#F7F8F7;
+  }
+  .split-half--left{border-right:1px solid rgba(10,23,34,.05)}
+  .split-half__active-bg{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    opacity:0;
+    background:linear-gradient(135deg,#47D7D8 0%,#32E5AC 100%);
+    pointer-events:none;
+  }
+  .split-future-assets{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .split-trail{
+    position:absolute;
+    inset:0;
+    z-index:8;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .scene > .split-trail{inset:0 50% 0 0}
+  .split-trail__item{
+    position:absolute;
+    left:0;
+    top:0;
+    width:var(--trail-width,80px);
+    height:var(--trail-height,50px);
+    display:block;
+    object-fit:contain;
+    filter:drop-shadow(0 9px 12px rgba(10,23,34,.12));
+    pointer-events:none;
+    user-select:none;
+  }
+  .split-kicker{
+    position:absolute;
+    z-index:3;
+    left:clamp(52px,6vw,118px);
+    top:clamp(150px,18vh,220px);
+    margin:0;
+    color:#D2D4D5;
+    font:500 clamp(36px,2.7vw,54px)/1.02 var(--heading);
+    letter-spacing:-.045em;
+    pointer-events:none;
+    transition:color .25s ease;
+  }
+  body.split-left-active .split-kicker{color:#FFF}
+  .split-heading{
+    position:absolute;
+    z-index:3;
+    left:clamp(52px,6vw,118px);
+    bottom:clamp(58px,9vh,118px);
+    margin:0;
+    color:#14202A;
+    font:500 clamp(38px,3.1vw,60px)/.98 var(--heading);
+    letter-spacing:-.055em;
+    pointer-events:none;
+  }
+  .split-half--right .split-heading{
+    left:auto;
+    right:clamp(52px,6vw,118px);
+    text-align:center;
+  }
+  .split-audio-control{
+    position:absolute;
+    z-index:9;
+    left:0;
+    top:0;
+    width:clamp(68px,6vw,96px);
+    height:clamp(68px,6vw,96px);
+    padding:0;
+    border:0;
+    border-radius:50%;
+    color:#07131C;
+    background:rgba(247,255,253,.92);
+    box-shadow:0 10px 32px rgba(10,23,34,.14);
+    opacity:0;
+    pointer-events:none;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .split-audio-control.is-visible{opacity:1;pointer-events:auto}
+  body.split-audio-cursor .scene,
+  body.split-audio-cursor .scene *{cursor:none!important}
+  .split-audio-control:focus-visible{
+    outline:3px solid #14202A;
+    outline-offset:5px;
+  }
+  .split-audio-ring{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:rotate(-90deg);
+    opacity:0;
+  }
+  .split-audio-control.has-progress .split-audio-ring{opacity:1}
+  .split-audio-ring circle{fill:none;stroke-width:2}
+  .split-audio-ring__track{stroke:rgba(10,23,34,.14)}
+  .split-audio-ring__progress{
+    stroke:currentColor;
+    stroke-linecap:round;
+    stroke-dasharray:100;
+    stroke-dashoffset:100;
+  }
+  .split-audio-icon{
+    position:absolute;
+    inset:0;
+    display:grid;
+    place-items:center;
+  }
+  .split-audio-icon i{
+    display:block;
+    width:0;
+    height:0;
+    margin-left:7%;
+    border-top:12px solid transparent;
+    border-bottom:12px solid transparent;
+    border-left:19px solid currentColor;
+  }
+  .split-audio-icon b{display:none;width:18px;height:24px;border-left:6px solid currentColor;border-right:6px solid currentColor}
+  .split-audio-control.is-playing .split-audio-icon i{display:none}
+  .split-audio-control.is-playing .split-audio-icon b{display:block}
+  @media(max-width:900px){
+    .split-story{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+    .split-half--left{border-right:0;border-bottom:1px solid rgba(10,23,34,.05)}
+    .split-heading{
+      left:clamp(22px,4vw,34px);
+      bottom:clamp(24px,5vh,48px);
+      font-size:clamp(32px,5.4vw,40px);
+    }
+    .split-kicker{
+      left:clamp(22px,4vw,34px);
+      top:clamp(96px,13vh,122px);
+      font-size:clamp(28px,4.8vw,36px);
+    }
+    .split-half--right .split-heading{
+      left:clamp(22px,4vw,34px);
+      right:auto;
+      text-align:left;
+    }
+    .split-audio-control{width:72px;height:72px}
+  }
+  @media(hover:none),(pointer:coarse){
+    .split-trail{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .split-trail{display:none}
+    .split-half__active-bg{transition:none}
+  }
+
+  .trip-hub{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    overflow:hidden;
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    contain:layout paint;
+    background:
+      radial-gradient(circle at 50% 42%,rgba(43,75,82,.34),transparent 48%),
+      #070D11;
+    color:#FFF;
+  }
+  .trip-hub.is-active{pointer-events:auto}
+  .trip-hub__title{
+    position:absolute;
+    z-index:2;
+    left:50%;
+    top:clamp(132px,16vh,210px);
+    width:min(82vw,1100px);
+    margin:0;
+    transform:translateX(-50%);
+    font:500 clamp(58px,min(6vw,11vh),112px)/.84 var(--heading);
+    letter-spacing:-.065em;
+    text-align:center;
+  }
+  .trip-hub__title-line-mask{
+    padding:.08em .06em .13em;
+    margin:-.08em -.06em -.13em;
+  }
+  .trip-hub__title-line{transform-origin:50% 100%}
+  .trip-hub__content{
+    position:absolute;
+    z-index:1;
+    left:clamp(24px,7vw,140px);
+    right:clamp(24px,7vw,140px);
+    top:clamp(330px,35vh,500px);
+    bottom:clamp(34px,5vh,76px);
+    max-width:1500px;
+    margin:auto;
+  }
+  .trip-hub__list{
+    position:absolute;
+    inset:50% 0 auto;
+    z-index:2;
+    transform:translateY(-50%);
+  }
+  .trip-hub__item{
+    position:relative;
+    isolation:isolate;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    width:100%;
+    min-height:clamp(66px,8vh,86px);
+    padding:0;
+    border:0;
+    border-bottom:1px solid rgba(255,255,255,.14);
+    border-radius:0;
+    background:none;
+    color:rgba(255,255,255,.46);
+    font:inherit;
+    text-align:left;
+    cursor:pointer;
+    transition:color .42s cubic-bezier(.4,0,.2,1);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .trip-hub__item:first-child{border-top:1px solid rgba(255,255,255,.14)}
+  .trip-hub__item:is(:hover,.is-active){color:#FFF}
+  .trip-hub__number{
+    grid-column:2;
+    grid-row:1;
+    align-self:center;
+    justify-self:end;
+    font:650 clamp(14px,1vw,17px)/1 'Onest',system-ui,sans-serif;
+    letter-spacing:.16em;
+    color:rgba(255,255,255,.46);
+    transition:color .42s cubic-bezier(.4,0,.2,1);
+  }
+  .trip-hub__item:is(:hover,.is-active) .trip-hub__number{color:rgba(255,255,255,.92)}
+  .trip-hub__label{
+    position:relative;
+    z-index:0;
+    grid-column:1;
+    grid-row:1;
+    display:block;
+    width:fit-content;
+    max-width:980px;
+    padding:16px 0;
+    font:500 clamp(21px,1.7vw,30px)/1.2 'Onest',system-ui,sans-serif;
+    letter-spacing:-.025em;
+  }
+  .trip-hub__label::before{
+    content:'';
+    position:absolute;
+    z-index:-1;
+    left:-.15em;
+    right:-.15em;
+    bottom:.16em;
+    height:.76em;
+    border-radius:100%;
+    opacity:0;
+    background:#0400FA;
+    box-shadow:0 0 28px rgba(4,0,250,.72),0 0 54px rgba(4,0,250,.42);
+    filter:blur(18px);
+    transform:scaleX(.72) scaleY(.72);
+    transform-origin:center;
+    transition:opacity .58s cubic-bezier(.22,.7,.24,1),transform .72s cubic-bezier(.16,.7,.22,1);
+  }
+  .trip-hub__item:is(:hover,.is-active) .trip-hub__label::before{
+    opacity:.9;
+    transform:scaleX(1) scaleY(.92);
+  }
+  .trip-hub__preview{
+    position:absolute;
+    z-index:3;
+    left:50%;
+    top:64%;
+    width:clamp(380px,34vw,572px);
+    aspect-ratio:320/432;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translate(-50%,-50%);
+  }
+  .trip-hub__preview-card{
+    position:absolute;
+    inset:0;
+    display:block;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:clamp(20px,2vw,30px);
+    background:#111A20;
+    box-shadow:0 28px 70px rgba(0,0,0,.38),0 0 0 1px rgba(255,255,255,.04) inset;
+    opacity:0;
+    visibility:hidden;
+    contain:paint;
+  }
+  .trip-hub__preview-image{
+    position:absolute;
+    inset:0;
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .trip-hub__preview-image--blur{
+    opacity:1;
+    filter:blur(16px);
+    transform:scale(1.14);
+  }
+  .trip-hub__preview-image--sharp{opacity:0}
+  @media(hover:none),(pointer:coarse){
+    .trip-hub__preview{display:none}
+  }
+  @media(max-width:900px){
+    .trip-hub__title{top:clamp(104px,15vh,150px);width:90vw;font-size:clamp(46px,min(12vw,9vh),78px)}
+    .trip-hub__content{
+      top:clamp(240px,31vh,320px);
+      bottom:18px;
+    }
+    .trip-hub__item{
+      grid-template-columns:minmax(0,1fr) auto;
+      min-height:clamp(43px,6.4vh,56px);
+    }
+    .trip-hub__label{
+      grid-column:1;
+      padding:9px 0;
+      font-size:clamp(17px,4.2vw,21px);
+      line-height:1.18;
+    }
+  }
+  @media(max-height:820px) and (min-width:901px){
+    .trip-hub__title{top:84px;font-size:clamp(54px,8.5vh,72px)}
+    .trip-hub__content{top:230px;bottom:24px}
+    .trip-hub__item{min-height:62px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .trip-hub__item,
+    .trip-hub__number,
+    .trip-hub__label,
+    .trip-hub__label::before{transition:none}
+    .trip-hub__item:is(:hover,.is-active) .trip-hub__label::before{opacity:.88;transform:scale(1)}
   }
 
   /* гигантская кнопка «Погнали»: во всю ширину, между сценой и рутиной */
@@ -1677,8 +2254,8 @@
   }
   .routine h2{
     margin:0;
-    font-family:var(--display);
-    font-weight:900;
+    font-family:var(--heading);
+    font-weight:500;
     font-size:clamp(44px,7vw,132px);
     letter-spacing:-.01em;
     line-height:0.83;
@@ -1686,6 +2263,15 @@
     text-align:center;
     color:var(--ink);
   }
+  .hero h1,
+  .caption-heading,
+  #cap0,
+  #cap3 .ln,
+  .weather-title,
+  .split-kicker,
+  .split-heading,
+  .trip-hub__title,
+  .routine h2{letter-spacing:0}
   /* появление по словам: каждое выезжает из-под своей маски */
   .routine h2 .w{
     display:inline-block;
@@ -1750,44 +2336,48 @@
     .fan{width:230px;height:300px}
   }
   .tail-space{height:0}
-  .hud{position:fixed;left:24px;bottom:24px;font-size:13px;color:#5A6B78;font-variant-numeric:tabular-nums}
-  /* Декоративный скролл-индикатор. Внутренняя маска обрезает прозрачные
-     поля исходного SVG 64x932 до фактической графики между y=328 и y=604. */
+  /* Неподвижная шкала всей страницы: JS меняет только длину и прозрачность рисок. */
   .scroll-indicator{
-    --scroll-indicator-width:clamp(56px,4.3vw,64px);
+    --indicator-color:rgb(0 0 0 / .05);
     position:fixed;
     z-index:24;
     left:0;
-    top:clamp(94px,11vh,122px);
-    bottom:clamp(30px,5vh,54px);
-    width:var(--scroll-indicator-width);
+    top:clamp(96px,12vh,128px);
+    width:64px;
+    height:min(70vh,932px);
+    color:var(--indicator-color);
     pointer-events:none;
-    overflow:visible;
-    opacity:.88;
-    transition:opacity .35s ease;
+    overflow:hidden;
+    opacity:1;
+    transition:color 300ms ease,opacity .35s ease;
     contain:layout paint;
   }
-  .scroll-indicator__marker{
+  .scroll-indicator__scale{
     position:absolute;
-    top:0;
-    left:0;
-    width:var(--scroll-indicator-width);
-    height:calc(var(--scroll-indicator-width) * 4.3125); /* 276 / 64 */
-    overflow:hidden;
+    inset:0;
   }
-  .scroll-indicator__graphic{
+  .scroll-indicator__line{
     position:absolute;
-    top:calc(var(--scroll-indicator-width) * -5.125); /* -328 / 64 */
-    left:0;
+    left:16px;
     display:block;
-    width:var(--scroll-indicator-width);
-    height:auto;
-    filter:drop-shadow(0 0 5px rgba(10,23,34,.22));
-    user-select:none;
+    width:9px;
+    height:3px;
+    border-radius:1.5px;
+    background:currentColor;
   }
   body.is-loading .scroll-indicator{opacity:0}
+  body.is-loading .scroll-indicator,
+  body.is-dark .scroll-indicator,
+  body.trip-hub-active .scroll-indicator,
+  body.menu-on-dark .scroll-indicator,
+  body.menu-open .scroll-indicator,
+    body.weather-active .scroll-indicator,
+    body.split-left-active .scroll-indicator{
+    --indicator-color:rgb(255 255 255 / 1);
+  }
+  body.is-charge .scroll-indicator{--indicator-color:rgb(10 23 34 / .72)}
   @media (max-width:1100px){
-    .scroll-indicator{--scroll-indicator-width:56px;left:-4px}
+    .scroll-indicator{width:56px}
   }
   @media (max-width:900px){.scroll-indicator{display:none}}
   @media (prefers-reduced-motion:reduce){
@@ -1860,6 +2450,7 @@
     transition:transform .3s cubic-bezier(.22,1,.36,1);
   }
   .site-header__business:hover svg{transform:translate(2px,-2px)}
+  .site-header__languages{display:none}
   .site-header__download{
     position:relative;
     display:inline-flex;
@@ -1892,6 +2483,43 @@
   .site-header__download:hover{transform:translateY(-2px);box-shadow:inset 5px 4px 12px rgba(255,255,255,.24),0 14px 34px rgba(10,23,34,.22)}
   .site-header__download:active{transform:translateY(0) scale(.97)}
   .site-header__apple{width:18px;height:18px;flex:0 0 auto}
+  @media (min-width:761px){
+    body.cap0-layout .site-header{padding:18px 3.6vw}
+    body.cap0-layout .site-header__nav{position:relative;min-height:32px;justify-content:flex-end}
+    body.cap0-layout .site-header__left{position:absolute;left:38px;top:8px;gap:0}
+    body.cap0-layout .site-header__business{display:none}
+    body.cap0-layout .site-header__languages{display:flex;gap:8px;font:700 9px/1 'Onest',system-ui,sans-serif;letter-spacing:.03em}
+    body.cap0-layout .site-header__brand{position:fixed;left:50%;top:22px;width:36px;height:26px;overflow:hidden;transform:translateX(-50%)}
+    body.cap0-layout .site-header__brand img{width:94px;max-width:none;height:26px}
+    body.cap0-layout .site-header__download{width:70px;height:32px;font-size:10px;box-shadow:none}
+    body.cap0-layout .site-header__download .site-header__apple{display:none}
+    body.cap0-layout .site-header__menu{display:block;position:absolute;left:0;top:0;width:28px;height:28px;background:transparent}
+    body.cap0-layout .site-header__menu span{left:0;width:26px;height:2px}
+    body.cap0-layout .site-header__menu span:first-child{top:8px}
+    body.cap0-layout .site-header__menu span:last-child{top:17px}
+  }
+  @media (min-width:761px){
+    body.weather-active .site-header__brand,
+    body.split-active .site-header__brand{width:clamp(160px,11vw,190px)}
+    body.weather-active .site-header__left,
+    body.split-active .site-header__left{gap:clamp(30px,3vw,48px)}
+    body.weather-active .site-header__business,
+    body.split-active .site-header__business{
+      gap:9px;
+      font-size:clamp(16px,1.1vw,18px);
+    }
+    body.weather-active .site-header__business svg,
+    body.split-active .site-header__business svg{width:22px;height:22px}
+    body.weather-active .site-header__download,
+    body.split-active .site-header__download{
+      gap:9px;
+      width:clamp(150px,10vw,180px);
+      height:clamp(54px,3.6vw,62px);
+      font-size:clamp(14px,1vw,17px);
+    }
+    body.weather-active .site-header__apple,
+    body.split-active .site-header__apple{width:20px;height:20px}
+  }
   @keyframes siteHeaderShine{
     0%,70%{opacity:0;transform:skewX(-22deg) translateX(-220%)}
     75%{opacity:.85}
@@ -1927,6 +2555,8 @@
   body.menu-open .site-header__menu span:last-child{top:23px;transform:rotate(-45deg)}
   body.is-loading .site-header,
   body.is-dark .site-header,
+  body.trip-hub-active .site-header,
+  body.weather-storm .site-header,
   body.menu-on-dark .site-header,
   body.menu-open .site-header{
     --header-ink:#fff;
@@ -1935,9 +2565,18 @@
   }
   body.is-loading .site-header__brand img,
   body.is-dark .site-header__brand img,
+  body.trip-hub-active .site-header__brand img,
+  body.weather-storm .site-header__brand img,
   body.menu-on-dark .site-header__brand img,
   body.menu-open .site-header__brand img,
   body.logo-inv .site-header__brand img{filter:brightness(0) invert(1)}
+  /* Жёлтая зарядка всегда светлая: тёмная шапка перекрывает прежнюю тёмную фазу. */
+  body.is-charge .site-header{
+    --header-ink:#0A1722;
+    --header-button:#050505;
+    --header-button-ink:#fff;
+  }
+  body.is-charge .site-header__brand img{filter:none}
   .site-header a:focus-visible,
   .site-header button:focus-visible{outline:2px solid currentColor;outline-offset:4px}
   .site-menu .menu-close{display:none}

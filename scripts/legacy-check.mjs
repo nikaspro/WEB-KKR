@@ -23,6 +23,10 @@ function isLocal(ref) {
 
 function localPath(file, ref) {
   const clean = ref.split(/[?#]/, 1)[0];
+  const publicAsset = clean.replace(/^\.\//, '');
+  if (file === 'index.html' && publicAsset.startsWith('assets/')) {
+    return join(root, 'public', publicAsset);
+  }
   if (!ref.startsWith('/')) return resolve(dirname(join(root, file)), clean);
   if (clean.startsWith('/assets/')) return join(root, 'public', clean.slice(1));
   return join(root, clean.slice(1));

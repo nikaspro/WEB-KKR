@@ -44,9 +44,76 @@
     track.style.transform = 'translate3d(0,' + y.toFixed(2) + 'px,0)';
   }
 
+  var weatherGroup = grps[0];
+  var weatherSec = weatherGroup && weatherGroup.querySelector('.sec');
+  var weatherCards = weatherGroup
+    ? Array.prototype.slice.call(weatherGroup.querySelectorAll('.ev'))
+    : [];
+  var weatherOriginal = weatherCards.map(function(card){
+    var title = card.querySelector('.ev-t');
+    var desc = card.querySelector('.ev-d');
+    var img = card.querySelector('.media img');
+    return {
+      title:title ? title.textContent : '',
+      desc:desc ? desc.textContent : '',
+      src:img ? img.getAttribute('src') : null
+    };
+  });
+  var weatherColdEvents = [
+    { title:'Русский музей', desc:'Семейный маршрут по залам русского искусства', src:'./media/b3db02f2646f.webp' },
+    { title:'Планетарий №1', desc:'Космическая программа под крупнейшим куполом города', src:'./media/9f7539acfe2d.webp' },
+    { title:'Оранжерея Таврического сада', desc:'Тропические растения и тёплые галереи в центре Петербурга', src:'./media/8048767ed9f9.webp' },
+    { title:'Музей железных дорог России', desc:'Интерактивная экспозиция и исторические локомотивы', src:'./media/a5fb787e6d13.webp' }
+  ];
+  var weatherCold = false;
+  var weatherSwapTimer = 0;
+  var weatherSwapToken = 0;
+
+  function applyWeatherEvents(cold){
+    var data = cold ? weatherColdEvents : weatherOriginal;
+    if (weatherSec) weatherSec.textContent = cold ? 'План на дождь' : 'Утро';
+    weatherCards.forEach(function(card, i){
+      var item = data[i];
+      if (!item) return;
+      var title = card.querySelector('.ev-t');
+      var desc = card.querySelector('.ev-d');
+      var img = card.querySelector('.media img');
+      if (title) title.textContent = item.title;
+      if (desc) desc.textContent = item.desc;
+      if (img && item.src) img.src = item.src;
+    });
+    weatherGroup.classList.toggle('weather-cold', cold);
+    measure();
+    draw(last);
+  }
+
+  function setWeatherEvents(cold){
+    cold = !!cold;
+    if (!weatherGroup || (cold === weatherCold && !weatherSwapTimer)) return;
+    weatherCold = cold;
+    weatherSwapToken += 1;
+    var token = weatherSwapToken;
+    clearTimeout(weatherSwapTimer);
+    weatherGroup.classList.remove('weather-swap-in');
+    weatherGroup.classList.add('weather-swap-out');
+    weatherSwapTimer = setTimeout(function(){
+      if (token !== weatherSwapToken) return;
+      applyWeatherEvents(cold);
+      weatherGroup.classList.remove('weather-swap-out');
+      weatherGroup.classList.add('weather-swap-in');
+      weatherSwapTimer = setTimeout(function(){
+        if (token !== weatherSwapToken) return;
+        weatherGroup.classList.remove('weather-swap-in');
+        weatherSwapTimer = 0;
+      }, 380);
+    }, 150);
+  }
+
   window.__draw = draw;
+  window.__setWeatherEvents = setWeatherEvents;
   window.addEventListener('message', function(e){
     if (e.data && typeof e.data.p === 'number') draw(e.data.p);
+    if (e.data && typeof e.data.weatherCold === 'boolean') setWeatherEvents(e.data.weatherCold);
   });
 
   measure(); draw(0);
