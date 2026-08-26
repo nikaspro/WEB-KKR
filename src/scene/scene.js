@@ -231,6 +231,9 @@ setTimeout(tryFinish, 6000);   // страховка: не залипать, е�
 // Так при скролле не остаются обрезанные или полупрозрачные слова.
 // [0] после влёта карточек и появления плана, [3] — вход в зарядку
 const CAP_START = [0.600, 0.832, 1.016, 1.240];
+// Последний кадр потока скрывается к 0.610. Текст первого экрана получает
+// короткий чистый зазор и появляется только после полного ухода изображений.
+const CAP0_REVEAL = 0.622;
 // длина таймлайна: позиции заданы в единицах старой шкалы p и уходят за 1.0,
 // поэтому прогресс нормируем на эту длину, а не на единицу
 const CAP_TL_LEN = 1.45;
@@ -348,7 +351,7 @@ CAP_START.forEach((at, i) => {
     return;
   }
   if (i === 0) {
-    capTl.set(el, { autoAlpha: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)' }, at)
+    capTl.set(el, { autoAlpha: 1, x: 0, y: 0, scale: 1, filter: 'blur(0px)' }, CAP0_REVEAL)
       .to(el, {
         autoAlpha: 0, x: -44, y: -18, scale: .985, filter: 'blur(11px)',
         duration: CAP_EXIT0, ease: 'power2.in'
@@ -382,7 +385,7 @@ function capSide(sel, at, hold) {
 });
 
 function capExit0(sel, x, y) {
-  const at = CAP_START[0], end = at + CAP_HOLD0;
+  const at = CAP0_REVEAL, end = CAP_START[0] + CAP_HOLD0;
   gsap.set(sel, { autoAlpha: 0 });
   capTl.set(sel, { autoAlpha: 1, x: 0, y: 0, filter: 'blur(0px)' }, at)
     .to(sel, {
@@ -395,7 +398,7 @@ gsap.set('#side2', { autoAlpha:0 });
 
 // Облако тегов справа появляется и исчезает целиком вместе с надписью.
 gsap.set('#ctags', { autoAlpha: 0 });
-capTl.set('#ctags', { autoAlpha: 1, x: 0, y: 0, filter: 'blur(0px)' }, CAP_START[0])
+capTl.set('#ctags', { autoAlpha: 1, x: 0, y: 0, filter: 'blur(0px)' }, CAP0_REVEAL)
   .to('#ctags', {
     autoAlpha: 0, x: 42, y: 10, filter: 'blur(9px)',
     duration: CAP_EXIT0, ease: 'power2.in'
@@ -655,14 +658,15 @@ function finishPreloader() {
 // Верхняя строка уходит за маску, а её копия одним оборотом поднимается снизу.
 (() => {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const rollLinks = document.querySelectorAll('a[href]');
+  const rollLinks = document.querySelectorAll('a[href],.foot-link-label,.foot-business__label');
 
   rollLinks.forEach(link => {
-    if (link.closest('.site-header') || link.matches('.menu-business-link,.menu-download-link')) return;
+    if (link.closest('.site-header') || link.matches('.menu-business-link,.menu-download-link,.hero-download,.foot-business')) return;
     const label = link.textContent.trim();
     if (!label) return;
 
-    link.setAttribute('aria-label', label);
+    const interactionTarget = link.closest('a[href]') || link;
+    if (link.matches('a[href]')) link.setAttribute('aria-label', label);
     const line = document.createElement('span');
     line.className = 'letter-roll';
 
@@ -695,10 +699,10 @@ function finishPreloader() {
       .to(fronts, { yPercent: -112, rotationX: -72, stagger: .024 }, 0)
       .to(backs,  { yPercent: -100, rotationX: 0, stagger: .024 }, 0);
 
-    link.addEventListener('mouseenter', () => roll.play());
-    link.addEventListener('mouseleave', () => roll.reverse());
-    link.addEventListener('focus', () => roll.play());
-    link.addEventListener('blur', () => roll.reverse());
+    interactionTarget.addEventListener('mouseenter', () => roll.play());
+    interactionTarget.addEventListener('mouseleave', () => roll.reverse());
+    interactionTarget.addEventListener('focus', () => roll.play());
+    interactionTarget.addEventListener('blur', () => roll.reverse());
   });
 })();
 
@@ -707,21 +711,28 @@ function mountMagneticButton(zone, btn, label, options = {}) {
   if (!zone || !btn || !label || reduced || matchMedia('(hover: none)').matches) return;
   const STRENGTH = 0.06;
   const LABEL_STRENGTH = 0.035;
-  const wobble = options.wobble ?? 1;
+  const wobble = options.wobble ?? (btn.matches('.hero-download') ? 0.65 : 1);
   const disabledWhen = options.disabledWhen;
   let disabled = Boolean(disabledWhen?.());
-
-  const wobbleLoop = gsap.to(btn, {
-    keyframes: { rotation: [1.6, -1.2, 0.9, -0.6, 0.4, -0.25, 0.12, -0.06, 0].map(value => value * wobble) },
-    duration: 1.5,
-    repeat: -1,
-    ease: 'none',
-    paused: disabled
+  const makeMotion = () => ({
+    buttonX: gsap.quickTo(btn, 'x', { duration: .34, ease: 'power3.out', overwrite: 'auto' }),
+    buttonY: gsap.quickTo(btn, 'y', { duration: .34, ease: 'power3.out', overwrite: 'auto' }),
+    labelX: gsap.quickTo(label, 'x', { duration: .4, ease: 'power3.out', overwrite: 'auto' }),
+    labelY: gsap.quickTo(label, 'y', { duration: .4, ease: 'power3.out', overwrite: 'auto' })
   });
+  let motion = makeMotion();
+
+  const wobbleLoop = gsap.timeline({ repeat: -1, paused: disabled })
+    .to(btn, { rotation: 1.05 * wobble, duration: 1.15, ease: 'sine.inOut' })
+    .to(btn, { rotation: -.8 * wobble, duration: 1.4, ease: 'sine.inOut' })
+    .to(btn, { rotation: .42 * wobble, duration: 1.05, ease: 'sine.inOut' })
+    .to(btn, { rotation: 0, duration: .9, ease: 'sine.inOut' });
 
   const resetMotion = () => {
+    Object.values(motion).forEach(move => move.tween.kill());
     gsap.set(btn, { x: 0, y: 0, rotation: 0 });
     gsap.set(label, { x: 0, y: 0 });
+    motion = makeMotion();
   };
 
   if (disabledWhen) {
@@ -741,20 +752,25 @@ function mountMagneticButton(zone, btn, label, options = {}) {
   zone.addEventListener('pointermove', e => {
     if (disabled) return;
     const r = zone.getBoundingClientRect();
-    const mapX = gsap.utils.mapRange(r.left, r.right, -r.width / 2, r.width / 2, e.clientX);
-    const mapY = gsap.utils.mapRange(r.top, r.bottom, -r.height / 2, r.height / 2, e.clientY);
-    gsap.to(btn,   { x: mapX * STRENGTH, y: mapY * STRENGTH, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
-    gsap.to(label, { x: mapX * LABEL_STRENGTH, y: mapY * LABEL_STRENGTH, duration: 0.4, ease: 'power2.out', overwrite: true });
+    const mapX = gsap.utils.clamp(-r.width / 2, r.width / 2, e.clientX - r.left - r.width / 2);
+    const mapY = gsap.utils.clamp(-r.height / 2, r.height / 2, e.clientY - r.top - r.height / 2);
+    motion.buttonX(mapX * STRENGTH);
+    motion.buttonY(mapY * STRENGTH);
+    motion.labelX(mapX * LABEL_STRENGTH);
+    motion.labelY(mapY * LABEL_STRENGTH);
   });
+
   zone.addEventListener('pointerleave', () => {
     if (disabled) return;
+    Object.values(motion).forEach(move => move.tween.kill());
     gsap.to(btn,   { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
     gsap.to(label, { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.4)', overwrite: true });
+    motion = makeMotion();
   });
 }
 
-const goMagnetBtn = document.querySelector('.go-btn');
-mountMagneticButton(document.querySelector('.go-band'), goMagnetBtn, goMagnetBtn?.querySelector('.go-t'));
+const heroMagnetBtn = document.querySelector('.hero-download');
+mountMagneticButton(document.querySelector('.hero-download-zone'), heroMagnetBtn, heroMagnetBtn?.querySelector('.hero-download__label'));
 const headerMagnetBtn = document.querySelector('.site-header__download');
 mountMagneticButton(headerMagnetBtn, headerMagnetBtn, headerMagnetBtn?.querySelector('span'), {
   wobble: 0.55,
@@ -820,8 +836,10 @@ const tagsLayer = document.getElementById('tags');
 const TAGS_IN = 0.08, TAGS_SPREAD = 0.30, TAGS_OUT = 0.30;
 const tags = [...document.querySelectorAll('.tag-pos')].map(pos => {
   const el = pos.firstElementChild;
-  const px = parseFloat(pos.style.left) / 100;
-  const py = parseFloat(pos.style.top) / 100;
+  // Позиции тегов теперь заданы в CSS, поэтому берём их из раскладки,
+  // а не из пустых inline-style. Иначе вектор разлёта превращается в NaN.
+  const px = pos.offsetLeft / (tagsLayer?.clientWidth || innerWidth);
+  const py = pos.offsetTop / (tagsLayer?.clientHeight || innerHeight);
   let vx = px - 0.5, vy = py - 0.5;
   const len = Math.hypot(vx, vy) || 1;
   return {
@@ -1009,7 +1027,10 @@ const PLAN_ASSETS = [
   './assets/plan-build/burger.webp',
   './assets/plan-build/croissant.webp',
   './assets/plan-build/bust.webp',
-  './assets/plan-build/shell.webp'
+  './assets/plan-build/shell.webp',
+  './assets/plan-build/car.webp',
+  './assets/plan-build/taco.webp',
+  './assets/plan-build/cable-car.webp'
 ];
 // В кульминации собранного плана эти же объекты вылетают из телефона.
 const explosionEl = document.getElementById('planExplosion');
@@ -1797,7 +1818,7 @@ gsap.ticker.add(() => {
   capTl.time(gsap.utils.clamp(0, CAP_TL_LEN, captionP));   // абсолютная позиция, не доля
   document.body.classList.toggle(
     'cap0-layout',
-    p >= CAP_START[0] - .006
+    p >= CAP0_REVEAL - .006
       && p <= CAP_START[0] + CAP_HOLD0 + .014
       && virtualP <= WEATHER_STAGE_IN + .006
   );
@@ -2119,8 +2140,15 @@ scheduleLogoOverlap();
 const weatherSec = document.getElementById('weatherStory');
 const weatherPicture = weatherSec && weatherSec.querySelector('.weather-picture');
 const weatherDarkPicture = document.getElementById('weatherDarkPicture');
+const weatherFreezingPicture = document.getElementById('weatherFreezingPicture');
 const weatherTemp = weatherSec && weatherSec.querySelector('.weather-temp');
 const weatherTempReel = weatherSec && weatherSec.querySelector('.weather-temp-reel');
+const weatherTempSteps = weatherTempReel ? weatherTempReel.children.length : 1;
+const weatherTempEnd = -((weatherTempSteps - 1) / weatherTempSteps) * 100;
+const weatherTempColdIndex = weatherTempReel
+  ? [...weatherTempReel.children].findIndex(value => value.textContent.trim() === '16°')
+  : 0;
+const weatherTempCold = -(Math.max(0, weatherTempColdIndex) / weatherTempSteps) * 100;
 const weatherTitle = weatherSec && weatherSec.querySelector('.weather-title');
 const weatherTitleLines = weatherTitle ? [...weatherTitle.children] : [];
 
@@ -2133,6 +2161,7 @@ if (weatherSec) {
     transformOrigin:'0 50%'
   });
   gsap.set(weatherDarkPicture, {opacity:0});
+  gsap.set(weatherFreezingPicture, {opacity:0});
 
   let weatherExitTween = null;
   const stopWeatherExit = () => {
@@ -2174,10 +2203,10 @@ if (weatherSec) {
       },
       onUpdate:self => {
         const weatherTime = self.progress * WEATHER_TIMELINE_LEN;
-        const storm = self.isActive && weatherTime > .99;
+        const storm = self.isActive && weatherTime >= .35 && weatherTime < .84;
         // Карточки в телефоне меняются вместе со стартом барабана погоды.
         // При обратном скролле возвращается исходный набор.
-        setAppWeatherEvents(weatherTime > .40);
+        setAppWeatherEvents(weatherTime >= .35);
         document.body.classList.toggle('weather-storm', storm);
         box.classList.toggle('is-weather-storm', storm);
       },
@@ -2197,12 +2226,14 @@ if (weatherSec) {
     .to(weatherTitleLines,{
       autoAlpha:1,y:0,scale:1,duration:.32,stagger:TEXT_REVEAL_STAGGER,ease:TEXT_REVEAL_EASE
     },.18)
-    // Вертикальный барабан последовательно показывает 20°, 19°, 18°, 17° и 16°.
-    .to(weatherTempReel,{yPercent:-80,duration:.40,ease:'power2.inOut'},.40)
-    // Фон меняется только после полной фиксации 16°.
-    .to(weatherDarkPicture,{opacity:1,duration:.18,ease:'sine.inOut'},.82)
-    .to(weatherTitleLines,{y:-8,duration:.12,stagger:.02,ease:'sine.inOut'},.82)
-    .to(weatherTitle,{color:'#FFFFFF',duration:.18,ease:'sine.inOut'},.82)
+    // Три скролл-состояния: 20° → похолодание до 16° → морозные −2°.
+    .to(weatherTempReel,{yPercent:weatherTempCold,duration:.17,ease:'power2.inOut'},.31)
+    .to(weatherDarkPicture,{opacity:1,duration:.17,ease:'sine.inOut'},.35)
+    .to(weatherTitle,{color:'#FFFFFF',duration:.17,ease:'sine.inOut'},.35)
+    .to(weatherTempReel,{yPercent:weatherTempEnd,duration:.22,ease:'power2.inOut'},.62)
+    .to(weatherFreezingPicture,{opacity:1,duration:.16,ease:'sine.inOut'},.84)
+    .to(weatherTitle,{color:'#183242',duration:.16,ease:'sine.inOut'},.84)
+    .to(weatherTitleLines,{y:-8,duration:.12,stagger:.02,ease:'sine.inOut'},.84)
     // Финальный погодный кадр удерживается до перехода к следующей главе.
     .to({hold:0}, {hold:1,duration:WEATHER_TIMELINE_HOLD}, 1);
 
@@ -2274,6 +2305,16 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
   let tripHubRowsActive = false;
   let tripHubPreviewSlot = 0;
   let tripHubPreviewShown = false;
+  let tripHubPreviewMotionActive = false;
+  let tripHubPreviewHasPoint = false;
+  let tripHubPreviewTargetX = innerWidth * .5;
+  let tripHubPreviewTargetY = innerHeight * .5;
+  let tripHubPreviewX = tripHubPreviewTargetX;
+  let tripHubPreviewY = tripHubPreviewTargetY;
+  let tripHubPreviewRotationX = 0;
+  let tripHubPreviewRotationY = 0;
+  let tripHubPreviewRotationZ = 0;
+  let tripHubPreviewScale = 1;
   let tripHubImagesWarmed = false;
   let destroyed = false;
   const hubTitleFrom = reduced
@@ -2291,7 +2332,15 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
   gsap.set(tripHubItems, reduced
     ? { autoAlpha:1, y:0 }
     : { autoAlpha:0, y:34 });
-  gsap.set(tripHubPreview, { autoAlpha:0 });
+  gsap.set(tripHubPreview, {
+    autoAlpha:0,
+    x:tripHubPreviewX,
+    y:tripHubPreviewY,
+    xPercent:-50,
+    yPercent:-50,
+    transformPerspective:1100,
+    transformOrigin:'50% 50%'
+  });
   gsap.set(tripHubPreviewCards, { autoAlpha:0 });
   gsap.set(splitBackgrounds.left, { opacity:0 });
   gsap.set(splitBackgrounds.right, { opacity:0 });
@@ -2311,23 +2360,80 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
     letter.src = src;
   });
 
+  function setTripHubPreviewPoint(event, snap = false) {
+    if (!finePointer || event.pointerType === 'touch') return;
+    tripHubPreviewTargetX = event.clientX;
+    tripHubPreviewTargetY = event.clientY;
+    if (snap || !tripHubPreviewHasPoint) {
+      tripHubPreviewX = tripHubPreviewTargetX;
+      tripHubPreviewY = tripHubPreviewTargetY;
+      tripHubPreviewHasPoint = true;
+      gsap.set(tripHubPreview, { x:tripHubPreviewX, y:tripHubPreviewY });
+    }
+  }
+
+  function renderTripHubPreview(_time, deltaMS = 16.67) {
+    if (!tripHubPreviewMotionActive || !tripHubPreviewHasPoint || destroyed) return;
+    const frameRatio = Math.min(3, Math.max(.25, deltaMS / 16.67));
+    const follow = 1 - Math.pow(.835, frameRatio);
+    const settle = 1 - Math.pow(.78, frameRatio);
+    const lagX = tripHubPreviewTargetX - tripHubPreviewX;
+    const lagY = tripHubPreviewTargetY - tripHubPreviewY;
+
+    tripHubPreviewX += lagX * follow;
+    tripHubPreviewY += lagY * follow;
+
+    const targetRotationY = gsap.utils.clamp(-6, 6, lagX * .022);
+    const targetRotationX = gsap.utils.clamp(-5, 5, -lagY * .018);
+    const targetRotationZ = gsap.utils.clamp(-2.4, 2.4, lagX * .008);
+    const targetScale = 1 + Math.min(.028, Math.hypot(lagX, lagY) * .00007);
+    tripHubPreviewRotationX += (targetRotationX - tripHubPreviewRotationX) * settle;
+    tripHubPreviewRotationY += (targetRotationY - tripHubPreviewRotationY) * settle;
+    tripHubPreviewRotationZ += (targetRotationZ - tripHubPreviewRotationZ) * settle;
+    tripHubPreviewScale += (targetScale - tripHubPreviewScale) * settle;
+
+    gsap.set(tripHubPreview, {
+      x:tripHubPreviewX,
+      y:tripHubPreviewY,
+      rotationX:tripHubPreviewRotationX,
+      rotationY:tripHubPreviewRotationY,
+      rotationZ:tripHubPreviewRotationZ,
+      scale:tripHubPreviewScale
+    });
+  }
+  gsap.ticker.add(renderTripHubPreview);
+
   function showTripHubPreview(index) {
     if (!finePointer || !tripHubActive) return;
     const src = tripHubItems[index].dataset.tripImage;
+    const secondarySrc = tripHubItems[index].dataset.tripImageSecondary || '';
     if (!src) return;
     const nextSlot = tripHubPreviewShown ? 1 - tripHubPreviewSlot : tripHubPreviewSlot;
     const incoming = tripHubPreviewCards[nextSlot];
     const outgoing = tripHubPreviewCards[1 - nextSlot];
-    const blurImage = incoming.querySelector('.trip-hub__preview-image--blur');
-    const sharpImage = incoming.querySelector('.trip-hub__preview-image--sharp');
-    [blurImage, sharpImage].forEach(image => {
+    const primaryImages = [...incoming.querySelectorAll('[data-trip-preview-primary]')];
+    const secondaryImages = [...incoming.querySelectorAll('[data-trip-preview-secondary]')];
+    const blurImages = [...incoming.querySelectorAll('.trip-hub__preview-image--blur')];
+    const sharpImages = [...incoming.querySelectorAll('.trip-hub__preview-image--sharp')];
+    const isFlightGlass = tripHubItems[index].hasAttribute('data-trip-glass');
+    const tripLayout = tripHubItems[index].dataset.tripLayout || '';
+    incoming.classList.toggle('is-flight-glass', isFlightGlass);
+    incoming.classList.toggle('is-flight-art', tripLayout === 'flight');
+    incoming.classList.toggle('is-weather-art', tripLayout === 'weather');
+    incoming.classList.toggle('is-route-art', tripLayout === 'route');
+    primaryImages.forEach(image => {
       if (image.getAttribute('src') !== src) image.setAttribute('src', src);
     });
-    gsap.killTweensOf([tripHubPreview, incoming, outgoing, blurImage, sharpImage]);
+    if (secondarySrc) {
+      secondaryImages.forEach(image => {
+        if (image.getAttribute('src') !== secondarySrc) image.setAttribute('src', secondarySrc);
+      });
+    }
+    gsap.killTweensOf([tripHubPreview, incoming, outgoing, ...blurImages, ...sharpImages]);
     gsap.set(tripHubPreview, { autoAlpha:1 });
     gsap.set(incoming, { autoAlpha:0 });
-    gsap.set(blurImage, { opacity:1 });
-    gsap.set(sharpImage, { opacity:0 });
+    gsap.set(blurImages, { opacity:1 });
+    gsap.set(sharpImages, { opacity:0 });
     gsap.to(outgoing, {
       autoAlpha:0,
       duration:.30,
@@ -2340,21 +2446,32 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
       ease:'power2.out',
       overwrite:'auto'
     });
-    gsap.to(sharpImage, { opacity:1, duration:.78, delay:.08, ease:'power2.out' });
-    gsap.to(blurImage, { opacity:0, duration:.78, delay:.08, ease:'power2.out' });
+    gsap.to(sharpImages, { opacity:1, duration:.78, delay:.08, ease:'power2.out' });
+    gsap.to(blurImages, { opacity:0, duration:.78, delay:.08, ease:'power2.out' });
     tripHubPreviewSlot = nextSlot;
     tripHubPreviewShown = true;
+    tripHubPreviewMotionActive = true;
   }
 
   function hideTripHubPreview() {
+    tripHubPreviewMotionActive = false;
+    tripHubPreviewHasPoint = false;
     if (!tripHubPreviewShown) return;
     tripHubPreviewShown = false;
     gsap.to(tripHubPreview, {
       autoAlpha:0,
+      rotationX:0,
+      rotationY:0,
+      rotationZ:0,
+      scale:1,
       duration:.34,
       ease:'power2.out',
       overwrite:true
     });
+    tripHubPreviewRotationX = 0;
+    tripHubPreviewRotationY = 0;
+    tripHubPreviewRotationZ = 0;
+    tripHubPreviewScale = 1;
   }
 
   function warmTripHubImages() {
@@ -2379,7 +2496,8 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
   }
 
   const tripHubItemHandlers = tripHubItems.map((item, index) => {
-    const activate = () => {
+    const activate = event => {
+      setTripHubPreviewPoint(event, !tripHubPreviewShown);
       setTripHubFeature(index);
       if (finePointer) showTripHubPreview(index);
     };
@@ -2389,6 +2507,10 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
   function clearTripHubHover() {
     setTripHubFeature();
   }
+  function moveTripHubPreview(event) {
+    setTripHubPreviewPoint(event);
+  }
+  tripHubList.addEventListener('pointermove', moveTripHubPreview, { passive:true });
   tripHubList.addEventListener('pointerleave', clearTripHubHover);
 
   const tripHubIntro = reduced ? null : gsap.timeline({ paused:true })
@@ -2879,7 +3001,9 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
     tripHubItemHandlers.forEach(({ item, activate }) => {
       item.removeEventListener('pointerenter', activate);
     });
+    tripHubList.removeEventListener('pointermove', moveTripHubPreview);
     tripHubList.removeEventListener('pointerleave', clearTripHubHover);
+    gsap.ticker.remove(renderTripHubPreview);
     gsap.killTweensOf([tripHubPreview, ...tripHubPreviewCards]);
     splitTl.scrollTrigger && splitTl.scrollTrigger.kill();
     splitTl.kill();
@@ -2905,4 +3029,45 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
   addEventListener('pagehide', destroySplitScene, { once:true });
   syncAudioState();
   setAudioProgress(0);
+}
+
+const footer = document.getElementById('footer');
+// Белый финальный кадр закреплён CSS sticky. Подвал остаётся в обычном потоке,
+// поэтому входит строго от нижнего края и накрывает закреплённый кадр.
+if (footer) {
+  const footerTop = footer.querySelector('.foot-top');
+  const footerLetters = footer.querySelectorAll('.foot-wordmark img');
+  const syncFooterActive = self => {
+    document.body.classList.toggle('footer-active', self.isActive || self.progress === 1);
+  };
+
+  if (reduced) {
+    ScrollTrigger.create({
+      trigger:footer,
+      start:'top 80%',
+      end:'bottom top',
+      onToggle:syncFooterActive
+    });
+  } else {
+    const footerTl = gsap.timeline({
+      defaults:{ease:'none'},
+      scrollTrigger:{
+        trigger:footer,
+        start:'top bottom',
+        end:'top top',
+        scrub:.8,
+        invalidateOnRefresh:true,
+        onToggle:syncFooterActive
+      }
+    });
+
+    footerTl
+      .fromTo(footerTop, {y:72,autoAlpha:.18}, {y:0,autoAlpha:1,duration:.62,immediateRender:false}, 0)
+      .fromTo(
+        footerLetters,
+        {scaleY:.08,yPercent:12,transformOrigin:'50% 100%'},
+        {scaleY:1,yPercent:0,duration:.58,stagger:.035,ease:'none',immediateRender:false},
+        .42
+      );
+  }
 }
