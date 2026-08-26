@@ -4,14 +4,18 @@
   "description": "Лендинг «Путешествовать — легко»",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "dev":    "vite",
-    "build":  "vite build",
-    "preview":"vite preview",
-    "package:portable":"npm run build && node scripts/portable-package.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "package:portable": "npm run build && node scripts/portable-package.mjs",
     "budget": "node scripts/budget.mjs",
     "phases:check": "node scripts/phases-check.mjs",
-    "legacy:check": "node scripts/legacy-check.mjs"
+    "legacy:check": "node scripts/legacy-check.mjs",
+    "check": "npm run build && npm run budget && npm run phases:check && npm run legacy:check"
   },
   "dependencies": {
     "gsap": "^3.12.5"

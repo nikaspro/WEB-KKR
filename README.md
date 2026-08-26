@@ -1,49 +1,78 @@
 # Путешествовать — легко
 
-Лендинг. Статика, Vite, ванильный JS, GSAP.
+Предрелизный лендинг на Vite, ванильном JavaScript, CSS и GSAP.
 
 ## Открыть сайт
 
 **[Рабочая версия на GitHub Pages](https://nikaspro.github.io/WEB-KKR/)**
 
-Сайт автоматически собирается и публикуется из исходников через GitHub Actions. Открывать `index.html` прямо в интерфейсе GitHub или через `raw.githubusercontent.com` не нужно: это исходный файл Vite, а не готовая production-сборка.
+GitHub Actions собирает production-версию и публикует её автоматически. Исходный `index.html` не нужно открывать через интерфейс GitHub или `raw.githubusercontent.com`.
+
+## Требования
+
+- Node.js 22.x (версия зафиксирована в `.nvmrc` и `package.json`);
+- npm из поставки Node.js;
+- установка зависимостей только через `npm ci`.
+
+```bash
+nvm use
+npm ci
+```
 
 ## Команды
 
 ```bash
-npm ci
-npm run dev      # дев-сервер
-npm run build    # сборка в dist/
-npm run preview  # проверка сборки
-npm run budget   # гейт бюджета (код 1 при превышении)
-npm run phases:check # карта окон фаз, код 1 при пересечении
+npm run dev              # локальный Vite-сервер
+npm run build            # production-сборка в dist/
+npm run preview          # локальная проверка dist/
+npm run budget           # бюджет и правила production-выдачи
+npm run phases:check     # окна и разрешённые пересечения фаз
+npm run legacy:check     # legacy-вход и embedded-ассеты
+npm run check            # build + все обязательные проверки
+npm run package:portable # portable/ и автономный standalone/index.html
 ```
 
 ## Структура
 
-```
+```text
+.github/workflows/pages.yml  # проверки и публикация GitHub Pages
+index.html                   # разметка единственной рабочей страницы
 src/
-  scene/      # scene.js, phases.js
-  styles/     # scene.css, tokens.css
-public/
-  assets/     # локальные шрифты, медиа и экран приложения
+  scene/
+    scene.js                 # логика, интерактив и GSAP-сцены
+    phases.js                # окна и тайминги фаз
+  styles/
+    scene.css                # стили страницы
+    tokens.css               # общие токены
+public/assets/
+  embedded/                  # экран приложения внутри телефона
+  fonts/                     # локальные WOFF2
+  generated/                 # графические ассеты сцен
+  media/                     # hero-медиа
+  plan-build/                # ассеты сборки плана
+  split-letters/             # буквы интерактивного следа
+  trip-hub/                  # карточки поездки
+  ui/                        # логотип и интерфейсные SVG
+  weather/                   # погодные фоны
 scripts/
-  budget.mjs       # гейт бюджета
-  phases-check.mjs # карта окон фаз
-  legacy-check.mjs # проверка HTML и локальных ассетов
-legacy/
-  rd-hero-v4.html  # переход со старой ссылки на корневую версию
+  budget.mjs                 # бюджет production-сборки
+  phases-check.mjs           # проверка окон анимации
+  legacy-check.mjs           # проверка локальных ссылок и ассетов
+  portable-package.mjs       # переносимая сборка
+legacy/rd-hero-v4.html       # совместимый переход на корневую страницу
 ```
 
-## Бюджет
+Правила проекта находятся в [AGENTS.md](./AGENTS.md), правила GSAP — в [GSAP.md](./GSAP.md).
 
-Лимиты в `budget.json`. Гейт: JS ≤ 100 КБ, критический путь ≤ 300 КБ, вся страница ≤ 900 КБ (все цифры transferred brotli).
+## Предрелизная проверка
 
-Правила проекта — в [AGENTS.md](./AGENTS.md). Читать до первой правки.
-Правила анимации и подключения библиотеки — в [GSAP.md](./GSAP.md).
-
-Рабочая версия собирается из `index.html`, `src/` и `public/assets/`. Внешних runtime-ресурсов и больших `data:` в выдаче нет.
+1. Выполнить `nvm use` и `npm ci`.
+2. Запустить `npm run check`.
+3. Запустить `npm run preview` и проверить desktop, mobile и нестандартное соотношение сторон.
+4. Проверить `prefers-reduced-motion`, консоль и базовую страницу без JavaScript.
+5. Проверить внутренние ссылки и отсутствие внешних runtime-запросов.
+6. Убедиться, что `git status` содержит только ожидаемые изменения.
 
 ## Публикация
 
-Workflow [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) при каждом push собирает `dist/` с базовым путём `/WEB-KKR/`, проверяет бюджет и публикует результат в GitHub Pages. Для первой публикации в настройках репозитория нужно один раз выбрать **Settings → Pages → Source: GitHub Actions**.
+Workflow [`.github/workflows/pages.yml`](./.github/workflows/pages.yml) выполняет `npm ci`, сборку и все обязательные проверки. При push в рабочую ветку или `main` готовая папка `dist/` публикуется по адресу [nikaspro.github.io/WEB-KKR](https://nikaspro.github.io/WEB-KKR/).

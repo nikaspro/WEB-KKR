@@ -6,6 +6,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 document.body.classList.add('is-loading');
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mobilePerformance = matchMedia('(max-width: 900px), (hover: none), (pointer: coarse)').matches;
 
 // Сквозной прогресс страницы: шкала неподвижна, меняется только длина рисок
 // вокруг активной позиции. Используем общий GSAP ticker проекта.
@@ -137,7 +138,15 @@ if (scrollCue) {
 const box = document.querySelector('.box');
 let rimPoseYaw = 0;
 let rimPosePitch = 0;
-let rimPoseHeight = box.offsetHeight;
+let boxWidth = box.offsetWidth;
+let boxHeight = box.offsetHeight;
+let rimPoseHeight = boxHeight;
+function refreshBoxMetrics() {
+  boxWidth = box.offsetWidth;
+  boxHeight = box.offsetHeight;
+  rimPoseHeight = boxHeight;
+}
+addEventListener('resize', refreshBoxMetrics, { passive:true });
 const RATIO = { r: 0.0694 };
 
 // Приложение из репозитория nikaspro/RD-APP (legacy/ChiposhPark.html).
@@ -953,10 +962,9 @@ function fallMove(clientX, clientY) {
   oldIncrY = valY;
 }
 
-addEventListener('mousemove', e => fallMove(e.clientX, e.clientY));
-addEventListener('touchmove', e => {
-  if (e.touches && e.touches[0]) fallMove(e.touches[0].clientX, e.touches[0].clientY);
-}, { passive: true });
+// Эффект следует за курсором. На touch-экране touchmove является прокруткой,
+// поэтому создание карточек на каждом жесте заметно тормозило сам скролл.
+if (!coarse) addEventListener('mousemove', e => fallMove(e.clientX, e.clientY));
 
 // ---- поток превью в корпус ----
 // Фотографии мест и пользовательские PNG смешаны в одном потоке с обеих сторон.
@@ -964,7 +972,7 @@ addEventListener('touchmove', e => {
 const INF_IN = 0.440, INF_OUT = 0.610;
 const INF_ITEM_WINDOW = 0.34;
 const influxEl = document.getElementById('influx');
-const INF_N = 192;
+const INF_N = mobilePerformance ? 72 : 192;
 const PLAN_ASSETS = [
   './assets/plan-build/clothes.webp',
   './assets/plan-build/burger.webp',
@@ -974,7 +982,8 @@ const PLAN_ASSETS = [
 ];
 // В кульминации собранного плана эти же объекты вылетают из телефона.
 const explosionEl = document.getElementById('planExplosion');
-const explosionItems = Array.from({ length: 30 }, (_, i) => {
+const EXPLOSION_N = mobilePerformance ? 14 : 30;
+const explosionItems = Array.from({ length: EXPLOSION_N }, (_, i) => {
   const el = document.createElement('img');
   el.src = PLAN_ASSETS[i % PLAN_ASSETS.length];
   el.alt = '';
@@ -982,8 +991,8 @@ const explosionItems = Array.from({ length: 30 }, (_, i) => {
   explosionEl.appendChild(el);
   return {
     setC: gsap.quickSetter(el, 'css'),
-    angle: (i / 30) * Math.PI * 2 + (i % 3) * 0.18,
-    phase: i / 30,
+    angle: (i / EXPLOSION_N) * Math.PI * 2 + (i % 3) * 0.18,
+    phase: i / EXPLOSION_N,
     reach: 0.88 + (i % 7) * 0.045,
     size: 0.58 + (i % 6) * 0.14,
     rot: -54 + (i * 47) % 116
@@ -1023,7 +1032,7 @@ const influx = (() => {
       // Одинаковый масштаб для левого и правого элемента пары: крупные
       // значения больше не скапливаются только с одной стороны экрана.
       size: INF_SCALES[Math.floor(i / 2) % INF_SCALES.length],
-      // Перемешанные сменяющиеся группы: за весь проход прилетают все 192,
+      // Перемешанные сменяющиеся группы: за весь проход прилетают все элементы,
       // но в одном кадре они не образуют сплошную стену.
       // Последняя картинка должна полностью завершить путь к w=1.
       lag: (flowIndex / (INF_N / 2)) * (1 - INF_ITEM_WINDOW),
@@ -1068,7 +1077,9 @@ p = pTarget = readProgress();
 let pDrawn = -1;
 gsap.ticker.add(() => {
   pTarget = readProgress();
-  p += (pTarget - p) * (reduced ? 1 : 0.072);
+  // На телефоне короткий хвост сглаживания лучше следует за нативным скроллом
+  // и быстрее прекращает тяжёлую перерисовку после отпускания пальца.
+  p += (pTarget - p) * (reduced ? 1 : mobilePerformance ? 0.16 : 0.072);
 
   // корпус успокоился и курсор не двигается: писать нечего.
   // интро — исключение: пока glowIn крутится, фон и свечение надо писать
@@ -1399,13 +1410,13 @@ gsap.ticker.add(() => {
   const sc = (heroPose.sc + (END_SCALE - heroPose.sc) * ezEff) * (1 + (FIN_SCALE - 1) * fin) * mirSc;
   // рост от верхнего края: компенсация ровно на половину прироста высоты.
   // корпус увеличивается на месте, никуда не переезжает
-  const boxH = box.offsetHeight;
+  const boxH = boxHeight;
   const yFin = (boxH / 2) * (sc - 1) + innerHeight * 0.20 * fin;   // плюс сдвиг вниз
 
   // вдавливание в зеркале: yaw и pitch как будто вращают вокруг левого нижнего угла.
   // компенсация уводит корпус в глубину: левый низ стоит на месте,
   // правый верх тонет вдвое дальше — это вдавливание, а не поворот
-  const mirZ = -(box.offsetWidth  * sc / 2) * Math.sin(mirRY * Math.PI / 180)
+  const mirZ = -(boxWidth         * sc / 2) * Math.sin(mirRY * Math.PI / 180)
                -(boxH             * sc / 2) * Math.sin(mirRX * Math.PI / 180);
 
   // roll на внешнем слое: применяется в системе экрана, после yaw и pitch
@@ -1671,7 +1682,7 @@ gsap.ticker.add(() => {
 // Этот лёгкий тикер соединяет его с основной позой сцены и переносит толщину
 // на ту грань, которая в данный момент отворачивается от зрителя.
 gsap.ticker.add(() => {
-  if (phoneTransitionHidden) return;
+  if (mobilePerformance || phoneTransitionHidden || document.hidden) return;
   const idlePhase = (performance.now() / 9100 + 2.3 / 9.1) % 1;
   const idleWave = Math.cos(idlePhase * Math.PI * 2);
   const visualYaw = rimPoseYaw - idleWave * 5;
@@ -1769,7 +1780,7 @@ const swarmEl  = document.getElementById('swarm');
 const chargeEl = document.getElementById('chargeGlow');
 let mxS = innerWidth / 2, myS = innerHeight / 2;
 addEventListener('mousemove', e => { mxS = e.clientX; myS = e.clientY; });
-const SWARM_N = 84;
+const SWARM_N = mobilePerformance ? 36 : 84;
 const swarm = [];
 let swarmBuilt = false, swarmOn = false;
 // удары частиц: дрожь корпуса и вспышка обводки
@@ -1844,7 +1855,7 @@ gsap.ticker.add((time, deltaMS) => {
   const bx = box.getBoundingClientRect();
   const cx = bx.left + bx.width / 2;      // честный центр корпуса: он ездит по скроллу
   const cy = bx.top + bx.height / 2;
-  const bw = box.offsetWidth, bh = box.offsetHeight;
+  const bw = boxWidth, bh = boxHeight;
 
   let hits = 0;   // сколько частиц въехало в корпус на этом кадре
   // пылесос: одно правило на всех. Вдали частица вяло дрейфует у своей домашней
@@ -2138,7 +2149,7 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
   const splitColors = Object.freeze({ active:'#35DFB5', neutral:'#F7F8F7', ink:'#14202A' });
   const letterSources = [
     'a.svg','b.svg','v.svg','g.svg','d.svg','e.svg','zh.svg','z.svg','i.svg','k.svg',
-    'l.svg','l-1.svg','m.svg','n.svg','o.svg','p.svg','r.svg','s.svg','t.svg'
+    'l.svg','l.svg','m.svg','n.svg','o.svg','p.svg','r.svg','s.svg','t.svg'
   ].map(name => `./assets/split-letters/${name}`);
   const activeTrailItems = new Set();
   let splitSceneActive = false;

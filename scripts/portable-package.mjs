@@ -57,8 +57,8 @@ const appUrl = `data:text/html;base64,${Buffer.from(app).toString('base64')}`;
 let standalonePage = await readFile(resolve(portable, 'index.html'), 'utf8');
 standalonePage = standalonePage
   .replaceAll('./assets/embedded/plan-app.html', appUrl);
-const splitFiles = ['a.svg', 'b.svg', 'v.svg', 'g.svg', 'd.svg', 'e.svg', 'zh.svg', 'z.svg', 'i.svg', 'k.svg', 'l.svg', 'l-1.svg', 'm.svg', 'n.svg', 'o.svg', 'p.svg', 'r.svg', 's.svg', 't.svg'];
-const splitSource = '["a.svg","b.svg","v.svg","g.svg","d.svg","e.svg","zh.svg","z.svg","i.svg","k.svg","l.svg","l-1.svg","m.svg","n.svg","o.svg","p.svg","r.svg","s.svg","t.svg"].map(C=>`./assets/split-letters/${C}`)';
+const splitFiles = ['a.svg', 'b.svg', 'v.svg', 'g.svg', 'd.svg', 'e.svg', 'zh.svg', 'z.svg', 'i.svg', 'k.svg', 'l.svg', 'l.svg', 'm.svg', 'n.svg', 'o.svg', 'p.svg', 'r.svg', 's.svg', 't.svg'];
+const splitSource = '["a.svg","b.svg","v.svg","g.svg","d.svg","e.svg","zh.svg","z.svg","i.svg","k.svg","l.svg","l.svg","m.svg","n.svg","o.svg","p.svg","r.svg","s.svg","t.svg"].map(C=>`./assets/split-letters/${C}`)';
 if (!standalonePage.includes(splitSource)) throw new Error('Не найдены буквы интерактивной сцены.');
 standalonePage = standalonePage.replace(splitSource, JSON.stringify(await Promise.all(splitFiles.map(file => assetUrl(`split-letters/${file}`)))));
 standalonePage = await replaceAssets(standalonePage);

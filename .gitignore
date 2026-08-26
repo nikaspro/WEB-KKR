@@ -1,8 +1,14 @@
 node_modules/
 dist/
+portable/
+standalone/
 .DS_Store
 *.local
 .frames/
+*-preview.png
+running-rim-highlight-*.png
+phone-model.html
+phone-model-site.png
 
 # секреты и логи
 .env
