@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
+  // GitHub Pages передаёт /WEB-KKR/; локальная и portable-сборки остаются относительными.
+  base: process.env.SITE_BASE_PATH || './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
