@@ -2380,7 +2380,7 @@
     justify-content:center;
     gap:0;
     width:auto;
-    min-width:clamp(125px,8.4vw,142px);
+    min-width:clamp(190px,12vw,220px);
     height:clamp(48px,3.2vw,56px);
     padding-inline:clamp(24px,1.8vw,30px);
     border-radius:999px;
