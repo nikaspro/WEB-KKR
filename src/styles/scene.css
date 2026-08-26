@@ -690,8 +690,12 @@
   }
   .menu-brand{
     color:#fff;
-    font:800 clamp(22px,1.8vw,32px)/1 'Onest',system-ui,sans-serif;
-    letter-spacing:-.07em;
+  }
+  .menu-brand img{
+    display:block;
+    width:clamp(72px,6vw,96px);
+    height:auto;
+    filter:invert(1);
   }
   .menu-close{
     position:absolute;
@@ -1008,10 +1012,12 @@
   .pre-logo{
     position:absolute;
     left:50%; top:50%;
-    width:min(26vw,520px);
+    width:min(22vw,402px);
+    aspect-ratio:201/86;
+    background:url('/assets/ui/luna-logo.svg') center/contain no-repeat;
     color:#000;
   }
-  .pre-logo svg{display:block;width:100%;height:auto}
+  .pre-logo svg{display:none}
   body.is-loading{overflow:hidden}
 
   /* пока скрыты: композиция вокруг телефона должна быть чистой.
@@ -2253,7 +2259,8 @@
     font-family:'Onest',system-ui,sans-serif;
   }
   .foot-top{display:grid;grid-template-columns:minmax(280px,1.5fr) repeat(2,minmax(150px,.55fr));gap:clamp(40px,7vw,120px);align-items:start}
-  .foot-logo{display:block;margin-bottom:30px;font-size:clamp(42px,5.5vw,88px);font-weight:900;line-height:.8;letter-spacing:-.07em}
+  .foot-logo{display:block;margin-bottom:30px}
+  .foot-logo img{display:block;width:clamp(104px,9vw,150px);height:auto;filter:invert(1)}
   .foot-lead{max-width:620px;margin:0;color:rgba(255,255,255,.72);font-size:clamp(22px,2.3vw,38px);font-weight:500;line-height:1.18;letter-spacing:-.025em}
   .foot-col{display:flex;flex-direction:column;gap:13px}
   .foot-col b{margin-bottom:9px;color:rgba(255,255,255,.38);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
@@ -2471,7 +2478,7 @@
   .site-header__brand{
     display:block;
     flex:0 0 auto;
-    width:clamp(116px,10vw,150px);
+    width:clamp(86px,7vw,104px);
     color:inherit;
     pointer-events:auto;
   }
@@ -2543,8 +2550,8 @@
     body.cap0-layout .site-header__left{position:absolute;left:38px;top:8px;gap:0}
     body.cap0-layout .site-header__business{display:none}
     body.cap0-layout .site-header__languages{display:flex;gap:8px;font:700 9px/1 'Onest',system-ui,sans-serif;letter-spacing:.03em}
-    body.cap0-layout .site-header__brand{position:fixed;left:50%;top:22px;width:36px;height:26px;overflow:hidden;transform:translateX(-50%)}
-    body.cap0-layout .site-header__brand img{width:94px;max-width:none;height:26px}
+    body.cap0-layout .site-header__brand{position:fixed;left:50%;top:22px;width:62px;height:26px;overflow:hidden;transform:translateX(-50%)}
+    body.cap0-layout .site-header__brand img{width:62px;max-width:none;height:auto}
     body.cap0-layout .site-header__download{width:70px;height:32px;font-size:10px;box-shadow:none}
     body.cap0-layout .site-header__download .site-header__apple{display:none}
     body.cap0-layout .site-header__menu{display:block;position:absolute;left:0;top:0;width:28px;height:28px;background:transparent}
@@ -2554,7 +2561,7 @@
   }
   @media (min-width:761px){
     body.weather-active .site-header__brand,
-    body.split-active .site-header__brand{width:clamp(160px,11vw,190px)}
+    body.split-active .site-header__brand{width:clamp(94px,7.5vw,118px)}
     body.weather-active .site-header__left,
     body.split-active .site-header__left{gap:clamp(30px,3vw,48px)}
     body.weather-active .site-header__business,
@@ -2648,7 +2655,7 @@
   @media (max-width:760px), (max-height:520px) and (pointer:coarse){
     .site-header{padding:14px 16px}
     .site-header__left{gap:0}
-    .site-header__brand{width:clamp(100px,34vw,132px)}
+    .site-header__brand{width:86px}
     .site-header__business{display:none}
     .site-header__download{
       position:fixed;
