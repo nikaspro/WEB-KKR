@@ -2517,9 +2517,11 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    gap:7px;
-    width:clamp(125px,8.4vw,142px);
+    gap:0;
+    width:auto;
+    min-width:clamp(125px,8.4vw,142px);
     height:clamp(48px,3.2vw,56px);
+    padding-inline:clamp(24px,1.8vw,30px);
     border-radius:999px;
     overflow:hidden;
     color:var(--header-button-ink);
