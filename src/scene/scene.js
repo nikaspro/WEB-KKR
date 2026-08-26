@@ -702,36 +702,65 @@ function finishPreloader() {
   });
 })();
 
-// магнит гигантской кнопки «Погнали»: тот же паттерн, что у кнопки шапки
-// (overwrite:'auto' сохраняет покачивание), силы ужаты под размер
-(() => {
-  const zone = document.querySelector('.go-band');
-  const btn = document.querySelector('.go-btn');
-  if (!zone || !btn || matchMedia('(hover: none)').matches) return;
-  const label = btn.querySelector('.go-t');
-
+// Общий магнит кнопок: покачивание, смещение корпуса и отдельная инерция текста.
+function mountMagneticButton(zone, btn, label, options = {}) {
+  if (!zone || !btn || !label || reduced || matchMedia('(hover: none)').matches) return;
   const STRENGTH = 0.06;
   const LABEL_STRENGTH = 0.035;
+  const wobble = options.wobble ?? 1;
+  const disabledWhen = options.disabledWhen;
+  let disabled = Boolean(disabledWhen?.());
 
-  gsap.to(btn, {
-    keyframes: { rotation: [1.6, -1.2, 0.9, -0.6, 0.4, -0.25, 0.12, -0.06, 0] },
+  const wobbleLoop = gsap.to(btn, {
+    keyframes: { rotation: [1.6, -1.2, 0.9, -0.6, 0.4, -0.25, 0.12, -0.06, 0].map(value => value * wobble) },
     duration: 1.5,
     repeat: -1,
-    ease: 'none'
+    ease: 'none',
+    paused: disabled
   });
 
-  zone.addEventListener('mousemove', e => {
+  const resetMotion = () => {
+    gsap.set(btn, { x: 0, y: 0, rotation: 0 });
+    gsap.set(label, { x: 0, y: 0 });
+  };
+
+  if (disabledWhen) {
+    gsap.ticker.add(() => {
+      const nextDisabled = Boolean(disabledWhen());
+      if (nextDisabled === disabled) return;
+      disabled = nextDisabled;
+      if (disabled) {
+        wobbleLoop.pause(0);
+        resetMotion();
+      } else {
+        wobbleLoop.play(0);
+      }
+    });
+  }
+
+  zone.addEventListener('pointermove', e => {
+    if (disabled) return;
     const r = zone.getBoundingClientRect();
     const mapX = gsap.utils.mapRange(r.left, r.right, -r.width / 2, r.width / 2, e.clientX);
     const mapY = gsap.utils.mapRange(r.top, r.bottom, -r.height / 2, r.height / 2, e.clientY);
     gsap.to(btn,   { x: mapX * STRENGTH, y: mapY * STRENGTH, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
     gsap.to(label, { x: mapX * LABEL_STRENGTH, y: mapY * LABEL_STRENGTH, duration: 0.4, ease: 'power2.out', overwrite: true });
   });
-  zone.addEventListener('mouseleave', () => {
+  zone.addEventListener('pointerleave', () => {
+    if (disabled) return;
     gsap.to(btn,   { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
     gsap.to(label, { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.4)', overwrite: true });
   });
-})();
+}
+
+const goMagnetBtn = document.querySelector('.go-btn');
+mountMagneticButton(document.querySelector('.go-band'), goMagnetBtn, goMagnetBtn?.querySelector('.go-t'));
+const headerMagnetBtn = document.querySelector('.site-header__download');
+mountMagneticButton(headerMagnetBtn, headerMagnetBtn, headerMagnetBtn?.querySelector('span'), {
+  wobble: 0.55,
+  disabledWhen: () => document.body.classList.contains('is-loading')
+    || document.body.classList.contains('hero-rim-blue')
+});
 
 // тёмная тема и магический свет включаются на разделе «ИИ-идеи»
 const DARK_IN = 0.964;   // фон дотемняет к 0.988, «помощник» выходит с 1.016   // зазор между надписями: фон меняется на пустом кадре
