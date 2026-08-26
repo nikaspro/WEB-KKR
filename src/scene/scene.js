@@ -7,6 +7,8 @@ document.body.classList.add('is-loading');
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobilePerformance = matchMedia('(max-width: 900px), (hover: none), (pointer: coarse)').matches;
+const TEXT_REVEAL_EASE = 'power3.out';
+const TEXT_REVEAL_STAGGER = .065;
 
 // Сквозной прогресс страницы: шкала неподвижна, меняется только длина рисок
 // вокруг активной позиции. Используем общий GSAP ticker проекта.
@@ -1072,14 +1074,144 @@ addEventListener('resize', refreshProgressMetrics, { passive: true });
 function readProgress() {
   return clamp01(scrollY / spacerHeight);
 }
+
+// Одна деликатная инерция двигает сам scrollY, поэтому ручная сцена и
+// ScrollTrigger читают один прогресс. Touch остаётся нативным: мобильные ОС
+// уже дают корректный momentum, а reduced motion полностью обходит сглаживание.
+const scrollMotion = (() => {
+  const finePointer = matchMedia('(hover:hover) and (pointer:fine)').matches;
+  let targetY = scrollY;
+  let active = false;
+  let lastWrittenY = scrollY;
+
+  const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  const clampScroll = value => gsap.utils.clamp(0, maxScroll(), value);
+  const nestedCanScroll = (origin, delta) => {
+    for (let el = origin instanceof Element ? origin : null; el && el !== document.body; el = el.parentElement) {
+      const style = getComputedStyle(el);
+      if (!/(auto|scroll)/.test(style.overflowY) || el.scrollHeight <= el.clientHeight + 1) continue;
+      if (delta < 0 && el.scrollTop > 0) return true;
+      if (delta > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1) return true;
+    }
+    return false;
+  };
+  const moveTo = (value, immediate = reduced) => {
+    targetY = clampScroll(value);
+    if (immediate) {
+      active = false;
+      lastWrittenY = targetY;
+      scrollTo(0, targetY);
+      ScrollTrigger.update();
+      return;
+    }
+    active = true;
+  };
+
+  if (finePointer && !reduced) {
+    addEventListener('wheel', event => {
+      if (event.defaultPrevented || event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+      const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? 16
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? innerHeight : 1;
+      const delta = gsap.utils.clamp(-220, 220, event.deltaY * unit);
+      if (!delta || nestedCanScroll(event.target, delta)) return;
+      event.preventDefault();
+      if (!active) targetY = scrollY;
+      moveTo(targetY + delta, false);
+    }, { passive:false });
+  }
+
+  addEventListener('keydown', event => {
+    if (reduced || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) return;
+    const step = Math.max(72, innerHeight * .09);
+    const page = innerHeight * .88;
+    const keys = {
+      ArrowDown:step, ArrowUp:-step,
+      PageDown:page, PageUp:-page,
+      ' ':event.shiftKey ? -page : page
+    };
+    if (event.key === 'Home') {
+      event.preventDefault();
+      moveTo(0, false);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      moveTo(maxScroll(), false);
+    } else if (event.key in keys) {
+      event.preventDefault();
+      if (!active) targetY = scrollY;
+      moveTo(targetY + keys[event.key], false);
+    }
+  });
+
+  addEventListener('scroll', () => {
+    // На тяжёлом кадре событие scroll может прийти заметно позже записи.
+    // Сверяем саму позицию, а не время: так длинный переход не обрывается,
+    // а внешний скролл с другой координатой по-прежнему сразу получает управление.
+    const ownWrite = active && Math.abs(scrollY - lastWrittenY) < 3;
+    if (ownWrite) return;
+    targetY = scrollY;
+    active = false;
+  }, { passive:true });
+  addEventListener('pointerdown', () => {
+    if (!active) return;
+    targetY = scrollY;
+    active = false;
+  }, { passive:true });
+  addEventListener('resize', () => {
+    targetY = clampScroll(targetY);
+  }, { passive:true });
+
+  gsap.ticker.add(() => {
+    if (!active) return;
+    const distance = targetY - scrollY;
+    if (Math.abs(distance) < .35) {
+      active = false;
+      lastWrittenY = targetY;
+    } else {
+      lastWrittenY = scrollY + distance * .19;
+    }
+    scrollTo(0, lastWrittenY);
+    ScrollTrigger.update();
+  });
+
+  return { moveTo };
+})();
+
+// Fixed-главы не имеют полезного DOM offsetTop, поэтому их якоря переводятся
+// в координаты общего spacer. Обычные секции продолжают использовать свой top.
+addEventListener('click', event => {
+  const link = event.target instanceof Element
+    ? event.target.closest('a[href^="#"]')
+    : null;
+  if (!link) return;
+  const hash = link.getAttribute('href');
+  if (!hash || hash === '#') return;
+  const target = document.querySelector(hash);
+  if (!target) return;
+  const sceneTargets = {
+    weatherStory:WEATHER_STAGE_IN + WEATHER_SCROLL_LEN * .18,
+    tripHub:TRIP_HUB_STAGE_IN + .085,
+    assistantChat:TRIP_HUB_SCENE_OUT + ASSISTANT_INTRO_SCROLL_LEN * .62,
+    business:0
+  };
+  const virtualTarget = sceneTargets[target.id];
+  const targetY = virtualTarget === undefined
+    ? scrollY + target.getBoundingClientRect().top
+    : spacerHeight * (virtualTarget / VIRTUAL_END);
+  event.preventDefault();
+  history.pushState(null, '', hash);
+  scrollMotion.moveTo(targetY);
+});
+
 p = pTarget = readProgress();
 
 let pDrawn = -1;
 gsap.ticker.add(() => {
   pTarget = readProgress();
-  // На телефоне короткий хвост сглаживания лучше следует за нативным скроллом
-  // и быстрее прекращает тяжёлую перерисовку после отпускания пальца.
-  p += (pTarget - p) * (reduced ? 1 : mobilePerformance ? 0.16 : 0.072);
+  // Инерция уже записывает реальный scrollY. Второй lerp здесь рассинхронизировал
+  // ручные сцены с ScrollTrigger и оставлял соседние главы видимыми одновременно.
+  p = pTarget;
 
   // корпус успокоился и курсор не двигается: писать нечего.
   // интро — исключение: пока glowIn крутится, фон и свечение надо писать
@@ -1265,8 +1397,7 @@ gsap.ticker.add(() => {
   const assistantTextOut = 1 - assistantLeave;
   setAssistantCap({
     autoAlpha:assistantTitleIn * assistantTextOut,
-    y:(1 - assistantTitleIn) * 34 - assistantLeave * 24,
-    filter:`blur(${((1 - assistantTitleIn) * 8 + assistantLeave * 6).toFixed(2)}px)`
+    y:(1 - assistantTitleIn) * 34 - assistantLeave * 24
   });
   assistantTitleWords.forEach((word, index) => {
     const wordIn = smooth(clamp01((assistantIntro - (.12 + index * .075)) / .44));
@@ -1278,8 +1409,7 @@ gsap.ticker.add(() => {
   });
   setAssistantSide({
     autoAlpha:assistantSideIn * assistantTextOut,
-    y:(1 - assistantSideIn) * 28 - assistantLeave * 18,
-    filter:`blur(${((1 - assistantSideIn) * 7 + assistantLeave * 5).toFixed(2)}px)`
+    y:(1 - assistantSideIn) * 28 - assistantLeave * 18
   });
 
   // Большой диалог появляется после фонового вступления. Позиции полностью
@@ -1301,23 +1431,20 @@ gsap.ticker.add(() => {
     exchange.setExchange({
       autoAlpha:exchangeVis,
       y:-exchangeOut * 46,
-      scale:1 - exchangeOut * .025,
-      filter:`blur(${(exchangeOut * 10).toFixed(2)}px)`
+      scale:1 - exchangeOut * .025
     });
     exchange.setUser({
       autoAlpha:userIn,
       x:(1 - userIn) * 110,
       y:(1 - userIn) * 28,
-      scale:.94 + userIn * .06,
-      filter:`blur(${((1 - userIn) * 13).toFixed(2)}px)`
+      scale:.94 + userIn * .06
     });
     exchange.user.style.setProperty('--request-fill', smooth(clamp01((local - .14) / .38)).toFixed(4));
     exchange.setAgent({
       autoAlpha:agentIn,
       x:(1 - agentIn) * -110,
       y:(1 - agentIn) * 36,
-      scale:.935 + agentIn * .065,
-      filter:`blur(${((1 - agentIn) * 14).toFixed(2)}px)`
+      scale:.935 + agentIn * .065
     });
   });
 
@@ -1958,53 +2085,6 @@ addEventListener('scroll', scheduleLogoOverlap, { passive: true });
 addEventListener('resize', scheduleLogoOverlap, { passive: true });
 scheduleLogoOverlap();
 
-// заголовок «рутины»: слова выезжают из-под маски по одному, когда блок входит
-// в кадр. IntersectionObserver вместо тикера: срабатывает один раз
-(() => {
-  const h2 = document.getElementById('rutH2');
-  const sub = document.getElementById('rutSub');
-  if (!h2) return;
-  const words = [...h2.querySelectorAll('.w')].map(w => {
-    const i = document.createElement('i');
-    i.textContent = w.textContent;
-    w.textContent = '';
-    w.appendChild(i);
-    return i;
-  });
-  if (reduced) {
-    gsap.set(words, { y: 0, rotate: 0, opacity: 1 });
-    gsap.set(sub, { opacity: 1 });
-    return;
-  }
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      io.disconnect();
-      gsap.to(words, {
-        y: 0, rotate: 0, opacity: 1,
-        duration: 0.9,
-        stagger: 0.085,
-        ease: 'expo.out'
-      });
-      gsap.to(sub, { opacity: 1, y: 0, duration: 0.7, delay: 0.34, ease: 'power2.out' });
-    });
-  }, { threshold: 0.25 });
-  gsap.set(sub, { y: 18 });
-  io.observe(h2);
-})();
-
-// Невидимые длинные секции не участвуют в глобальном GSAP-цикле.
-const sectionVisibility = new WeakMap();
-const sectionObserver = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    sectionVisibility.set(entry.target, entry.isIntersecting);
-  });
-}, { rootMargin: '20% 0px' });
-function watchAnimatedSection(el) {
-  if (!el) return;
-  sectionVisibility.set(el, false);
-  sectionObserver.observe(el);
-}
 // Погодная глава встроена в ту же sticky-сцену: фон сменяется под уже
 // существующим телефоном, а ScrollTrigger отвечает только за драматургию слоя.
 const weatherSec = document.getElementById('weatherStory');
@@ -2056,7 +2136,7 @@ if (weatherSec) {
       trigger:'.stage',
       start:() => `top+=${weatherStart()} top`,
       end:() => `top+=${weatherEnd()} top`,
-      scrub:reduced ? false : 1.35,
+      scrub:reduced ? false : true,
       invalidateOnRefresh:true,
       onEnter:enterWeather,
       onEnterBack:() => {
@@ -2065,7 +2145,7 @@ if (weatherSec) {
       },
       onUpdate:self => {
         const weatherTime = self.progress * WEATHER_TIMELINE_LEN;
-        const storm = weatherTime > .99;
+        const storm = self.isActive && weatherTime > .99;
         // Карточки в телефоне меняются вместе со стартом барабана погоды.
         // При обратном скролле возвращается исходный набор.
         setAppWeatherEvents(weatherTime > .40);
@@ -2086,7 +2166,7 @@ if (weatherSec) {
     .fromTo(weatherPicture,{scale:1.035},{scale:1.012,duration:.82,ease:'sine.out'},0)
     .to(weatherTemp,{autoAlpha:1,scale:1,duration:.28,ease:'power3.out'},.10)
     .to(weatherTitleLines,{
-      autoAlpha:1,y:0,scale:1,duration:.32,stagger:.065,ease:'power3.out'
+      autoAlpha:1,y:0,scale:1,duration:.32,stagger:TEXT_REVEAL_STAGGER,ease:TEXT_REVEAL_EASE
     },.18)
     // Вертикальный барабан последовательно показывает 20°, 19°, 18°, 17° и 16°.
     .to(weatherTempReel,{yPercent:-80,duration:.40,ease:'power2.inOut'},.40)
@@ -2286,9 +2366,9 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
     .to(tripHubItems, {
       autoAlpha:1,
       y:0,
-      duration:.58,
-      stagger:.085,
-      ease:'power3.out'
+      duration:.62,
+      stagger:TEXT_REVEAL_STAGGER,
+      ease:TEXT_REVEAL_EASE
     });
   function setTripHubRowsActive(active) {
     if (reduced || active === tripHubRowsActive) return;
@@ -2713,12 +2793,13 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
       trigger:'.stage',
       start:() => `top+=${splitStart()} top`,
       end:() => `top+=${splitEnd()} top`,
-      scrub:reduced ? true : .72,
+      scrub:true,
       invalidateOnRefresh:true,
       onToggle:self => {
         if (!self.isActive) {
           setSplitSceneActive(false);
           setTripHubActive(false);
+          gsap.set([splitSec, tripHub], { autoAlpha:0 });
         }
       },
       onUpdate:self => {
@@ -2747,12 +2828,11 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
       scale:1,
       duration:hubLineDuration,
       stagger:hubLineStagger,
-      ease:'power4.out'
+      ease:TEXT_REVEAL_EASE
     }, hubTitleInStart);
   splitTl
     .to([tripHubTitle, tripHubList], {
       autoAlpha:0,
-      filter:'blur(8px)',
       duration:Math.max(.01, hubCutOut - hubContentOutStart),
       ease:'power3.in'
     }, hubContentOutStart)
@@ -2793,52 +2873,7 @@ if (splitSec && splitLeft && splitRight && splitTrail && splitAudio && splitAudi
     removeEventListener('resize', onSplitResize);
   }
 
-  const splitObserver = new MutationObserver(() => {
-    if (!document.documentElement.contains(splitSec)) {
-      splitObserver.disconnect();
-      destroySplitScene();
-    }
-  });
-  if (document.documentElement) {
-    splitObserver.observe(document.documentElement, { childList:true, subtree:true });
-  }
   addEventListener('pagehide', destroySplitScene, { once:true });
   syncAudioState();
   setAudioProgress(0);
 }
-
-const rutSec = document.querySelector('.routine');
-watchAnimatedSection(rutSec);
-const rutCards = [...document.querySelectorAll('.fcard')].map(el => ({
-  setC: gsap.quickSetter(el, 'css')
-}));
-let rutP = 0, rutDrawn = -1;
-const FAN_N = rutCards.length, FAN_STEP = 13;
-// back-out: карта проскакивает слот и упруго встаёт — баунс на появлении
-const backOut = t => { const c1 = 1.70158, c3 = c1 + 1, x = t - 1; return 1 + c3*x*x*x + c1*x*x; };
-
-gsap.ticker.add(() => {
-  if (!rutSec || !sectionVisibility.get(rutSec)) return;
-  const r = rutSec.getBoundingClientRect();
-  if (r.top > innerHeight || r.bottom < 0) return;      // секция не в кадре
-  const raw = clamp01(-r.top / (r.height - innerHeight));
-  rutP += (raw - rutP) * (reduced ? 1 : 0.09);
-  if (Math.abs(rutP - rutDrawn) < 0.0006) return;
-  rutDrawn = rutP;
-
-  // v: сколько карт в веере, непрерывно; первая тоже въезжает, а не ждёт готовой
-  const v  = rutP * (FAN_N + 0.25);
-  const vc = Math.min(v, FAN_N);
-  rutCards.forEach((c, k) => {
-    const rk = clamp01(v - k);                     // раскрытие карты k
-    const rb = backOut(rk);                        // с упругим перелётом
-    const ang = (k - (vc - 1) / 2) * FAN_STEP;
-    c.setC({
-      rotation: ang + (1 - rb) * 16,
-      x: (1 - rb) * 34,
-      y: (1 - rb) * 22,
-      opacity: clamp01(rk * 2.6),
-      scale: 0.92 + 0.08 * rb
-    });
-  });
-});

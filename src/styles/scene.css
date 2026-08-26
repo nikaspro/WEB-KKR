@@ -72,9 +72,6 @@
     visibility:hidden;
     pointer-events:none;
   }
-  .roll-layer.sharp{}
-  .scroll-layer{}
-  .scroll-layer.sharp{}
   .scroll-layer{position:relative;z-index:6}
 
   .idle-y{transform-style:preserve-3d;animation:floatY 5.6s ease-in-out infinite}
@@ -441,32 +438,6 @@
     inset:calc(var(--h) * .0045);
     border-radius:calc(var(--r) - var(--h) * .0045);
   }
-  /* место, куда садится карточка */
-  .slot{align-self:stretch}
-
-  /* сама карточка: один шаблон для обеих копий */
-  .pay{
-    background:var(--accent); color:#fff;
-    border-radius:20px; padding:13px;
-  }
-  .pay .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-  .pay .big{font-size:15px;font-weight:500;letter-spacing:-.01em}
-  .pay .ok{font-size:12px;color:#C9FFE6;margin-top:2px}
-  .pay .amt{font-size:15px;font-weight:500;white-space:nowrap}
-  .pay .panel{
-    margin-top:11px; padding:9px 11px;
-    background:rgba(255,255,255,.17);
-    border-radius:14px;
-    display:grid; gap:7px; font-size:11.5px;
-  }
-  .pay .panel .r{display:flex;justify-content:space-between;gap:12px}
-  .pay .panel .r span:last-child{color:rgba(255,255,255,.92)}
-
-  /* копия внутри экрана: появляется в самом конце посадки */
-
-  /* --- слой поверх корпуса: тут карточка живёт, пока крупная --- */
-  .overlays{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
-
   /* --- градиент первого экрана: уходит вместе с героем --- */
   /* исходит из-под корпуса, смещено вниз: цвета больше в кадре */
   /* градиентная полоса главного экрана: во всю ширину, гаснет к низу */
@@ -480,9 +451,6 @@
     opacity:0;
     pointer-events:none;
     transform-origin:50% 0;
-    background-image:url(/assets/generated/a94b6d632689.webp);
-    background-size:100% 100%;
-    background-repeat:no-repeat;
     background:#0A1722;
     -webkit-mask-image:none;
     mask-image:none;
@@ -871,12 +839,6 @@
     /* Цвет даёт сам Ellipse 5583.svg — без дополнительных пятен поверх него. */
     opacity:0;
   }
-  .hero-band::after{
-    inset:-128vh -108vw -108vh;
-    background:url('/assets/media/hero-glow.svg') center / min(300vw,4400px) auto no-repeat;
-    opacity:.82;
-    transform:rotate(-15deg);
-  }
   /* Исходный Ellipse 5583.svg растянут как в референсе: большая тёмная
      внутренняя дуга сверху, голубая и зелёная части выходят за края окна. */
   .hero-band::after{
@@ -981,8 +943,6 @@
   }
   @media (prefers-reduced-motion:reduce){.hero-download{transition:none}}
 
-  /* маски строк и слов: буквы выныривают из-за края.
-     padding с отрицательным margin нужен, чтобы не срезало выносные элементы */
   /* маска включена: буквы поднимаются из-за нижнего края строки.
      padding с отрицательным margin оставляет место выносным, край клипа ниже базовой линии */
   .m-line{display:block;overflow:hidden;padding:.42em .16em .34em 0;margin:-.42em -.16em -.34em 0}
@@ -1019,10 +979,6 @@
   }
   .pre-logo svg{display:none}
   body.is-loading{overflow:hidden}
-
-  /* пока скрыты: композиция вокруг телефона должна быть чистой.
-     вернуть — убрать эти два правила, логика в JS осталась на месте */
-  .orb{display:none; /* фаза убрана */ display:none}   /* шары скрыты, «Заряжаем поездку» вернулся */
 
   /* --- шары вайбов: выезжают снизу с разной скоростью --- */
   .orb{
@@ -2294,36 +2250,6 @@
     .foot-legal{flex-direction:column;gap:8px}
   }
 
-  /* --- блок «рутина»: обычный блок после сцены --- */
-  .routine{
-    display:none;   /* скрыто: заголовок и карточки дублируют блок «помощник» в сцене */
-    position:relative;
-    height:300vh;
-    background:#fff;
-  }
-  .routine-sticky{
-    position:sticky; top:0;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:22px;
-    padding-top:13vh;      /* заголовок не подлезает под шапку */
-    padding-bottom:10vh;   /* запас под просадку крайних карт веера */
-    overflow:hidden;
-  }
-  .routine h2{
-    margin:0;
-    font-family:var(--heading);
-    font-weight:500;
-    font-size:clamp(44px,7vw,132px);
-    letter-spacing:-.01em;
-    line-height:0.83;
-    text-transform:lowercase;
-    text-align:center;
-    color:var(--ink);
-  }
   .hero h1,
   .caption-heading,
   #cap0,
@@ -2331,72 +2257,7 @@
   .weather-title,
   .split-kicker,
   .split-heading,
-  .trip-hub__title,
-  .routine h2{letter-spacing:0}
-  /* появление по словам: каждое выезжает из-под своей маски */
-  .routine h2 .w{
-    display:inline-block;
-    overflow:hidden;
-    vertical-align:bottom;
-    clip-path:inset(0 0 -.14em 0);
-  }
-  .routine h2 .w > i{
-    display:inline-block;
-    font-style:normal;
-    transform:translateY(105%) rotate(4deg);
-    opacity:0;
-  }
-  .routine-sub{opacity:0;}
-  .routine-sub{
-    margin:0;
-    max-width:560px;
-    text-align:center;
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    font-size:clamp(15px,1.25vw,19px);
-    line-height:1.45;
-    color:#6B747B;
-  }
-  /* тёмная плита убрана: веер живёт прямо на белом */
-  .routine-plate{
-    margin-top:14px;
-    width:min(1160px,94vw);
-    height:min(56vh,600px);
-    display:grid;
-    place-items:center;
-  }
-  .fan{
-    position:relative;
-    /* потолок по высоте окна: крайние карты при повороте просаживаются на ~20% высоты */
-    --fw:min(clamp(250px,23vw,390px), 35vh);
-    width:var(--fw);
-    height:min(clamp(330px,30vw,500px), 46vh);
-    transform:translateY(-3%);
-  }
-  .fcard{
-    position:absolute; inset:0;
-    /* айфоновское скругление: как у корпуса телефона, ~14.5% ширины карты */
-    border-radius:calc(var(--fw) * 0.145);
-    padding:30px;
-    transform-origin:50% 380%;    /* далёкая нижняя ось: поворот раскладывает веером */
-    opacity:0;
-  }
-  /* текст по верхнему краю; видео позже ляжет фоном карточки */
-  .ft{
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    font-size:clamp(19px,1.6vw,27px);
-    font-weight:600;
-    letter-spacing:-.02em;
-    line-height:1.24;
-    color:var(--ink);
-  }
-  .fc1{background:#D1FFEB}
-  .fc2{background:#EFFF5D}
-  .fc3{background:#BFE9FA}
-  .fc4{background:#FFD9C4}
-  @media (max-width:900px){
-    .fan{width:230px;height:300px}
-  }
-  .tail-space{height:0}
+  .trip-hub__title{letter-spacing:0}
   /* Неподвижная шкала всей страницы: JS меняет только длину и прозрачность рисок. */
   .scroll-indicator{
     --indicator-color:rgb(0 0 0 / .05);
