@@ -110,7 +110,10 @@ for (const f of htmlFiles) {
   for (const m of txt.matchAll(/<(img|video)\b[^>]*>/gi)) {
     const tag = m[0], kind = m[1].toLowerCase();
     const src = (tag.match(/\bsrc=["']?([^"'\s>]+)/i) || [])[1] || '(без src)';
-    const whitelisted = eager.has(src);
+    // Вложенный HTML получает от Vite ../assets/* вместо ./assets/*.
+    // Сводим оба варианта к форме из eagerAllow, не расширяя сам белый список.
+    const eagerSrc = src.replace(/^(?:\.\.\/)+/, './');
+    const whitelisted = eager.has(src) || eager.has(eagerSrc);
 
     if (chk.requireLazyImages && kind === 'img' && !whitelisted && !/\bloading=["']?lazy/i.test(tag)) {
       fails.push(`${f}: ${src} без loading="lazy" и не в eagerAllow`);

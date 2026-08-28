@@ -17,7 +17,14 @@ import {
 } from './phases.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText, CustomEase);
-document.body.classList.add('is-loading');
+const INTRO_SEEN_KEY = 'luna:intro-seen';
+let skipPreloader = false;
+try {
+  skipPreloader = sessionStorage.getItem(INTRO_SEEN_KEY) === '1';
+} catch (err) {
+  skipPreloader = false;
+}
+if (!skipPreloader) document.body.classList.add('is-loading');
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobilePerformance = matchMedia('(max-width: 900px), (hover: none), (pointer: coarse)').matches;
@@ -242,7 +249,9 @@ addEventListener('resize', fitFrame);
 // прелоадер уходит, когда готовы и страница, и экран внутри
 const preStart = performance.now();
 function tryFinish() {
-  const wait = Math.max(0, 300 - (performance.now() - preStart));   // короткая страховка от вспышки загрузки
+  const wait = skipPreloader
+    ? 0
+    : Math.max(0, 300 - (performance.now() - preStart));   // короткая страховка от вспышки загрузки
   setTimeout(() => { if (typeof finishPreloader === 'function') finishPreloader(); }, wait);
 }
 if (document.readyState === 'complete') tryFinish();
@@ -470,7 +479,7 @@ gsap.set(preLogoLetterL, { autoAlpha: 0, xPercent: -92, yPercent: 20, rotation: 
 gsap.set(preLogoLetterU, { autoAlpha: 0, xPercent: 92, yPercent: -16, rotation: 5 });
 gsap.set(preLogoSvg, { scale: 1.18, transformOrigin: '50% 50%' });
 
-const preRevealTl = gsap.timeline();
+const preRevealTl = gsap.timeline({ paused:skipPreloader });
 preRevealTl
   .to(preGradient, {
     opacity: 1, scaleY: 1, duration: INTRO_TIMING.gradient, ease: 'power2.out'
@@ -573,6 +582,27 @@ function finishPreloader() {
   if (loadDone) return;
   loadDone = true;
 
+  if (skipPreloader) {
+    preRevealTl.kill();
+    preEl.remove();
+    logoSlot.style.opacity = 1;
+    document.body.classList.remove('is-loading');
+    glowIn.v = 1;
+    glowIn.sc = 1;
+    gsap.set(hdrItems, { autoAlpha:1, y:0 });
+    gsap.set([heroH1, heroP], { opacity:1 });
+    gsap.set(h1Chars, { yPercent:0 });
+    gsap.set(pChars, { opacity:1, y:0 });
+    gsap.set(introLayer, { x:0, y:0, scale:1 });
+    gsap.set(tiltLayer, { rotationY:0 });
+    gsap.set([rimEl, faceFront, screenEl], { opacity:1 });
+    gsap.set(rimEl, { scale:1 });
+    gsap.set([heroDownload, scrollCue], { autoAlpha:1, y:0 });
+    pDrawn = -1;
+    if (scrollCueLoop) scrollCueLoop.play(0);
+    return;
+  }
+
   // Даже при быстром кэше сохраняем чёрную паузу и полный въезд обеих букв.
   const revealEnd = INTRO_TIMING.blackHold
     + INTRO_TIMING.logoLetters
@@ -605,6 +635,11 @@ function flyLogoToHeader() {
       preLogo.style.opacity = 0;
       preEl.remove();
       document.body.classList.remove('is-loading');
+      try {
+        sessionStorage.setItem(INTRO_SEEN_KEY, '1');
+      } catch (err) {
+        // В приватном режиме хранилище может быть недоступно: интро просто повторится.
+      }
     })
     .to(hdrItems, { autoAlpha: 1, y: 0, duration: .55, ease: 'power3.out' }, .62)
     .to(glowIn, { v: 1, sc: 1, duration: 1, ease: 'power2.out' }, 0)

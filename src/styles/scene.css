@@ -2797,6 +2797,7 @@
     font-weight:500;
     font-stretch:100%;
     line-height:1;
+    text-decoration:none;
     white-space:nowrap;
     transition:color .34s ease;
   }

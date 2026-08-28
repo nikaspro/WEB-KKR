@@ -9,7 +9,7 @@ export default defineConfig({
     // По умолчанию Vite инлайнит ассеты до 4 КБ в base64, а гейт валит data: длиннее 2 КБ.
     assetsInlineLimit: 2048,
     rollupOptions: {
-      input: 'index.html'
+      input: ['index.html', 'hotels/index.html']
     }
   }
 });

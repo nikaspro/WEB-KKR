@@ -1,0 +1,127 @@
+.hotel-sales-story{
+  position:relative;
+  height:185svh;
+  background:var(--hotel-black);
+}
+
+.hotel-sales{
+  position:sticky;
+  top:0;
+  height:100svh;
+  min-height:660px;
+  overflow:hidden;
+  isolation:isolate;
+  background:var(--hotel-black);
+  color:#fff;
+}
+
+.hotel-sales__glow{
+  display:none;
+}
+
+.hotel-sales__inner{
+  display:grid;
+  grid-template-rows:auto 1fr;
+  width:100%;
+  height:100%;
+  padding:clamp(178px,11.5vh,190px) clamp(42px,6.55vw,128px) clamp(112px,13.25vh,148px);
+}
+
+.hotel-sales__title{
+  margin:0;
+  color:#f7f7f7;
+  font-size:clamp(48px,3.7vw,72px);
+  font-weight:300;
+  line-height:1.01;
+  text-align:center;
+  letter-spacing:.005em;
+  text-wrap:balance;
+}
+
+.hotel-sales__stats{
+  align-self:end;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(18px,1.3vw,28px);
+}
+
+.hotel-sales__stat{min-width:0}
+
+.hotel-sales__bar-stage{
+  position:relative;
+  height:clamp(300px,38vh,520px);
+  overflow:hidden;
+}
+
+.hotel-sales__bar{
+  --sales-bar-radius:clamp(12px,1vw,18px);
+  position:absolute;
+  inset:auto 0 0;
+  display:block;
+  border-radius:var(--sales-bar-radius);
+}
+
+.hotel-sales__bar--revenue{
+  height:17.4%;
+  background:#1914a8;
+}
+
+.hotel-sales__bar--repeat{
+  height:35%;
+  background:#0400fa;
+}
+
+.hotel-sales__bar--extras{
+  height:100%;
+  background:#6a66ff;
+}
+
+.hotel-sales__value{
+  display:block;
+  min-height:1em;
+  margin-top:clamp(46px,6.7vh,68px);
+  color:#fff;
+  font-size:clamp(70px,5.55vw,108px);
+  font-weight:300;
+  line-height:.96;
+  letter-spacing:-.035em;
+  white-space:nowrap;
+}
+
+.hotel-sales__label{
+  margin:clamp(18px,2.1vh,26px) 0 0;
+  color:rgba(255,255,255,.58);
+  font-size:clamp(18px,1.45vw,28px);
+  font-weight:500;
+  line-height:1.2;
+  letter-spacing:-.02em;
+}
+
+@media (max-width:900px){
+  .hotel-sales-story{height:auto}
+  .hotel-sales{
+    position:relative;
+    height:auto;
+    min-height:100svh;
+    overflow:visible;
+  }
+  .hotel-sales__inner{
+    display:block;
+    padding:180px 20px 88px;
+  }
+  .hotel-sales__title{font-size:clamp(42px,10vw,64px)}
+  .hotel-sales__stats{
+    grid-template-columns:1fr;
+    gap:64px;
+    margin-top:96px;
+  }
+  .hotel-sales__bar-stage{height:280px}
+  .hotel-sales__bar--revenue{height:28%}
+  .hotel-sales__bar--repeat{height:52%}
+  .hotel-sales__value{margin-top:28px}
+  .hotel-sales__label{margin-top:16px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .hotel-sales-story{height:100svh}
+}
