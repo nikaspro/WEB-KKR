@@ -1,14 +1,48 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { CustomEase } from 'gsap/CustomEase';
+import {
+  CAP0_AT,
+  CAP1_AT,
+  CAP2_AT,
+  CHARGE_AT,
+  CHARGE_LEN,
+  DARK_AT,
+  DARK_LEN,
+  DIVE_AT,
+  DIVE_LEN,
+  MIRROR_AT,
+  MIRROR_LEN
+} from './phases.js';
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger, SplitText, CustomEase);
 document.body.classList.add('is-loading');
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobilePerformance = matchMedia('(max-width: 900px), (hover: none), (pointer: coarse)').matches;
 const TEXT_REVEAL_EASE = 'power3.out';
 const TEXT_REVEAL_STAGGER = .065;
+const LOGO_TO_CORNER_EASE = CustomEase.create(
+  'logoToCorner',
+  'M0,0 C0.545,0.105 0.095,0.985 1,1'
+);
+const INTRO_TIMING = Object.freeze({
+  blackHold: .2,
+  logoLetters: 1.5,
+  logoStagger: .1,
+  gradient: 2,
+  logoFlight: 1.2,
+  title: 1,
+  titleStagger: .014,
+  description: 1,
+  descriptionStagger: .003,
+  phone: 1.8,
+  rim: .7,
+  screen: .6,
+  cta: .6,
+  arrow: .6
+});
 
 // Сквозной прогресс страницы: шкала неподвижна, меняется только длина рисок
 // вокруг активной позиции. Используем общий GSAP ticker проекта.
@@ -96,19 +130,16 @@ function syncHeaderTheme() {
 syncHeaderTheme();
 addEventListener('scroll', syncHeaderTheme, { passive:true });
 addEventListener('resize', syncHeaderTheme, { passive:true });
-// Две стрелки пружинят на месте: короткое сжатие и мягкая GSAP-отдача.
+// Одинарная стрелка пружинит на месте: короткое сжатие и мягкая GSAP-отдача.
 const scrollCue = document.querySelector('.scroll-cue');
 let scrollCueLoop = null;
 if (scrollCue) {
-  scrollCue.insertAdjacentHTML('afterbegin',
-    '<svg class="scroll-cue-arrows" viewBox="0 0 40 31" aria-hidden="true"><path class="scroll-chevron" pathLength="1" d="M3 3.5L20 12L37 3.5"/><path class="scroll-chevron" pathLength="1" d="M3 16.5L20 25L37 16.5"/></svg>'
-  );
-  const cueArrows = scrollCue.querySelectorAll('.scroll-chevron');
+  const cueArrow = scrollCue.querySelector('.scroll-chevron');
   gsap.set(scrollCue, { autoAlpha: 0, y: 12 });
   if (reduced) {
-    gsap.set(cueArrows, { opacity: .78, strokeDasharray: 1, strokeDashoffset: 0 });
+    gsap.set(cueArrow, { opacity: .78, strokeDasharray: 1, strokeDashoffset: 0 });
   } else {
-    gsap.set(cueArrows, {
+    gsap.set(cueArrow, {
       opacity: .84,
       strokeDasharray: 1,
       strokeDashoffset: 0,
@@ -118,22 +149,14 @@ if (scrollCue) {
       transformOrigin: '50% 50%'
     });
     scrollCueLoop = gsap.timeline({ paused: true, repeat: -1, repeatDelay: .42 })
-      .to(cueArrows[0], {
+      .to(cueArrow, {
         opacity: 1, y: -1, scaleX: 1.15, scaleY: .68,
         duration: .16, ease: 'power2.in'
       }, 0)
-      .to(cueArrows[0], {
+      .to(cueArrow, {
         opacity: .84, y: 0, scaleX: 1, scaleY: 1,
         duration: .78, ease: 'elastic.out(1.25,.28)'
-      }, .16)
-      .to(cueArrows[1], {
-        opacity: 1, y: -1, scaleX: 1.15, scaleY: .68,
-        duration: .16, ease: 'power2.in'
-      }, .12)
-      .to(cueArrows[1], {
-        opacity: .84, y: 0, scaleX: 1, scaleY: 1,
-        duration: .78, ease: 'elastic.out(1.25,.28)'
-      }, .28);
+      }, .16);
   }
 }
 
@@ -230,10 +253,10 @@ setTimeout(tryFinish, 6000);   // страховка: не залипать, е�
 // Важно: кадры дискретные — блок либо есть целиком, либо его уже нет.
 // Так при скролле не остаются обрезанные или полупрозрачные слова.
 // [0] после влёта карточек и появления плана, [3] — вход в зарядку
-const CAP_START = [0.600, 0.832, 1.016, 1.240];
+const CAP_START = [0.600, CAP1_AT, CAP2_AT, CHARGE_AT];
 // Последний кадр потока скрывается к 0.610. Текст первого экрана получает
 // короткий чистый зазор и появляется только после полного ухода изображений.
-const CAP0_REVEAL = 0.622;
+const CAP0_REVEAL = CAP0_AT;
 // длина таймлайна: позиции заданы в единицах старой шкалы p и уходят за 1.0,
 // поэтому прогресс нормируем на эту длину, а не на единицу
 const CAP_TL_LEN = 1.45;
@@ -295,7 +318,7 @@ const ASSISTANT_INTRO_SCROLL_LEN = 0.105;
 // Четырём диалогам выделен отдельный длинный участок. Legacy-период помощника
 // остаётся тем же, но проходит по нему медленнее, не сдвигая тайминги зарядки.
 const ASSISTANT_CHAT_SCROLL_LEN = 0.720;
-const ASSISTANT_CHAT_LEGACY_END = 1.240;
+const ASSISTANT_CHAT_LEGACY_END = CHARGE_AT;
 const ASSISTANT_CHAT_LEGACY_LEN = ASSISTANT_CHAT_LEGACY_END - CAP_START[2];
 const ASSISTANT_CHAT_EXTRA = ASSISTANT_CHAT_SCROLL_LEN - ASSISTANT_CHAT_LEGACY_LEN;
 const BASE_EXTRA_SCROLL_LEN = WEATHER_SCROLL_LEN + SPLIT_SCROLL_LEN
@@ -413,11 +436,11 @@ capTl.progress(0).pause();
 const START = { rx: 22, ry: 0, rz: 0, sc: 1.58, x: 0, y: 220 };
 // На широком первом экране телефон освобождает левую колонку текста и
 // частично выходит за низ кадра, как в утверждённой композиции.
-const HERO_DESKTOP = { rx: 6, ry: -6, rz: 6, sc: 1.26, x: 0.13, y: 0.045 };
+const HERO_DESKTOP = { rx: 6, ry: -6, rz: 6, sc: 1.386, x: 0.20, y: 0.045 };
 // поза покоя: углы не уходят в ноль, иначе корпус читается плоским — торца не видно
 const REST  = { rx: 3, ry: -14, rz: 0 };
 // поза нырка и возврата: ракурс снизу, без бокового разворота и крена
-const DIVE  = { rx: 15, ry: -2, rz: 0, x: 0, y: 120 };
+const DIVE  = { rx: 58, ry: -45, rz: 0, x: 0, y: 1.22 };
 const END_SCALE = 1.0;
 
 let pTarget = 0, p = 0, virtualP = 0, legacyP = 0, vTarget = 0, v = 0;
@@ -434,34 +457,39 @@ const orbs = [...document.querySelectorAll('.orb')].map(el => ({
 }));
 
 // ---- прелоадер ----
-// пятна летят вверх по кругу, пока грузится; счётчик идёт к 100
 const preEl  = document.getElementById('pre');
 const preLogo = document.getElementById('preLogo');
+const preLogoSvg = preLogo.querySelector('.pre-logo-svg');
+const preLogoLetters = [...preLogo.querySelectorAll('.pre-logo-letter')];
+const preLogoLetterL = preLogo.querySelector('.pre-logo-letter--l');
+const preLogoLetterU = preLogo.querySelector('.pre-logo-letter--u');
+const preGradient = document.getElementById('preGradient');
 // центровка живёт в трансформе GSAP, поэтому дальнейшие x/y её не затирают
 gsap.set(preLogo, { xPercent: -50, yPercent: -50 });
-const preBlobs = [
-  { el: document.getElementById('pb0'), speed: 1.00, drift: -3 },
-  { el: document.getElementById('pb1'), speed: 1.45, drift:  4 },
-  { el: document.getElementById('pb2'), speed: 0.78, drift: -2 }
-];
-// каждое пятно крутит свой цикл: общий таймлайн синхронизировал бы их
-// и параллакс пропал бы после первого повтора
-preBlobs.forEach(b => {
-  b.loop = gsap.fromTo(b.el,
-    { y: 0, x: 0 },
-    {
-      y: () => -(innerHeight * 1.9),
-      x: b.drift * 10,
-      duration: 3.6 / b.speed,
-      ease: 'none',
-      repeat: -1
-    });
-});
+gsap.set(preLogoLetterL, { autoAlpha: 0, xPercent: -92, yPercent: 20, rotation: -5 });
+gsap.set(preLogoLetterU, { autoAlpha: 0, xPercent: 92, yPercent: -16, rotation: 5 });
+gsap.set(preLogoSvg, { scale: 1.18, transformOrigin: '50% 50%' });
 
-// логотип чуть дышит, пока идёт загрузка
-gsap.fromTo(preLogo, { scale: .985 }, {
-  scale: 1.015, duration: 1.4, ease: 'sine.inOut', yoyo: true, repeat: -1
-});
+const preRevealTl = gsap.timeline();
+preRevealTl
+  .to(preGradient, {
+    opacity: 1, scaleY: 1, duration: INTRO_TIMING.gradient, ease: 'power2.out'
+  }, INTRO_TIMING.blackHold)
+  .to(preLogoLetters, {
+    autoAlpha: 1,
+    xPercent: 0,
+    yPercent: 0,
+    rotation: 0,
+    duration: INTRO_TIMING.logoLetters,
+    ease: LOGO_TO_CORNER_EASE,
+    stagger: INTRO_TIMING.logoStagger
+  }, INTRO_TIMING.blackHold)
+  // Буквы приезжают к центру чуть крупнее и мягко сжимаются к размеру полёта.
+  .to(preLogoSvg, {
+    scale: 1,
+    duration: INTRO_TIMING.logoLetters + INTRO_TIMING.logoStagger * (preLogoLetters.length - 1),
+    ease: LOGO_TO_CORNER_EASE
+  }, INTRO_TIMING.blackHold);
 
 // разбивка текста: строки в маски, внутри буквы. SplitText платный,
 // поэтому режем руками — структура та же, что в Mask Reveal и Wave Up из библиотеки
@@ -511,22 +539,28 @@ const logoSlot  = document.getElementById('logoSlot');
 const introLayer = document.getElementById('introLayer');
 const heroH1 = document.getElementById('heroH1');
 const heroP  = document.getElementById('heroP');
+const heroSection = document.querySelector('.hero');
+const headerDownload = document.getElementById('headerDownload');
 const h1Chars = splitChars(heroH1);
 const pChars  = splitWordChars(heroP);
 // прячем заранее и анимируем через .to: у .from со стаггером буквы
 // до своей очереди остаются в конечном состоянии, то есть уже видны
 gsap.set(h1Chars, { yPercent: 118 });   // маска строки прячет их до подъёма
 gsap.set(pChars,  { opacity: 0, y: 14 });
-const hdrItems = ['hi0','hi2','menuTrigger'].map(id => document.getElementById(id)).filter(Boolean);
-gsap.set(hdrItems, { y: -14 });   // .from здесь не годится: в CSS opacity уже 0
+const hdrItems = ['hi0','menuTrigger'].map(id => document.getElementById(id)).filter(Boolean);
+gsap.set(hdrItems, { autoAlpha: 0, y: -14 });
+const heroDownload = document.querySelector('.hero-download');
+gsap.set(heroDownload, { autoAlpha: 0, y: 12 });
 
 // телефон и текст ждут окончания интро
 // Градиентный контур и экран проявляются последовательно.
 const rimEl = document.querySelector('.rim');
 const faceFront = document.querySelector('.face.front');
 const screenEl  = document.querySelector('.screen');
+const tiltLayer = document.querySelector('.tilt-layer');
 
-gsap.set(introLayer, { y: 150 });   // приезжает раньше: см. позицию build в таймлайне
+gsap.set(introLayer, { x: () => Math.min(260, innerWidth * .14), y: 0, scale: 1.6 });
+gsap.set(tiltLayer, { rotationY: -8 });
 gsap.set(rimEl, { opacity: 0, scale: .94 });
 gsap.set(faceFront, { opacity: 0 });
 gsap.set(screenEl,  { opacity: 0 });
@@ -538,8 +572,17 @@ let loadDone = false;
 function finishPreloader() {
   if (loadDone) return;
   loadDone = true;
-  gsap.killTweensOf(preLogo);
-  gsap.set(preLogo, { scale: 1 });   // без этого a.width берётся с дыхания и посадка уезжает
+
+  // Даже при быстром кэше сохраняем чёрную паузу и полный въезд обеих букв.
+  const revealEnd = INTRO_TIMING.blackHold
+    + INTRO_TIMING.logoLetters
+    + INTRO_TIMING.logoStagger * (preLogoLetters.length - 1);
+  gsap.delayedCall(Math.max(0, revealEnd - preRevealTl.time()), flyLogoToHeader);
+}
+
+function flyLogoToHeader() {
+  const logoInnerScale = Number(gsap.getProperty(preLogoSvg, 'scale')) || 1;
+  gsap.killTweensOf(preLogoSvg);
 
   // логотип переезжает из центра в шапку: считаем дельту между прямоугольниками,
   // двигаем трансформом, поэтому раскладка не пересчитывается
@@ -547,53 +590,67 @@ function finishPreloader() {
   const b = logoSlot.getBoundingClientRect();
   const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
   const dy = (b.top + b.height / 2) - (a.top + a.height / 2);
-  const k  = b.width / a.width;
+  const k  = b.width / (a.width * logoInnerScale);
 
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-  tl.to(preBlobs.map(x => x.el), {
-      y: () => -(innerHeight * 2.1), duration: .45, ease: 'power2.inOut', stagger: .025
+  tl.to(preLogo, {
+      x: dx, y: dy, scale: k, duration: INTRO_TIMING.logoFlight, ease: LOGO_TO_CORNER_EASE
     }, 0)
-    .to(preLogo, { x: dx, y: dy, scale: k, duration: .4, ease: 'power4.inOut' }, .02)
+    .to(preGradient, { opacity: 0, duration: .65, ease: 'power2.inOut' }, .45)
+    .to(preEl, { backgroundColor: 'rgba(0,0,0,0)', duration: .72, ease: 'power2.inOut' }, .38)
     .add(() => {
       // подмена на статичный логотип шапки в момент совпадения геометрии
       logoSlot.style.opacity = 1;
       preLogo.style.opacity = 0;
-      preBlobs.forEach(x => x.loop && x.loop.kill());
       preEl.remove();
       document.body.classList.remove('is-loading');
     })
-    .to(hdrItems, { opacity: 1, y: 0, duration: .28, stagger: .03 }, '-=.08')
+    .to(hdrItems, { autoAlpha: 1, y: 0, duration: .55, ease: 'power3.out' }, .62)
     .to(glowIn, { v: 1, sc: 1, duration: 1, ease: 'power2.out' }, 0)
     .set([heroH1, heroP], { opacity: 1 }, .52)
     // мягкое проявление по буквам: только opacity, y и лёгкий блюр
     // подъём из-под маски: длинный expo.out и мелкий стаггер дают мягкий накат
     .to(h1Chars, {
       yPercent: 0,
-      duration: .75, ease: 'expo.out', stagger: .014
+      duration: INTRO_TIMING.title, ease: 'expo.out', stagger: INTRO_TIMING.titleStagger
     }, .52)
     .to(pChars, {
       opacity: 1, y: 0,
-      duration: .55, ease: 'expo.out', stagger: .003
+      duration: INTRO_TIMING.description, ease: 'expo.out', stagger: INTRO_TIMING.descriptionStagger
     }, .92)
     .addLabel('textDone')
     // сборка: градиентный контур, лицо и экран
-    .addLabel('build', '-=1.15')
-    .to(introLayer, { y: 0, duration: 1, ease: 'power2.out' }, 'build')
-    .to(rimEl, { opacity: 1, scale: 1, duration: .36, ease: 'power2.out' }, 'build+=.08')
-    .to(faceFront, { opacity: 1, duration: .3, ease: 'power2.out' }, 'build+=.34')
-    .to(screenEl, { opacity: 1, duration: .34, ease: 'power2.out' }, 'build+=.45')
+    .addLabel('build', '-=1.55')
+    .to(introLayer, {
+      x: 0, y: 0, scale: 1, duration: INTRO_TIMING.phone, ease: LOGO_TO_CORNER_EASE
+    }, 'build')
+    .to(tiltLayer, {
+      rotationY: 0, duration: INTRO_TIMING.phone, ease: LOGO_TO_CORNER_EASE
+    }, 'build')
+    .to(rimEl, {
+      opacity: 1, scale: 1, duration: INTRO_TIMING.rim, ease: 'power2.out'
+    }, 'build+=.18')
+    .to(faceFront, {
+      opacity: 1, duration: .2, ease: 'power1.out'
+    }, 'build+=.16')
+    .to(screenEl, {
+      opacity: 1, duration: INTRO_TIMING.screen, ease: 'power2.out'
+    }, 'build+=.52')
     .add(() => {
       // после интро буквам ускорение не нужно, снимаем will-change и склеиваем слои
-      gsap.set([...h1Chars, ...pChars], { clearProps: 'all' });
+      gsap.set([...h1Chars, ...pChars], { clearProps: 'transform,opacity,visibility' });
       heroH1.style.willChange = 'auto';
       heroP.style.willChange = 'auto';
     })
-    // Подсказка появляется только после полного проявления описания.
+    // CTA поднимаются одинаково, основная кнопка начинает движение раньше стрелки.
+    .to(heroDownload, {
+      autoAlpha: 1, y: 0, duration: reduced ? .15 : INTRO_TIMING.cta, ease: 'power3.out'
+    }, 'textDone')
     .to(scrollCue, {
-      autoAlpha: 1, y: 0, duration: reduced ? .15 : .4, ease: 'power3.out'
-    }, 'textDone+=.04')
-    .add(() => { if (scrollCueLoop) scrollCueLoop.play(0); }, 'textDone+=.18');
+      autoAlpha: 1, y: 0, duration: reduced ? .15 : INTRO_TIMING.arrow, ease: 'power3.out'
+    }, 'textDone+=.07')
+    .add(() => { if (scrollCueLoop) scrollCueLoop.play(0); }, 'textDone+=.68');
 }
 
 // полноэкранное меню
@@ -709,24 +766,26 @@ function finishPreloader() {
 // Общий магнит кнопок: покачивание, смещение корпуса и отдельная инерция текста.
 function mountMagneticButton(zone, btn, label, options = {}) {
   if (!zone || !btn || !label || reduced || matchMedia('(hover: none)').matches) return;
-  const STRENGTH = 0.06;
-  const LABEL_STRENGTH = 0.035;
+  const STRENGTH = 0.16;
+  const LABEL_STRENGTH = 0.14;
   const wobble = options.wobble ?? (btn.matches('.hero-download') ? 0.65 : 1);
   const disabledWhen = options.disabledWhen;
   let disabled = Boolean(disabledWhen?.());
   const makeMotion = () => ({
-    buttonX: gsap.quickTo(btn, 'x', { duration: .34, ease: 'power3.out', overwrite: 'auto' }),
-    buttonY: gsap.quickTo(btn, 'y', { duration: .34, ease: 'power3.out', overwrite: 'auto' }),
-    labelX: gsap.quickTo(label, 'x', { duration: .4, ease: 'power3.out', overwrite: 'auto' }),
-    labelY: gsap.quickTo(label, 'y', { duration: .4, ease: 'power3.out', overwrite: 'auto' })
+    buttonX: gsap.quickTo(btn, 'x', { duration: .28, ease: 'power3.out', overwrite: 'auto' }),
+    buttonY: gsap.quickTo(btn, 'y', { duration: .28, ease: 'power3.out', overwrite: 'auto' }),
+    labelX: gsap.quickTo(label, 'x', { duration: .34, ease: 'power3.out', overwrite: 'auto' }),
+    labelY: gsap.quickTo(label, 'y', { duration: .34, ease: 'power3.out', overwrite: 'auto' })
   });
   let motion = makeMotion();
 
-  const wobbleLoop = gsap.timeline({ repeat: -1, paused: disabled })
-    .to(btn, { rotation: 1.05 * wobble, duration: 1.15, ease: 'sine.inOut' })
-    .to(btn, { rotation: -.8 * wobble, duration: 1.4, ease: 'sine.inOut' })
-    .to(btn, { rotation: .42 * wobble, duration: 1.05, ease: 'sine.inOut' })
-    .to(btn, { rotation: 0, duration: .9, ease: 'sine.inOut' });
+  const wobbleLoop = wobble
+    ? gsap.timeline({ repeat: -1, paused: disabled })
+      .to(btn, { rotation: 1.05 * wobble, duration: 1.15, ease: 'sine.inOut' })
+      .to(btn, { rotation: -.8 * wobble, duration: 1.4, ease: 'sine.inOut' })
+      .to(btn, { rotation: .42 * wobble, duration: 1.05, ease: 'sine.inOut' })
+      .to(btn, { rotation: 0, duration: .9, ease: 'sine.inOut' })
+    : null;
 
   const resetMotion = () => {
     Object.values(motion).forEach(move => move.tween.kill());
@@ -741,10 +800,10 @@ function mountMagneticButton(zone, btn, label, options = {}) {
       if (nextDisabled === disabled) return;
       disabled = nextDisabled;
       if (disabled) {
-        wobbleLoop.pause(0);
+        wobbleLoop?.pause(0);
         resetMotion();
       } else {
-        wobbleLoop.play(0);
+        wobbleLoop?.play(0);
       }
     });
   }
@@ -770,16 +829,19 @@ function mountMagneticButton(zone, btn, label, options = {}) {
 }
 
 const heroMagnetBtn = document.querySelector('.hero-download');
-mountMagneticButton(document.querySelector('.hero-download-zone'), heroMagnetBtn, heroMagnetBtn?.querySelector('.hero-download__label'));
-const headerMagnetBtn = document.querySelector('.site-header__download');
-mountMagneticButton(headerMagnetBtn, headerMagnetBtn, headerMagnetBtn?.querySelector('span'), {
-  wobble: 0.55,
-  disabledWhen: () => document.body.classList.contains('is-loading')
-    || document.body.classList.contains('hero-rim-blue')
-});
+mountMagneticButton(heroMagnetBtn, heroMagnetBtn, heroMagnetBtn?.querySelector('.hero-download__label'));
+mountMagneticButton(headerDownload, headerDownload, headerDownload?.querySelector('span'), { wobble: 0 });
+const heroScrollBtn = document.querySelector('.hero-scroll');
+mountMagneticButton(
+  heroScrollBtn,
+  heroScrollBtn,
+  heroScrollBtn?.querySelector('.scroll-cue-arrows'),
+  { wobble: .65 }
+);
 
 // тёмная тема и магический свет включаются на разделе «ИИ-идеи»
-const DARK_IN = 0.964;   // фон дотемняет к 0.988, «помощник» выходит с 1.016   // зазор между надписями: фон меняется на пустом кадре
+const DARK_IN = DARK_AT;   // фон дотемняет к концу dark, затем появляется «помощник»
+const MIRROR = { at:MIRROR_AT, len:MIRROR_LEN };
 const setVeil = gsap.quickSetter('#veil', 'opacity');
 const setInflow = gsap.quickSetter('#inflow', 'opacity');
 
@@ -821,11 +883,12 @@ const rollLayerEl = document.getElementById('rollLayer');
 let isSharp = false;                      // класс .sharp снимает will-change в финале
 let phoneTransitionHidden = false;
 
-// Корпус уходит вниз, на пустом экране печатается промт,
+// Первый корпус уходит вправо; на пустом экране печатается промт,
 // потом текст сгружается в корпус, который приезжает снизу, и идёт загрузка.
-const UP_IN   = 0.02, UP_OUT  = 0.11;
+const UP_IN = DIVE_AT;
+const UP_OUT = DIVE_AT + DIVE_LEN;
 const PR_IN   = 0.21, PR_OUT  = 0.29;   // промт: коротко удерживается перед возвратом телефона
-const BACK_IN = 0.26, BACK_OUT= 0.38;   // возврат снизу начинается раньше
+const BACK_IN = 0.26, BACK_OUT= 0.34;   // перенос завершается под кадром, затем телефон поднимается снизу
 const LOAD_IN = 0.44, LOAD_OUT= 0.556;   // «собираю план» держится весь влёт карточек
 
 const PROMPT_TEXT = 'Еду в Санкт-Петербург с ребёнком';
@@ -833,8 +896,8 @@ const PROMPT_TEXT = 'Еду в Санкт-Петербург с ребёнком
 const tagsLayer = document.getElementById('tags');
 
 // облако тегов: направление разлёта считается от центра сцены один раз
-const TAGS_IN = 0.08, TAGS_SPREAD = 0.30, TAGS_OUT = 0.30;
-const tags = [...document.querySelectorAll('.tag-pos')].map(pos => {
+const TAGS_IN = 0.055, TAGS_SPREAD = 0.30, TAGS_OUT = 0.30;
+const tags = [...document.querySelectorAll('.tag-pos')].map((pos, index) => {
   const el = pos.firstElementChild;
   // Позиции тегов теперь заданы в CSS, поэтому берём их из раскладки,
   // а не из пустых inline-style. Иначе вектор разлёта превращается в NaN.
@@ -848,11 +911,16 @@ const tags = [...document.querySelectorAll('.tag-pos')].map(pos => {
     vx: vx / len,
     vy: vy / len,
     near: 1 - Math.min(1, len / 0.62),
+    lag: ((index * 7) % 36) / 35 * .034,
     seed: Math.random() * Math.PI * 2,
     px, py,
     cursorX: 0, cursorY: 0,
     cursorVX: 0, cursorVY: 0,
     homeX: 0, homeY: 0,
+    baseOpacity: 0,
+    baseX: 0,
+    baseY: 0,
+    baseScale: .9,
     depth: el.classList.contains('tag-small') ? .78 : 1
   };
 });
@@ -865,6 +933,38 @@ requestAnimationFrame(refreshTagCenters);
 document.fonts && document.fonts.ready.then(refreshTagCenters);
 addEventListener('resize', refreshTagCenters, { passive: true });
 
+// Три небольших radial-gradient слоя догоняют курсор без Canvas и движущегося blur.
+const heroCursorTrail = document.getElementById('heroCursorTrail');
+const heroCursorTrailEnabled = Boolean(heroCursorTrail)
+  && !reduced
+  && matchMedia('(hover:hover) and (pointer:fine)').matches;
+const heroCursorTrailItems = heroCursorTrailEnabled
+  ? [...heroCursorTrail.querySelectorAll('i')].map((el, index) => {
+      gsap.set(el, { xPercent: -50, yPercent: -50 });
+      return {
+        setC: gsap.quickSetter(el, 'css'),
+        x: innerWidth * .5,
+        y: innerHeight * .5,
+        opacity: 0,
+        alpha: [.70, .58, .45][index] || .45,
+        follow: [.18, .075, .028][index] || .05,
+        scale: [1, .92, .84][index] || 1
+      };
+    })
+  : [];
+let heroCursorTrailX = innerWidth * .5;
+let heroCursorTrailY = innerHeight * .5;
+let heroCursorTrailSeen = false;
+let heroCursorTrailActive = false;
+let heroCursorTrailVisibility = 1;
+if (heroCursorTrailEnabled) {
+  addEventListener('pointermove', event => {
+    heroCursorTrailX = event.clientX;
+    heroCursorTrailY = event.clientY;
+    heroCursorTrailSeen = true;
+  }, { passive:true });
+}
+
 const promptEl = document.getElementById('prompt');
 const promptQ  = document.getElementById('promptQ');
 const promptTextEl = document.getElementById('promptText');
@@ -874,6 +974,10 @@ const setPrompt = gsap.quickSetter(promptEl, 'css');
 const setPromptQ = gsap.quickSetter(promptQ, 'css');
 const setPromptText = gsap.quickSetter(promptTextEl, 'css');
 const setLoader = gsap.quickSetter(loaderEl, 'opacity');
+const loaderMessages = [...loaderEl.querySelectorAll('.loader-t span')].map(el => ({
+  setC: gsap.quickSetter(el, 'css')
+}));
+let loaderMessagesDirty = true;
 const setHint   = gsap.quickSetter('#hintMove', 'css');
 let typedShown = -1;
 // финал: корпус наезжает на камеру, шторка раскрывается
@@ -904,7 +1008,8 @@ const TRV_SC0 = 1.12;  // умеренный масштаб: растр экра
 // финал проезда: корпус не выпрямляется во фронт, а остаётся в лёгком развороте
 const TRV_END = { rx: 6, ry: -14, rz: -4, sc: 1.32 };
 // ---- фаза зарядки: скролл заливает текст, фон желтеет, частицы летят в корпус ----
-const CHG_IN = ASSISTANT_CHAT_LEGACY_END, CHG_OUT = 1.695;   // старт после длинного диалога помощника
+const CHG_IN = CHARGE_AT;
+const CHG_OUT = CHARGE_AT + CHARGE_LEN;   // старт после длинного диалога помощника
 const setChargeBg = gsap.quickSetter('#chargeBg', 'opacity');
 const setPulse    = gsap.quickSetter('#pulseWhite', 'css');
 const cap3El  = document.getElementById('cap3');
@@ -1021,7 +1126,7 @@ if (!coarse) addEventListener('mousemove', e => fallMove(e.clientX, e.clientY));
 const INF_IN = 0.440, INF_OUT = 0.610;
 const INF_ITEM_WINDOW = 0.34;
 const influxEl = document.getElementById('influx');
-const INF_N = mobilePerformance ? 72 : 192;
+const INF_N = mobilePerformance ? 56 : 148;
 const PLAN_ASSETS = [
   './assets/plan-build/clothes.webp',
   './assets/plan-build/burger.webp',
@@ -1057,6 +1162,7 @@ const INF_SCALES = [
   .68,1.25,.38,.58,.82,1.50,.28,.50,.72,1.00,
   .36,.64,.88,1.82,.32,.55,.78,1.12,.44,2.15
 ];
+const INF_SCALE_MULTIPLIER = 1.3;
 const influx = (() => {
   const out = [];
   for (let i = 0; i < INF_N; i++) {
@@ -1083,7 +1189,7 @@ const influx = (() => {
       lane: ((i * 53) % 97) / 96 * .11,
       // Одинаковый масштаб для левого и правого элемента пары: крупные
       // значения больше не скапливаются только с одной стороны экрана.
-      size: INF_SCALES[Math.floor(i / 2) % INF_SCALES.length],
+      size: INF_SCALES[Math.floor(i / 2) % INF_SCALES.length] * INF_SCALE_MULTIPLIER,
       // Перемешанные сменяющиеся группы: за весь проход прилетают все элементы,
       // но в одном кадре они не образуют сплошную стену.
       // Последняя картинка должна полностью завершить путь к w=1.
@@ -1101,11 +1207,17 @@ let influxDirty = true;
 const heroShot = document.getElementById('heroShot');
 const setHeroShot = gsap.quickSetter(heroShot, 'css');
 let heroShotOn = true;
-const HERO_SHOT_CUT = 0.060;
+// Меняем экран внутри только пока корпус целиком находится под кадром.
+const HERO_SHOT_CUT = BACK_IN - .015;
+const screenPlaceholderEl = document.getElementById('screenPlaceholder');
+const setScreenPlaceholder = gsap.quickSetter(screenPlaceholderEl, 'opacity');
+const setAppFrameOpacity = gsap.quickSetter(frame, 'opacity');
+let screenPlaceholderOn = false;
 
-const setHero = gsap.quickSetter('.hero', 'css');
+const setHero = gsap.quickSetter(heroSection, 'css');
 const setGlow2 = gsap.quickSetter('#heroGlow', 'css');
 const setBand  = gsap.quickSetter('#heroBand', 'css');   // градиентная полоса главного экрана
+const setHeroParticles = gsap.quickSetter('#heroParticles', 'opacity');
 const setRoll     = gsap.quickSetter('#rollLayer', 'css');
 const setScroll   = gsap.quickSetter('.scroll-layer', 'css');
 const setTiltZ    = gsap.quickSetter('.tilt-layer', 'rotateZ', 'deg');
@@ -1228,6 +1340,10 @@ const scrollMotion = (() => {
   return { moveTo };
 })();
 
+scrollCue?.addEventListener('click', () => {
+  scrollMotion.moveTo(scrollY + innerHeight * .88);
+});
+
 // Fixed-главы не имеют полезного DOM offsetTop, поэтому их якоря переводятся
 // в координаты общего spacer. Обычные секции продолжают использовать свой top.
 addEventListener('click', event => {
@@ -1257,6 +1373,8 @@ addEventListener('click', event => {
 p = pTarget = readProgress();
 
 let pDrawn = -1;
+let heroActionsEnabled = false;
+let headerDownloadVisible = false;
 gsap.ticker.add(() => {
   pTarget = readProgress();
   // Инерция уже записывает реальный scrollY. Второй lerp здесь рассинхронизировал
@@ -1285,14 +1403,11 @@ gsap.ticker.add(() => {
   const ez = smooth(clamp01(p / 0.16));
   const fin = smooth(clamp01((p - FIN_IN) / (FIN_END - FIN_IN)));
 
-  // к финалу углы выпрямляются, корпус наезжает и верх кадра держится у шапки
-  // корпус нырнул вниз и оттуда же вернулся: за кадром между 0.20 и 0.36
+  // Первый корпус уходит вправо; возврат после смены экрана остаётся отдельной фазой снизу.
   const up   = smooth(clamp01((p - UP_IN)   / (UP_OUT - UP_IN)));
   const back = smooth(clamp01((p - BACK_IN) / (BACK_OUT - BACK_IN)));
   const away = up * (1 - back);
-  const yStage = p < BACK_IN
-    ? up * innerHeight * 1.25                  // нырок за нижний край
-    : (1 - back) * innerHeight * 1.25;         // возврат оттуда же
+  const yStage = -Math.sin(away * Math.PI) * innerHeight * .08;
 
   // на нырке и возврате никаких сопутствующих движений: только вертикаль.
   // still = 1 пока корпус в пути, поза держится ровной
@@ -1300,22 +1415,24 @@ gsap.ticker.add(() => {
   const still = smooth(clamp01((p - 0.02) / 0.05)) * (1 - smooth(clamp01((p - BACK_OUT) / 0.04)));
   // retn включает ракурс снизу только на возврате, когда корпус уже за кадром
   const retn = smooth(clamp01((p - BACK_IN) / 0.04)) * (1 - smooth(clamp01((p - BACK_OUT) / 0.05)));
+  // Сильный pitch держится дольше вертикального смещения: в момент встречи
+  // с промтом нижняя часть корпуса остаётся широкой и направленной к зрителю.
+  const returnPitch = smooth(clamp01((p - BACK_IN) / 0.04))
+    * (1 - smooth(clamp01((p - (BACK_OUT + .04)) / .065)));
 
   // Исходное облако тегов разлетается радиально под растущую строку запроса.
   const tagsPhase = p > TAGS_IN - 0.02 && p < TAGS_OUT + 0.06;
   if (tagsPhase || tagsDirty) {
-    const tIn  = smooth(clamp01((p - TAGS_IN) / 0.05));
     const tSp  = smooth(clamp01((p - 0.215) / (TAGS_SPREAD - 0.215)));
     // гаснут до конца набора промта: к полной строке кадр должен быть чистым
     const tOut = smooth(clamp01((p - TAGS_OUT) / 0.035));
     tags.forEach(t => {
+      const tIn = smooth(clamp01((p - TAGS_IN - t.lag) / 0.045));
       const push = (240 + 620 * t.near) * tSp;
-      t.setC({
-        opacity: tIn * (1 - tOut) * (1 - 0.55 * tSp),
-        x: t.vx * push,
-        y: t.vy * push + Math.sin(p * 6 + t.seed) * 5 * tIn,
-        scale: 0.9 + 0.1 * tIn - 0.06 * tSp
-      });
+      t.baseOpacity = tIn * (1 - tOut) * (1 - 0.55 * tSp);
+      t.baseX = t.vx * push;
+      t.baseY = t.vy * push;
+      t.baseScale = 0.9 + 0.1 * tIn - 0.06 * tSp;
     });
     tagsDirty = tagsPhase;
   }
@@ -1327,6 +1444,19 @@ gsap.ticker.add(() => {
   if (wantHeroShot !== heroShotOn) {
     heroShotOn = wantHeroShot;
     heroShot.style.visibility = heroShotOn ? 'visible' : 'hidden';
+  }
+
+  // На втором экране готовый план не показываем: под градиентным стеклом
+  // остаётся подложка телефона. Приложение возвращается к началу cap0.
+  const placeholderIn = smooth(clamp01((p - HERO_SHOT_CUT) / .025));
+  const placeholderOut = smooth(clamp01((p - (CAP0_REVEAL - .035)) / .035));
+  const placeholderVis = placeholderIn * (1 - placeholderOut);
+  setScreenPlaceholder(placeholderVis);
+  setAppFrameOpacity(1 - placeholderVis);
+  const wantScreenPlaceholder = placeholderVis > .001;
+  if (wantScreenPlaceholder !== screenPlaceholderOn) {
+    screenPlaceholderOn = wantScreenPlaceholder;
+    screenPlaceholderEl.classList.toggle('is-active', screenPlaceholderOn);
   }
 
   // поток превью: летят к корпусу и гаснут у кромки
@@ -1366,16 +1496,18 @@ gsap.ticker.add(() => {
     influxDirty = infPhase;
   }
 
-  // Промт снова остаётся ровной капсулой: без морфинга, хвоста и деформации.
-  // После набора он просто уменьшается и опускается к телефону, как раньше.
+  // Промт остаётся ровной капсулой: растёт вместе со скроллом, затем падает
+  // навстречу телефону и скрывается только внутри его экрана.
   const prIn  = smooth(clamp01((p - PR_IN) / 0.025));
-  const prOut = smooth(clamp01((p - PR_OUT) / 0.06));
+  const prGrow = smooth(clamp01((p - PR_IN) / 0.085));
+  const prOut = smooth(clamp01((p - PR_OUT) / 0.12));
+  const prDropFade = smooth(clamp01((prOut - .86) / .14));
   setPrompt({
-    opacity: prIn * (1 - prOut),
+    opacity: prIn * (1 - prDropFade),
     x: 0,
-    y: -prOut * innerHeight * 0.16,
+    y: Math.sin(prOut * Math.PI) * innerHeight * 0.06,
     rotation: 0,
-    scale: 1 - 0.42 * prOut
+    scale: (0.82 + 0.36 * prGrow) * (1 - 0.80 * prOut)
   });
   setPromptQ({
     scaleX: 1,
@@ -1398,6 +1530,19 @@ gsap.ticker.add(() => {
   // загрузка внутри экрана
   const loadVis = smooth(clamp01((p - LOAD_IN) / 0.03)) - smooth(clamp01((p - LOAD_OUT) / 0.022));
   setLoader(loadVis);
+  const loaderMessagesActive = loadVis > .001;
+  if (loaderMessagesActive || loaderMessagesDirty) {
+    const messageProgress = clamp01((p - LOAD_IN) / (LOAD_OUT - LOAD_IN));
+    const messagePosition = messageProgress * (loaderMessages.length - 1);
+    loaderMessages.forEach((message, index) => {
+      const distance = Math.abs(messagePosition - index);
+      message.setC({
+        opacity: smooth(1 - clamp01(distance)),
+        y: (index - messagePosition) * 12
+      });
+    });
+    loaderMessagesDirty = loaderMessagesActive;
+  }
 
   // подсказка про курсор: тот же рисунок движения, что у надписей
   const hIn  = smooth(clamp01((p - (LOAD_IN - 0.05)) / 0.03));
@@ -1414,7 +1559,7 @@ gsap.ticker.add(() => {
   }
 
   // тёмная тема: с «ИИ-идей» и до конца. свет по периметру приходит чуть позже
-  const dk = smooth(clamp01((p - DARK_IN) / 0.024));
+  const dk = smooth(clamp01((p - DARK_IN) / DARK_LEN));
   // setVeil ниже, в блоке зарядки: ему нужен chgY
   setAura(0);   // градиент по краям убран; было smooth((p-DARK_IN-0.02)/0.05)*0.75
 
@@ -1548,7 +1693,7 @@ gsap.ticker.add(() => {
 
   // раздел «Чем заняться»: корпус уходит влево и разворачивается в обратную сторону.
   // окно совпадает с окном второй надписи, поэтому кадр собирается как в макете
-  const MIRROR = { at: 0.730, len: 0.232 };   // поза встаёт до смены контента и держится весь текст
+  // Поза встаёт до смены контента и держится весь текст.
   // рампы шире (0.05 вместо 0.035): вход и выход позы без рывка
   const mir = smooth(clamp01((p - MIRROR.at) / 0.05))
             * (1 - smooth(clamp01((p - (MIRROR.at + MIRROR.len)) / 0.05)));
@@ -1599,15 +1744,29 @@ gsap.ticker.add(() => {
   // roll на внешнем слое: применяется в системе экрана, после yaw и pitch
   let rzV = (heroPose.rz * invEff + REST.rz * ezEff) * (1 - fin) * (1 - retn) + dZ + mirRZ + FLOW.rz * fl;
   // нырок идёт в геройской позе, ракурс снизу включается только на возврате
-  let rxV = (heroPose.rx * invEff + REST.rx * ezEff) * (1 - fin) * (1 - retn) + dX + DIVE.rx * retn + mirRX + FLOW.rx * fl;
+  let rxV = (heroPose.rx * invEff + REST.rx * ezEff) * (1 - fin) * (1 - returnPitch) + dX + DIVE.rx * returnPitch + mirRX + FLOW.rx * fl;
   let ryV = (heroPose.ry * invEff + REST.ry * ezEff) * (1 - fin) * (1 - retn) + dY + DIVE.ry * retn + mirRY + FLOW.ry * fl;
   const heroPhoneX = innerWidth > 900 ? innerWidth * heroPose.x : START.x;
   const heroPhoneY = innerWidth > 900 ? innerHeight * heroPose.y : Math.max(520, innerHeight * 0.50);
   let xV  = heroPhoneX * invEff * (1 - fin) * (1 - retn) + dPx + mirX;
-  let yV  = heroPhoneY * invEff * (1 - fin) * (1 - retn) + dPy + DIVE.y * retn + yFin + yStage + mirY
+  let yV  = heroPhoneY * invEff * (1 - fin) * (1 - retn) + dPy + innerHeight * DIVE.y * retn + yFin + yStage + mirY
           + innerHeight * 0.01 * fl;   // тёмная фаза: низ в кадре целиком
   let zV  = mirZ;
   let scV = sc;
+
+  // На возврате снизу корпус сразу приходит крупным планом: компенсация
+  // по Y удерживает верхнюю кромку, а увеличенный низ остаётся за кадром.
+  const returnCloseUp = .58 * returnPitch;
+  scV += returnCloseUp;
+  yV += boxH * returnCloseUp * .48;
+
+  // Первый уход не гасит телефон: корпус увеличивается, поворачивается по Y
+  // и по мягкой дуге покидает вьюпорт через правую границу.
+  if (away > .0001) {
+    ryV += -48 * away;
+    xV += innerWidth * 1.3 * away;
+    scV += .52 * away;
+  }
 
   // Кадр «Куда сходить»: корпус занимает 70% высоты и стоит точно по центру.
   // Это самостоятельная поза, чтобы сетка текста и чипов сохраняла пропорции
@@ -1760,9 +1919,7 @@ gsap.ticker.add(() => {
     x: xV,
     y: yV,
     z: zV,
-    opacity: insertedPhone
-      ? 1
-      : (1 - phoneClear) * (1 - smooth(clamp01((away - 0.55) / 0.35))),
+    opacity: insertedPhone ? 1 : 1 - phoneClear,
     scale: scV
   });
   rimPoseYaw = ryV;
@@ -1788,6 +1945,24 @@ gsap.ticker.add(() => {
 
   // герой уходит, пока телефон едет к центру
   const hero = 1 - smooth(clamp01((p - 0.012) / 0.055));   // уходит до появления тегов: пересечения нет
+  heroCursorTrailVisibility = hero;
+  const wantHeroActions = hero > .02;
+  if (wantHeroActions !== heroActionsEnabled) {
+    heroActionsEnabled = wantHeroActions;
+    heroSection.classList.toggle('is-interactive', wantHeroActions);
+    heroSection.inert = !wantHeroActions;
+    heroSection.setAttribute('aria-hidden', String(!wantHeroActions));
+    heroDownload.tabIndex = wantHeroActions ? 0 : -1;
+    scrollCue.disabled = !wantHeroActions;
+    if (!wantHeroActions && heroSection.contains(document.activeElement)) document.activeElement.blur();
+  }
+  const wantHeaderDownload = !wantHeroActions;
+  if (wantHeaderDownload !== headerDownloadVisible) {
+    headerDownloadVisible = wantHeaderDownload;
+    headerDownload.classList.toggle('is-visible', wantHeaderDownload);
+    headerDownload.setAttribute('aria-hidden', String(!wantHeaderDownload));
+    headerDownload.tabIndex = wantHeaderDownload ? 0 : -1;
+  }
   // Первый экран получает собственную холодную палитру корпуса. Отдельный
   // класс не даёт синему ободку затронуть погодные и последующие сцены.
   document.body.classList.toggle('hero-rim-blue', hero > .02);
@@ -1796,7 +1971,7 @@ gsap.ticker.add(() => {
   const rimDarkMix = Math.max(hero, dk * (1 - chgY));
   box.style.setProperty('--rim-lightness', `${(52 - rimDarkMix * 34).toFixed(2)}%`);
   setHero({ opacity: hero, y: (1 - hero) * -60 });
-  const wantMenuOnDark = hero > .42 || wantDark;
+  const wantMenuOnDark = hero > .985 || wantDark;
   if (wantMenuOnDark !== menuOnDark) {
     menuOnDark = wantMenuOnDark;
     document.body.classList.toggle('menu-on-dark', menuOnDark);
@@ -1808,6 +1983,7 @@ gsap.ticker.add(() => {
   });
   // полоса живёт вместе с героем: тот же вход и тот же уход
   setBand({ opacity: hero * glowIn.v * (1 - dk), y: (1 - hero) * -90 });
+  setHeroParticles(hero * glowIn.v * (1 - dk));
   // Во время вставных weather/split/hub-сцен legacy-прогресс стоит на месте.
   // Доводим только предыдущую подпись до конца выхода, чтобы она не оставалась
   // замороженной под следующими полноэкранными слоями.
@@ -1853,6 +2029,55 @@ gsap.ticker.add(() => {
   }
 
   p = pq;   // сглаживание наверху работает в шкале q
+});
+
+// Один общий callback для лёгких hero-акцентов. 30 fps достаточно для мягкого шлейфа
+// и парения тегов, при этом вне их фаз DOM не перезаписывается.
+let heroAccentLastTime = -1;
+let tagsAmbientDrawn = false;
+gsap.ticker.add(time => {
+  if (time - heroAccentLastTime < 1 / 30) return;
+  heroAccentLastTime = time;
+
+  const showTrail = heroCursorTrailEnabled
+    && heroCursorTrailSeen
+    && !document.hidden
+    && heroCursorTrailVisibility > .003;
+  if (showTrail !== heroCursorTrailActive) {
+    heroCursorTrailActive = showTrail;
+    heroCursorTrail.classList.toggle('is-active', showTrail);
+  }
+  if (showTrail || heroCursorTrailItems.some(item => item.opacity > .003)) {
+    heroCursorTrailItems.forEach(item => {
+      if (showTrail) {
+        item.x += (heroCursorTrailX - item.x) * item.follow;
+        item.y += (heroCursorTrailY - item.y) * item.follow;
+      }
+      const opacityTarget = showTrail ? item.alpha * heroCursorTrailVisibility : 0;
+      item.opacity += (opacityTarget - item.opacity) * .22;
+      item.setC({ x:item.x, y:item.y, opacity:item.opacity, scale:item.scale });
+    });
+  }
+
+  const tagsAmbientActive = !document.hidden
+    && legacyP > TAGS_IN - .02
+    && legacyP < TAGS_OUT + .06;
+  if (tagsAmbientActive) {
+    tags.forEach(tag => {
+      const floatStrength = tag.baseOpacity;
+      tag.setC({
+        opacity:tag.baseOpacity,
+        x:tag.baseX + Math.cos(time * .72 + tag.seed) * 3.5 * floatStrength,
+        y:tag.baseY + Math.sin(time * .92 + tag.seed) * 8 * floatStrength,
+        rotation:Math.sin(time * .58 + tag.seed) * 3.6 * floatStrength,
+        scale:tag.baseScale
+      });
+    });
+    tagsAmbientDrawn = true;
+  } else if (tagsAmbientDrawn) {
+    tags.forEach(tag => tag.setC({ opacity:0 }));
+    tagsAmbientDrawn = false;
+  }
 });
 
 // Спокойный CSS-поворот .idle-r продолжается даже после остановки скролла.
@@ -1915,37 +2140,6 @@ gsap.ticker.add(() => {
       scale: item.size * (0.08 + depth * 2.72),
       opacity: whiteReady * born * (1 - gone)
     });
-  });
-});
-
-// ---- демонстрация жеста на фазе карточек ----
-// полупрозрачный кружок ходит восьмёркой (лиссажу 1:2): «поводите мышкой».
-// свой тикер: движение живёт и без скролла; p здесь в сквозной шкале q
-const demoEl = document.getElementById('demoCursor');
-const setDemo = gsap.quickSetter(demoEl, 'css');
-let demoOn = false;
-const DEMO_ON = false;   // кружок-восьмёрка убран вместе с эффектом-002
-let userMoved = false;
-addEventListener('mousemove', () => { userMoved = true; }, { once: true, passive: true });
-if (DEMO_ON) gsap.ticker.add(() => {
-  if (!DEMO_ON) { if (demoOn) { demoOn = false; setDemo({ opacity: 0 }); } return; }
-  if (userMoved) {
-    if (demoOn) { demoOn = false; setDemo({ opacity: 0 }); }
-    return;
-  }
-  const pOldD = legacyP;
-  const w = smooth(clamp01((pOldD - (LOAD_IN - 0.05)) / 0.03))
-          * (1 - smooth(clamp01((pOldD - (LOAD_OUT - 0.01)) / 0.035)));
-  if (w <= 0.001) {
-    if (demoOn) { demoOn = false; setDemo({ opacity: 0 }); }
-    return;
-  }
-  demoOn = true;
-  const tD = reduced ? 0 : performance.now() / 1000 * 1.8;
-  setDemo({
-    opacity: w,
-    x: Math.sin(tD) * innerWidth * 0.16,
-    y: Math.sin(tD * 2) * innerHeight * 0.09
   });
 });
 

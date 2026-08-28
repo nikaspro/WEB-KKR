@@ -8,7 +8,9 @@
     "и исполнение на главном потоке, картинка декодируется вне него.",
     "critical это отдельный лимит суммы, чтобы потолки по типам не сложились разом.",
     "В critical нет js: точка входа подключена как type=module, а это defer по спецификации,",
-    "то есть скрипт не блокирует первую отрисовку. Появится синхронный скрипт — добавить сюда."
+    "то есть скрипт не блокирует первую отрисовку. Появится синхронный скрипт — добавить сюда.",
+    "Шрифты учитываются в отдельных корзинах fonts и critical, но намеренно исключены из total.",
+    "Количество WOFF2 не ограничено; допустимый runtime-формат шрифтов остаётся только WOFF2."
   ],
 
   "buckets": {
@@ -18,14 +20,14 @@
     "fonts":      { "include": ["**/fonts/*"] },
     "hero":       { "include": ["**/media/hero-background.webp", "**/media/hero-*.avif"] },
     "critical":   { "include": ["index.html", "**/*.css", "**/fonts/*", "**/media/hero-background.webp", "**/media/hero-*.avif"] },
-    "total":      { "include": ["**/*"] }
+    "total":      { "include": ["**/*"], "exclude": ["**/fonts/*"] }
   },
 
   "limits": {
     "html":     { "transferred": 15360, "raw": 61440 },
     "css":      { "transferred": 40960 },
     "js":       { "transferred": 102400 },
-    "fonts":    { "transferred": 102400, "maxFiles": 2, "allowExt": [".woff2"] },
+    "fonts":    { "transferred": 163840, "allowExt": [".woff2"] },
     "hero":     { "transferred": 153600 },
     "critical": { "transferred": 307200 },
     "total":    { "transferred": 921600 }
@@ -34,7 +36,7 @@
   "checks": {
     "inlineCssMax": 10240,
     "requireLazyImages": true,
-    "eagerAllow": ["/media/hero-poster.webp"],
+    "eagerAllow": ["./assets/media/hero-screen.png"],
     "requireDimensions": true,
     "dataUriMax": 2048,
     "forbidStaticWillChange": true

@@ -62,7 +62,10 @@ const report = [];
 
 // ---- корзины ----
 for (const [name, bucket] of Object.entries(cfg.buckets)) {
-  const list = files.filter(f => bucket.include.some(p => match(f, p)));
+  const excludes = bucket.exclude || [];
+  const list = files.filter(
+    f => bucket.include.some(p => match(f, p)) && !excludes.some(p => match(f, p)),
+  );
   const sum = list.reduce((a, f) => {
     const s = size(f);
     return { raw: a.raw + s.raw, transferred: a.transferred + s.transferred };

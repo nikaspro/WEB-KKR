@@ -12,6 +12,22 @@
     font-weight:500;
     font-display:swap;
   }
+  @font-face{
+    font-family:'Nunito Sans Light Wide';
+    src:url('/assets/fonts/nunito-sans-light-wide-v2.woff2') format('woff2');
+    font-style:normal;
+    font-weight:300;
+    font-stretch:105%;
+    font-display:swap;
+  }
+  @font-face{
+    font-family:'Nunito Sans Medium';
+    src:url('/assets/fonts/nunito-sans-medium-v2.woff2') format('woff2');
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    font-display:swap;
+  }
   @property --ghost-hue{
     syntax:'<angle>';
     inherits:true;
@@ -32,7 +48,25 @@
     --display:'Onest',system-ui,sans-serif;
     --display-cc:'Onest',system-ui,sans-serif;   /* прежний шрифт заголовков */
     --heading:'SF Pro Expanded','Onest',system-ui,sans-serif;
+    --font-nunito-light-wide:'Nunito Sans Light Wide','Onest',system-ui,sans-serif;
+    --font-nunito-medium:'Nunito Sans Medium','Onest',system-ui,sans-serif;
+    --hero-copy-size:clamp(20px,1.35vw,28px);
     --face-side:#12202B;
+  }
+  /* Проектные имена начертаний. Оси wdth и YTLC уже зафиксированы в WOFF2. */
+  .font-nunito-light-wide{
+    font-family:var(--font-nunito-light-wide);
+    font-style:normal;
+    font-weight:300;
+    font-stretch:105%;
+    font-synthesis:none;
+  }
+  .font-nunito-medium{
+    font-family:var(--font-nunito-medium);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
   }
   *{box-sizing:border-box}
   html{background:var(--page)}
@@ -101,25 +135,11 @@
     transform-style:preserve-3d;
     animation:
       ghostHue 22s linear infinite,
-      rimRun 12.4s linear -3.1s infinite;
+      rimRun 12s linear -4.5s infinite;
   }
   @keyframes ghostHue{to{--ghost-hue:528deg}}
-  /* Нерегулярный обход: разная скорость, короткие возвраты и паузы.
-     Конечная точка кратна 360°, поэтому между циклами нет скачка. */
-  @keyframes rimRun{
-    0%  {--rim-spin:0deg;   animation-timing-function:cubic-bezier(.55,.02,.35,1)}
-    7%  {--rim-spin:48deg;  animation-timing-function:ease-in-out}
-    14% {--rim-spin:20deg;  animation-timing-function:cubic-bezier(.2,.8,.25,1)}
-    27% {--rim-spin:160deg; animation-timing-function:ease-out}
-    34% {--rim-spin:174deg; animation-timing-function:cubic-bezier(.15,.75,.3,1)}
-    43% {--rim-spin:312deg; animation-timing-function:ease-in-out}
-    52% {--rim-spin:268deg; animation-timing-function:cubic-bezier(.2,.8,.25,1)}
-    66% {--rim-spin:478deg; animation-timing-function:ease-out}
-    73% {--rim-spin:492deg; animation-timing-function:cubic-bezier(.15,.72,.35,1)}
-    83% {--rim-spin:618deg; animation-timing-function:ease-in-out}
-    90% {--rim-spin:584deg; animation-timing-function:cubic-bezier(.18,.78,.3,1)}
-    100%{--rim-spin:720deg}
-  }
+  /* Непрерывный равномерный обход без возвратов и смены скорости. */
+  @keyframes rimRun{to{--rim-spin:360deg}}
   /* На светлой теме — стабильная mint/cyan-палитра из референса.
      В тёмных главах остаётся медленная футуристичная смена hue. */
   body.menu-on-dark .box{--rim-hue:var(--ghost-hue)}
@@ -204,6 +224,11 @@
     inset:0;
     z-index:10;
     border-radius:var(--r);
+    box-shadow:
+      inset 0 0 calc(var(--h) * .014) rgba(205,255,247,.34),
+      inset 0 0 calc(var(--h) * .030) rgba(78,231,220,.20),
+      0 0 calc(var(--h) * .020) rgba(75,225,221,.28),
+      0 0 calc(var(--h) * .045) rgba(70,255,181,.15);
     /* Blur цветной ленты обрезается по внешнему силуэту и раскрывается
        только внутрь корпуса — внешняя форма остаётся собранной. */
     overflow:hidden;
@@ -263,14 +288,12 @@
     /* Blur после кольцевой маски раздувался внутрь экрана при 3D-наклоне
        и создавал овальные цветные пятна. Сам conic-gradient уже плавный,
        поэтому оставляем только компактное равномерное свечение. */
-    filter:
-      drop-shadow(0 0 4px rgba(38,211,235,.30))
-      drop-shadow(0 0 7px rgba(20,39,255,.20));
+    filter:none;
     opacity:.94;
   }
   body.hero-rim-blue .rim::after{
     filter:none;
-    opacity:.025;
+    opacity:.07;
   }
   /* «Заряжаем поездку»: лимонное стекло в тон жёлтой сцене. Тёплая
      полутень сохраняет объём корпуса, не превращаясь в чёрный контур. */
@@ -352,7 +375,7 @@
     mask-composite:exclude;
     mix-blend-mode:soft-light;
     filter:blur(3px);
-    opacity:.04;
+    opacity:.065;
     pointer-events:none;
   }
   /* вспышка обводки при въезде частиц: статичная тень, анимируется только opacity */
@@ -381,7 +404,7 @@
     position:absolute; inset:calc(var(--h) * 0.0129);
     border-radius:calc(var(--r) - var(--h) * 0.0129);
     overflow:hidden;
-    background:#fff;
+    background:#dce8e4;
     opacity:1;
     filter:none;
     mix-blend-mode:normal;
@@ -411,19 +434,50 @@
     opacity:1;
     filter:none;
     mix-blend-mode:normal;
-    background:#fff;
+    background:#000;
     transform-origin:0 0;
     /* scale считает JS от фактического размера .screen */
   }
+  /* Второй экран: вместо готового плана видна стеклянная подложка корпуса.
+     Перелив двигается transform-свойством одного псевдоэлемента. */
+  .screen-placeholder{
+    position:absolute;
+    inset:0;
+    z-index:3;
+    overflow:hidden;
+    background:linear-gradient(145deg,
+      rgba(255,255,255,.96) 0%,
+      rgba(255,255,255,.18) 37%,
+      rgba(255,255,255,.76) 68%,
+      rgba(255,255,255,.08) 100%);
+    opacity:0;
+    pointer-events:none;
+  }
+  .screen-placeholder::before{
+    content:'';
+    position:absolute;
+    inset:-18% -88%;
+    background:linear-gradient(110deg,
+      rgba(255,255,255,0) 23%,
+      rgba(255,255,255,.28) 36%,
+      rgba(255,255,255,1) 48%,
+      rgba(255,255,255,.32) 61%,
+      rgba(255,255,255,0) 77%);
+    transform:translate3d(-26%,0,0);
+    animation:screenGlassDrift 3.8s ease-in-out infinite alternate;
+    animation-play-state:paused;
+  }
+  .screen-placeholder.is-active::before{animation-play-state:running}
+  @keyframes screenGlassDrift{to{transform:translate3d(26%,0,0)}}
   /* От исходной iPhone-геометрии остаются только пропорции и скругление. */
   .box.device-iphone-14-pro{
     --w:calc(var(--h) * 0.49309); /* 428 / 868 */
     --r:calc(var(--h) * 0.07834); /* 68 / 868 */
   }
   .box.device-iphone-14-pro .device-frame{
-    /* Непрозрачная подложка не даёт карточкам сцены просвечивать сквозь
-       узкий зазор между приложением и единым стеклянным ободком. */
-    background:#fff;
+    /* Корпус рисует только единый градиентный ободок: тёмной внутренней
+       рамки между ним и экраном больше нет. */
+    background:transparent;
     -webkit-backdrop-filter:none;
     backdrop-filter:none;
     border:0;
@@ -654,11 +708,109 @@
   .menu-brand{
     color:#fff;
   }
+
+  .hero-cursor-trail{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .hero-particles{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    overflow:hidden;
+    opacity:0;
+    pointer-events:none;
+  }
+  .hero-particles i{
+    position:absolute;
+    display:block;
+    width:calc(var(--particle-size,2px) / 1.65);
+    height:calc(var(--particle-size,2px) / 1.65);
+    border-radius:50%;
+    background:rgba(255,255,255,.96);
+    box-shadow:0 0 11px rgba(255,255,255,.92);
+    opacity:0;
+    animation:heroParticleFloat var(--particle-duration,11s) ease-in-out var(--particle-delay,0s) infinite;
+    animation-play-state:paused;
+  }
+  body.hero-rim-blue .hero-particles i{animation-play-state:running}
+  .hero-particles i:nth-child(1){left:8%;top:28%;--particle-size:5px;--particle-duration:10.8s;--particle-delay:-7.2s}
+  .hero-particles i:nth-child(2){left:17%;top:71%;--particle-size:4px;--particle-duration:13.4s;--particle-delay:-3.1s}
+  .hero-particles i:nth-child(3){left:29%;top:17%;--particle-size:7px;--particle-duration:14.6s;--particle-delay:-11.8s}
+  .hero-particles i:nth-child(4){left:38%;top:83%;--particle-size:5px;--particle-duration:9.7s;--particle-delay:-5.4s}
+  .hero-particles i:nth-child(5){left:47%;top:35%;--particle-size:4px;--particle-duration:12.1s;--particle-delay:-9.2s}
+  .hero-particles i:nth-child(6){left:56%;top:68%;--particle-size:5px;--particle-duration:15.2s;--particle-delay:-1.7s}
+  .hero-particles i:nth-child(7){left:64%;top:14%;--particle-size:4px;--particle-duration:11.5s;--particle-delay:-6.8s}
+  .hero-particles i:nth-child(8){left:72%;top:77%;--particle-size:7px;--particle-duration:13.9s;--particle-delay:-10.3s}
+  .hero-particles i:nth-child(9){left:81%;top:43%;--particle-size:5px;--particle-duration:10.2s;--particle-delay:-2.6s}
+  .hero-particles i:nth-child(10){left:91%;top:22%;--particle-size:4px;--particle-duration:14.3s;--particle-delay:-8.5s}
+  .hero-particles i:nth-child(11){left:24%;top:49%;--particle-size:4px;--particle-duration:12.8s;--particle-delay:-4.7s}
+  .hero-particles i:nth-child(12){left:86%;top:88%;--particle-size:5px;--particle-duration:15.8s;--particle-delay:-12.4s}
+  .hero-particles i:nth-child(13){left:13%;top:48%;--particle-size:4px;--particle-duration:11.9s;--particle-delay:-9.7s}
+  .hero-particles i:nth-child(14){left:43%;top:13%;--particle-size:5px;--particle-duration:14.8s;--particle-delay:-5.9s}
+  .hero-particles i:nth-child(15){left:68%;top:52%;--particle-size:4px;--particle-duration:10.6s;--particle-delay:-8.1s}
+  .hero-particles i:nth-child(16){left:95%;top:64%;--particle-size:7px;--particle-duration:15.4s;--particle-delay:-13.2s}
+  .hero-particles i:nth-child(17){left:4%;top:58%;--particle-size:4px;--particle-duration:12.7s;--particle-delay:-2.4s}
+  .hero-particles i:nth-child(18){left:11%;top:89%;--particle-size:5px;--particle-duration:14.1s;--particle-delay:-10.6s}
+  .hero-particles i:nth-child(19){left:20%;top:9%;--particle-size:4px;--particle-duration:10.3s;--particle-delay:-6.2s}
+  .hero-particles i:nth-child(20){left:26%;top:63%;--particle-size:7px;--particle-duration:15.7s;--particle-delay:-13.8s}
+  .hero-particles i:nth-child(21){left:33%;top:39%;--particle-size:5px;--particle-duration:11.4s;--particle-delay:-4.1s}
+  .hero-particles i:nth-child(22){left:36%;top:6%;--particle-size:4px;--particle-duration:13.8s;--particle-delay:-8.9s}
+  .hero-particles i:nth-child(23){left:41%;top:58%;--particle-size:7px;--particle-duration:9.9s;--particle-delay:-5.1s}
+  .hero-particles i:nth-child(24){left:50%;top:91%;--particle-size:4px;--particle-duration:14.9s;--particle-delay:-12.7s}
+  .hero-particles i:nth-child(25){left:52%;top:21%;--particle-size:5px;--particle-duration:12.4s;--particle-delay:-3.8s}
+  .hero-particles i:nth-child(26){left:58%;top:45%;--particle-size:4px;--particle-duration:15.9s;--particle-delay:-11.4s}
+  .hero-particles i:nth-child(27){left:61%;top:87%;--particle-size:7px;--particle-duration:10.9s;--particle-delay:-7.4s}
+  .hero-particles i:nth-child(28){left:66%;top:31%;--particle-size:5px;--particle-duration:13.2s;--particle-delay:-1.9s}
+  .hero-particles i:nth-child(29){left:70%;top:93%;--particle-size:4px;--particle-duration:11.8s;--particle-delay:-9.5s}
+  .hero-particles i:nth-child(30){left:75%;top:7%;--particle-size:7px;--particle-duration:15.1s;--particle-delay:-6.5s}
+  .hero-particles i:nth-child(31){left:77%;top:61%;--particle-size:4px;--particle-duration:10.1s;--particle-delay:-3.4s}
+  .hero-particles i:nth-child(32){left:83%;top:12%;--particle-size:5px;--particle-duration:14.5s;--particle-delay:-12.1s}
+  .hero-particles i:nth-child(33){left:88%;top:54%;--particle-size:7px;--particle-duration:12.9s;--particle-delay:-8.3s}
+  .hero-particles i:nth-child(34){left:93%;top:80%;--particle-size:4px;--particle-duration:15.6s;--particle-delay:-4.9s}
+  .hero-particles i:nth-child(35){left:6%;top:76%;--particle-size:5px;--particle-duration:11.1s;--particle-delay:-10.9s}
+  .hero-particles i:nth-child(36){left:31%;top:94%;--particle-size:4px;--particle-duration:13.6s;--particle-delay:-7.9s}
+  .hero-particles i:nth-child(37){left:46%;top:72%;--particle-size:7px;--particle-duration:10.5s;--particle-delay:-2.8s}
+  .hero-particles i:nth-child(38){left:60%;top:4%;--particle-size:5px;--particle-duration:14.7s;--particle-delay:-11.7s}
+  .hero-particles i:nth-child(39){left:79%;top:95%;--particle-size:4px;--particle-duration:12.2s;--particle-delay:-5.7s}
+  .hero-particles i:nth-child(40){left:97%;top:37%;--particle-size:7px;--particle-duration:15.3s;--particle-delay:-9.1s}
+  @keyframes heroParticleFloat{
+    0%,100%{transform:translate3d(0,12px,0) scale(.65);opacity:0}
+    18%{opacity:.38}
+    48%{transform:translate3d(7px,-6px,0) scale(1);opacity:.82}
+    78%{opacity:.32}
+    90%{transform:translate3d(-4px,-22px,0) scale(.78);opacity:0}
+  }
+  .hero-cursor-trail i{
+    position:absolute;
+    left:0;
+    top:0;
+    display:block;
+    width:clamp(320px,38vw,560px);
+    aspect-ratio:1;
+    border-radius:50%;
+    opacity:0;
+    pointer-events:none;
+  }
+  .hero-cursor-trail i:nth-child(1){
+    background:radial-gradient(circle,rgba(4,0,250,.58) 0%,rgba(4,0,250,.26) 38%,transparent 72%);
+  }
+  .hero-cursor-trail i:nth-child(2){
+    width:clamp(280px,32vw,470px);
+    background:radial-gradient(circle,rgba(255,0,184,.46) 0%,rgba(255,0,184,.20) 40%,transparent 72%);
+  }
+  .hero-cursor-trail i:nth-child(3){
+    width:clamp(220px,25vw,370px);
+    background:radial-gradient(circle,rgba(58,220,255,.40) 0%,rgba(58,220,255,.16) 42%,transparent 72%);
+  }
   .menu-brand img{
     display:block;
     width:clamp(72px,6vw,96px);
     height:auto;
-    filter:invert(1);
+    filter:brightness(0) invert(1);
   }
   .menu-close{
     position:absolute;
@@ -791,7 +943,7 @@
     font-family:'Onest',system-ui,sans-serif;
   }
   .hdr,.hdr *{font-family:'Onest',system-ui,sans-serif}
-  .hero,.hero *{font-family:var(--heading)}
+  .hero{font-family:var(--heading)}
   .hero h1{
     margin:0;
     font-kerning:normal;
@@ -857,92 +1009,182 @@
     text-align:left;
   }
   .hero h1{
-    color:#fff;
-    font-size:clamp(46px,4.4vw,94px);
-    line-height:.94;
-    letter-spacing:-.045em;
+    color:rgba(255,255,255,.6);
+    font-family:var(--font-nunito-light-wide);
+    font-style:normal;
+    font-weight:300;
+    font-stretch:105%;
+    font-size:clamp(96px,9vw,130px);
+    line-height:.88;
+    letter-spacing:-.035em;
     white-space:nowrap;
     text-align:left;
   }
   .hero p,
   .hero p *{
-    font-family:'Onest',system-ui,sans-serif;
+    font-family:var(--font-nunito-medium);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
   }
   .hero p{
-    margin:46px 0 0;
-    max-width:min(760px,42vw);
-    color:#fff;
-    font-size:clamp(20px,1.35vw,28px);
-    font-weight:400;
+    margin:32px 0 0;
+    max-width:28vw;
+    color:rgba(255,255,255,.4);
+    font-size:var(--hero-copy-size);
     line-height:1.35;
     letter-spacing:-.01em;
     text-align:left;
   }
   .hero-download-zone{
-    width:min(520px,36vw);
-    height:clamp(92px,7vw,120px);
+    --hero-cta-height:clamp(92px,7vw,120px);
+    display:flex;
+    align-items:stretch;
+    gap:clamp(12px,1vw,18px);
+    width:max-content;
+    height:var(--hero-cta-height);
     margin-top:clamp(34px,3vw,52px);
     pointer-events:auto;
   }
+  .hero:not(.is-interactive) .hero-download-zone,
+  .hero:not(.is-interactive) .hero-download,
+  .hero:not(.is-interactive) .hero-scroll{pointer-events:none}
   .hero-download{
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    width:100%;
+    width:min(440px,31vw);
     height:100%;
     border-radius:999px;
     background:#0400FA;
-    box-shadow:0 18px 52px rgba(4,0,250,.34);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.32),
+      inset 0 0 28px rgba(125,205,255,.28),
+      0 20px 62px rgba(4,0,250,.48),
+      0 0 30px rgba(54,73,255,.24);
     color:#fff;
-    font:600 clamp(24px,1.65vw,32px)/1 'Onest',system-ui,sans-serif;
+    font-family:var(--font-nunito-medium);
+    font-size:var(--hero-copy-size);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    line-height:1;
     text-decoration:none;
     pointer-events:auto;
     transform-origin:50% 50%;
-    transition:box-shadow .24s ease,background .3s;
+    transition:box-shadow .85s cubic-bezier(.22,.61,.36,1),background .3s;
   }
-  .hero-download__label{display:inline-flex;align-items:center}
-  .hero-download:hover{box-shadow:0 24px 62px rgba(4,0,250,.46)}
-  .hero-download:focus-visible{outline:3px solid #fff;outline-offset:5px}
+  .hero-download__label{display:inline-flex;align-items:center;gap:.42em}
+  .hero-download__label,
+  .hero-download__apple,
+  .scroll-cue-arrows{transition:text-shadow .5s ease,filter .5s ease}
+  .hero-download__apple{
+    display:block;
+    width:auto;
+    height:1em;
+    flex:0 0 auto;
+    filter:brightness(0) invert(1);
+  }
+  @keyframes blueButtonInnerPulse{
+    0%,100%{
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.62),
+        inset 0 0 46px rgba(154,221,255,.62),
+        inset 0 0 82px rgba(86,84,255,.32),
+        0 28px 78px rgba(4,0,250,.58),
+        0 0 64px rgba(255,0,184,.36);
+    }
+    50%{
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.82),
+        inset 0 0 64px rgba(182,235,255,.92),
+        inset 0 0 112px rgba(108,91,255,.56),
+        0 28px 78px rgba(4,0,250,.58),
+        0 0 64px rgba(255,0,184,.36);
+    }
+  }
+  .hero-download:hover,
+  .hero-scroll:hover{
+    animation:blueButtonInnerPulse 2.5s ease-in-out infinite;
+  }
+  .hero-download:hover,
+  .hero-scroll:hover{
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.56),
+      inset 0 0 44px rgba(154,221,255,.48),
+      0 28px 78px rgba(4,0,250,.60),
+      0 0 64px rgba(255,0,184,.40),
+      0 0 120px rgba(255,0,184,.24);
+  }
+  .hero-download:hover .hero-download__label{
+    text-shadow:0 0 8px rgba(255,255,255,.95),0 0 20px rgba(128,218,255,.78);
+  }
+  .hero-download:hover .hero-download__apple{
+    filter:brightness(0) invert(1) drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 15px rgba(128,218,255,.7));
+  }
+  .hero-scroll:hover .scroll-cue-arrows{
+    filter:drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 16px rgba(128,218,255,.76));
+  }
+  .hero-download:focus-visible,
+  .hero-scroll:focus-visible{outline:3px solid #fff;outline-offset:5px}
   .scroll-cue{
-    position:absolute;
-    left:var(--pad);
-    top:calc(80vh - 80px);
-    width:48px;
+    flex:0 0 var(--hero-cta-height);
+    width:var(--hero-cta-height);
+    height:var(--hero-cta-height);
     margin:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
+    padding:0;
+    display:grid;
+    place-items:center;
+    border:0;
+    border-radius:50%;
+    background:#0400FA;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.32),
+      inset 0 0 28px rgba(125,205,255,.28),
+      0 20px 62px rgba(4,0,250,.48),
+      0 0 30px rgba(54,73,255,.24);
     color:#fff;
+    cursor:pointer;
+    pointer-events:auto;
+    transition:box-shadow .85s cubic-bezier(.22,.61,.36,1),background .3s;
   }
-  .scroll-cue img{display:none}
   .scroll-cue-arrows{
     width:40px;
-    height:31px;
-    margin-top:0;
+    height:18px;
     overflow:visible;
   }
   .scroll-chevron{
     fill:none;
     stroke:currentColor;
-    stroke-width:3.2;
+    stroke-width:4;
     stroke-linecap:round;
     stroke-linejoin:round;
     opacity:0;
   }
+  @media (min-width:901px) and (max-height:700px){
+    .hero-download-zone{--hero-cta-height:72px;gap:10px;margin-top:24px}
+    .hero-download{width:min(320px,30vw);font-size:24px}
+  }
   @media (max-width:900px){
     .scene{height:100svh}
     .hero{
-      left:20px;right:20px;top:clamp(112px,16svh,154px);
+      left:20px;right:20px;top:clamp(132px,16svh,154px);
       max-width:none;padding:0;
     }
-    .hero h1{white-space:normal;font-size:clamp(42px,12.6vw,68px);line-height:.9}
+    .hero h1{white-space:normal;font-size:clamp(40px,11.2vw,64px);line-height:.94}
     .hero p{max-width:620px;margin-top:24px;font-size:clamp(17px,4.6vw,20px);line-height:1.38}
-    .hero-download-zone{display:none}
-    .scroll-cue{left:20px;top:calc(82svh - 68px)}
+    .hero-download-zone{
+      --hero-cta-height:58px;
+      width:100%;
+      gap:10px;
+      margin-top:28px;
+    }
+    .hero-download{flex:1 1 auto;width:auto;font-size:20px}
+    .scroll-cue-arrows{width:30px;height:14px}
     .hero-band{height:calc(100svh + 120px)}
     .hero-band::after{width:max(230vw,190vh);transform:translate(-50%,-68%) rotate(-15deg)}
   }
-  @media (prefers-reduced-motion:reduce){.hero-download{transition:none}}
+  @media (prefers-reduced-motion:reduce){.hero-download,.hero-scroll{transition:none}}
 
   /* маска включена: буквы поднимаются из-за нижнего края строки.
      padding с отрицательным margin оставляет место выносным, край клипа ниже базовой линии */
@@ -952,33 +1194,39 @@
   .m-word{display:inline-block;white-space:nowrap}
   .m-word > span{display:inline-block}
 
-  /* --- прелоадер: пятна улетают вверх, пока идёт загрузка --- */
+  /* --- прелоадер: синий Lu появляется на чёрном и уезжает в шапку --- */
   .pre{
     position:fixed;
     inset:0;
     z-index:50;
-    background:var(--page);
+    background:#000;
     pointer-events:none;
     overflow:hidden;
   }
-  .pre-blob{
+  .pre-gradient{
     position:absolute;
-    width:var(--w);
+    inset:auto -12vw -32vh;
+    height:82vh;
+    background:radial-gradient(ellipse at 50% 100%,rgba(4,0,250,.92) 0%,rgba(4,0,250,.46) 33%,rgba(4,0,250,0) 72%);
+    opacity:0;
+    transform:scaleY(.72);
+    transform-origin:50% 100%;
     pointer-events:none;
   }
-  .pre-blob .gimg{width:100%;padding-top:82%}   /* пропорция вместо высоты картинки */
-  #pb0{--w:46vw;left:-12vw;top:66vh}
-  #pb1{--w:36vw;left:58vw;top:88vh}
-  #pb2{--w:52vw;left:18vw;top:112vh}
   .pre-logo{
     position:absolute;
     left:50%; top:50%;
     width:min(22vw,402px);
     aspect-ratio:201/86;
-    background:url('/assets/ui/luna-logo.svg') center/contain no-repeat;
-    color:#000;
+    color:#0400FA;
   }
-  .pre-logo svg{display:none}
+  .pre-logo-svg{display:block;width:100%;height:100%;overflow:visible}
+  .pre-logo-letter{
+    visibility:hidden;
+    opacity:0;
+    transform-box:fill-box;
+    transform-origin:center;
+  }
   body.is-loading{overflow:hidden}
 
   /* --- шары вайбов: выезжают снизу с разной скоростью --- */
@@ -1077,12 +1325,21 @@
     border-radius:1000px;
     background:#F1F3F5;
     color:var(--ink);
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-family:var(--font-nunito-medium);
+    font-style:normal;
     font-size:clamp(17px,1.75vw,28px);
-    font-weight:600;
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
     letter-spacing:-.01em;
     opacity:0;
   }
+  .tag-pos:nth-child(6n + 1) .tag{padding:15px 25px;font-size:clamp(16px,1.54vw,25px)}
+  .tag-pos:nth-child(6n + 2) .tag{padding:18px 30px;font-size:clamp(18px,1.88vw,30px)}
+  .tag-pos:nth-child(6n + 3) .tag{padding:16px 27px;font-size:clamp(17px,1.68vw,27px)}
+  .tag-pos:nth-child(6n + 4) .tag{padding:18px 29px;font-size:clamp(18px,1.82vw,29px)}
+  .tag-pos:nth-child(6n + 5) .tag{padding:14px 24px;font-size:clamp(16px,1.48vw,24px)}
+  .tag-pos:nth-child(6n + 6) .tag{padding:17px 28px;font-size:clamp(17px,1.75vw,28px)}
 
   /* --- промт пользователя на пустом экране --- */
   .prompt{
@@ -1094,12 +1351,12 @@
     align-items:center;
     justify-content:center;   /* центр держит раскладка, а не отрицательный margin */
     text-align:center;
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-family:var(--font-nunito-medium);
     /* кегль от ширины окна: строка не должна разбиваться на две */
     font-size:min(4.1vw,58px);
     line-height:1.04;
     letter-spacing:-.03em;
-    font-weight:700;
+    font-weight:500;
     color:var(--ink);
     opacity:0;
     pointer-events:none;
@@ -1278,20 +1535,6 @@
     opacity:0;
   }
 
-  /* кружок-демонстратор жеста: восьмёрка на фоне, под корпусом */
-  .demo-cursor{
-    position:absolute;
-    left:50%; top:52%;
-    width:383px; height:383px;
-    margin:-191px 0 0 -191px;
-    border-radius:50%;
-    /* пятно без обводки: чёрный на 3% */
-    background:rgba(0,0,0,.05);
-    z-index:5;
-    opacity:0;
-    pointer-events:none;
-  }
-
   .hint-move{
     display:none !important;   /* убрано: ниже в правиле был display:flex */
     position:absolute;
@@ -1338,23 +1581,36 @@
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:18px;
-    background:#fff;
+    background:transparent;
     opacity:0;
     pointer-events:none;
   }
-  .loader-ring{
-    width:54px;height:54px;
-    border-radius:50%;
-    border:4px solid #E4E7EA;
-    border-top-color:var(--accent);
-    animation:ringspin .9s linear infinite;
-  }
-  @keyframes ringspin{to{transform:rotate(360deg)}}
   .loader-t{
-    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    font-size:17px;font-weight:600;letter-spacing:-.01em;color:#7C868E;
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:82%;
+    min-height:2.2em;
+    font-family:var(--font-nunito-medium);
+    font-size:clamp(22px,calc(var(--h) * .036),34px);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
+    line-height:1.08;
+    letter-spacing:-.02em;
+    color:rgba(20,32,42,.62);
   }
+  .loader-t span{
+    grid-area:1 / 1;
+    display:block;
+    width:100%;
+    text-align:center;
+    text-wrap:balance;
+    white-space:normal;
+    opacity:0;
+  }
+  .loader-t span:first-child{opacity:1}
 
   /* надписи по сторонам корпуса, чередуются лево-право */
   .caption{
@@ -1615,7 +1871,9 @@
     margin-inline:auto;
     overflow:visible;
     font-family:var(--heading);
-    font-weight:700;
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
     /* заливка зарядки: граница едет по скроллу через --chg (пишет тикер).
        незалитая часть плотнее: на .55 огромный кегль читался тонким */
     background:linear-gradient(90deg, #14202A 48%, rgba(20,32,42,.30) 52%);
@@ -2468,12 +2726,10 @@
   /* Единый глобальный хедер: самостоятельные элементы вместо цельного SVG-макета. */
   .site-header{
     --header-ink:#0A1722;
-    --header-button:#050505;
-    --header-button-ink:#fff;
     top:0;
     z-index:45;
     display:block;
-    padding:clamp(16px,2.2vh,24px) clamp(16px,1.6vw,32px);
+    padding:clamp(36px,4.95vh,54px) var(--pad) clamp(24px,3.3vh,36px);
     color:var(--header-ink);
     pointer-events:none;
     transition:color .28s ease,transform .62s cubic-bezier(.22,1,.36,1);
@@ -2482,78 +2738,119 @@
   .site-header > *{visibility:visible!important}
   .site-header__nav *{visibility:visible}
   .site-header__nav{
+    position:relative;
     display:flex;
     align-items:center;
     justify-content:space-between;
     width:100%;
     min-width:0;
   }
-  .site-header__left{
-    display:flex;
-    align-items:center;
-    gap:clamp(24px,2.8vw,44px);
-    min-width:0;
-  }
   .site-header__brand{
     display:block;
     flex:0 0 auto;
-    width:clamp(86px,7vw,104px);
+    width:clamp(77px,6.3vw,94px);
     color:inherit;
+    background:#0400FA;
+    -webkit-mask:url('/assets/ui/luna-logo.svg') center/contain no-repeat;
+    mask:url('/assets/ui/luna-logo.svg') center/contain no-repeat;
     pointer-events:auto;
   }
   .site-header__brand img{
     display:block;
     width:100%;
     height:auto;
-    filter:none;
+    opacity:0;
+    filter:none!important;
     transition:filter .28s ease,opacity .28s ease;
   }
-  .site-header__business{
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    color:inherit;
-    font:700 clamp(14px,1vw,16px)/1 'Onest',system-ui,sans-serif;
-    text-decoration:none;
-    white-space:nowrap;
+  .site-header__audience-position{
+    position:absolute;
+    left:50%;
+    top:0;
+    transform:translateX(-50%);
     pointer-events:auto;
   }
-  .site-header__business svg{
-    width:20px;
-    height:20px;
-    overflow:visible;
-    fill:none;
-    stroke:currentColor;
-    stroke-width:1.5;
-    stroke-linecap:round;
-    stroke-linejoin:round;
-    transition:transform .3s cubic-bezier(.22,1,.36,1);
+  .site-header__audience{
+    display:flex;
+    width:380px;
+    height:70px;
+    padding:5px;
+    border-radius:999px;
+    background:#F1F3F5;
+    box-shadow:none;
+    transition:background-color .34s ease;
   }
-  .site-header__business:hover svg{transform:translate(2px,-2px)}
-  .site-header__languages{display:none}
+  .site-header__audience-tab{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+    height:60px;
+    padding:0 20px;
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    color:rgba(10,23,34,.42);
+    font-family:var(--font-nunito-medium);
+    font-size:18px;
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    line-height:1;
+    white-space:nowrap;
+    transition:color .34s ease;
+  }
+  .site-header__audience-tab:first-child{flex:5}
+  .site-header__audience-tab:last-child{flex:3}
+  .site-header__audience-tab.is-active{background:#0400FA;color:rgba(255,255,255,.6)}
+  .site-header__audience-tab:disabled{cursor:not-allowed;opacity:1}
+  body.is-loading .site-header__audience,
+  body.is-dark .site-header__audience,
+  body.trip-hub-active .site-header__audience,
+  body.weather-storm .site-header__audience,
+  body.menu-on-dark .site-header__audience,
+  body.menu-open .site-header__audience{background:#050505;box-shadow:none}
+  body.is-loading .site-header__audience-tab:not(.is-active),
+  body.is-dark .site-header__audience-tab:not(.is-active),
+  body.trip-hub-active .site-header__audience-tab:not(.is-active),
+  body.weather-storm .site-header__audience-tab:not(.is-active),
+  body.menu-on-dark .site-header__audience-tab:not(.is-active),
+  body.menu-open .site-header__audience-tab:not(.is-active){color:rgba(255,255,255,.6)}
   .site-header__download{
-    position:relative;
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    gap:0;
-    width:auto;
-    min-width:clamp(220px,14vw,260px);
-    height:clamp(56px,3.8vw,64px);
-    padding-inline:clamp(30px,2.2vw,38px);
+    gap:9px;
+    min-width:154px;
+    height:60px;
+    padding:0 25px;
     border-radius:999px;
-    overflow:hidden;
-    color:var(--header-button-ink);
-    background:var(--header-button);
-    box-shadow:0 10px 28px rgba(10,23,34,.16);
-    font:700 clamp(15px,1.05vw,17px)/1 'Onest',system-ui,sans-serif;
+    background:#0400FA;
+    color:#fff;
+    font-family:var(--font-nunito-medium);
+    font-size:18px;
+    font-weight:500;
+    line-height:1;
     text-decoration:none;
-    white-space:nowrap;
-    pointer-events:auto;
-    transition:color .28s ease,background-color .28s ease,transform .24s ease,box-shadow .24s ease;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(-12px);
+    transition:opacity .34s ease,transform .46s cubic-bezier(.22,1,.36,1),visibility 0s linear .46s;
   }
-  .site-header__download:hover{box-shadow:0 14px 34px rgba(10,23,34,.22)}
-  .site-header__download:active{transform:translateY(0) scale(.97)}
+  .site-header__download img{
+    display:block;
+    width:auto;
+    height:18px;
+    filter:brightness(0) invert(1);
+  }
+  .site-header__download.is-visible{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateY(0);
+    transition-delay:0s;
+  }
   /* Геометрия глобальной шапки едина во всех сценах.
      Состояния body ниже меняют только контрастные цвета под фон. */
   .site-header__menu{
@@ -2590,28 +2887,10 @@
   body.menu-on-dark .site-header,
   body.menu-open .site-header{
     --header-ink:#fff;
-    --header-button:#fff;
-    --header-button-ink:#0A1722;
   }
-  body.is-loading .site-header,
-  body.hero-rim-blue .site-header{
-    --header-button:rgba(255,255,255,.15);
-    --header-button-ink:#fff;
-  }
-  body.is-loading .site-header__download,
-  body.hero-rim-blue .site-header__download{box-shadow:0 10px 30px rgba(0,0,0,.08)}
-  body.is-loading .site-header__brand img,
-  body.is-dark .site-header__brand img,
-  body.trip-hub-active .site-header__brand img,
-  body.weather-storm .site-header__brand img,
-  body.menu-on-dark .site-header__brand img,
-  body.menu-open .site-header__brand img,
-  body.logo-inv .site-header__brand img{filter:brightness(0) invert(1)}
   /* Жёлтая зарядка всегда светлая: тёмная шапка перекрывает прежнюю тёмную фазу. */
   body.is-charge .site-header{
     --header-ink:#0A1722;
-    --header-button:#050505;
-    --header-button-ink:#fff;
   }
   body.is-charge .site-header__brand img{filter:none}
   .site-header a:focus-visible,
@@ -2629,26 +2908,13 @@
   .site-menu .menu-download-link:hover{color:#0A1722;transform:translateY(-2px)}
   .site-menu .menu-download-link svg{width:18px;height:18px;flex:0 0 auto}
   @media (max-width:760px), (max-height:520px) and (pointer:coarse){
-    .site-header{padding:14px 16px}
-    .site-header__left{gap:0}
+    .site-header{padding:14px 20px}
     .site-header__brand{width:86px}
-    .site-header__business{display:none}
-    .site-header__download{
-      position:fixed;
-      z-index:46;
-      left:16px;
-      right:16px;
-      bottom:calc(12px + env(safe-area-inset-bottom,0px));
-      display:inline-flex;
-      width:auto;
-      height:58px;
-      color:#fff!important;
-      background:#0400FA!important;
-      box-shadow:0 12px 34px rgba(4,0,250,.34),0 2px 8px rgba(10,23,34,.18);
-      font-size:16px;
-      -webkit-tap-highlight-color:transparent;
-    }
+    .site-header__audience-position{top:62px;transform:translateX(-50%)}
+    .site-header__audience{width:min(340px,calc(100vw - 40px))}
+    .site-header__audience-tab{font-size:clamp(14px,4vw,16px);padding-inline:10px}
     .site-header__menu{display:block}
+    .site-header__download{display:none}
     .site-menu,.site-menu.is-open{padding-top:88px}
     .go-band{padding:6svh 16px calc(6svh + 82px + env(safe-area-inset-bottom,0px))}
     .go-btn{height:min(26svh,190px);font-size:clamp(52px,17vw,82px)}

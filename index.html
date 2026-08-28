@@ -5,23 +5,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="description" content="План путешествия, внутри которого всё уже можно сделать.">
   <title>Путешествовать — легко</title>
+  <link rel="icon" href="/assets/ui/luna-logo.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/nunito-sans-light-wide-v2.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/nunito-sans-medium-v2.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/src/styles/scene.css">
 </head>
 <body>
 <header class="hdr site-header" id="siteHeader" data-theme="light">
   <nav class="site-header__nav" aria-label="Главная навигация">
-    <div class="site-header__left">
-      <a class="logo-slot site-header__brand" id="logoSlot" href="#" aria-label="Luna — на главную">
-        <img loading="lazy" src="/assets/ui/luna-logo.svg" alt="Luna" width="201" height="86">
-      </a>
-      <a class="site-header__business hdr-item" id="hi0" href="#business">
-        <span>Для бизнеса</span>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 7.5h5v5M12.5 7.5l-5 5"/><circle cx="10" cy="10" r="8.25"/></svg>
-      </a>
-      <span class="site-header__languages" aria-label="Язык: русский"><span>EN</span><span>RU</span></span>
+    <a class="logo-slot site-header__brand" id="logoSlot" href="#" aria-label="Luna — на главную">
+      <img loading="lazy" src="/assets/ui/luna-logo.svg" alt="Luna" width="201" height="86">
+    </a>
+    <div class="site-header__audience-position">
+      <div class="site-header__audience hdr-item" id="hi0" role="tablist" aria-label="Режим сайта">
+        <button class="site-header__audience-tab is-active font-nunito-medium" type="button" role="tab" aria-selected="true">Путешественникам</button>
+        <button class="site-header__audience-tab font-nunito-medium" type="button" role="tab" aria-selected="false" disabled title="Раздел для отелей скоро появится">Отелям</button>
+      </div>
     </div>
-    <a class="site-header__download hdr-item" id="hi2" href="#download">
-      <span>Попробовать бесплатно</span>
+    <a class="site-header__download font-nunito-medium" id="headerDownload" href="#download" aria-hidden="true" tabindex="-1">
+      <img src="/assets/ui/login_apple.svg" width="23" height="29" loading="lazy" alt="" aria-hidden="true">
+      <span>Скачать</span>
     </a>
     <button class="site-header__menu hdr-item" id="menuTrigger" type="button" aria-label="Открыть меню" aria-controls="siteMenu" aria-expanded="false">
       <span></span><span></span>
@@ -67,13 +70,12 @@
 </div>
 
 <div class="pre" id="pre">
-  <div class="pre-blob" id="pb0"><div class="gimg g1"></div></div>
-  <div class="pre-blob" id="pb1"><div class="gimg g2"></div></div>
-  <div class="pre-blob" id="pb2"><div class="gimg g3"></div></div>
+  <div class="pre-gradient" id="preGradient"></div>
   <div class="pre-logo" id="preLogo">
-<svg viewBox="0 0 353 231" fill="none" class="pre-logo-svg" xmlns="http://www.w3.org/2000/svg">
-<path fill="currentColor" d="M3.94844e-05 223.5C3.94844e-05 207.607 3.94844e-05 191.813 3.94844e-05 176.118C3.94844e-05 160.225 3.94844e-05 144.431 3.94844e-05 128.736C3.94844e-05 112.843 3.94844e-05 97.0487 3.94844e-05 81.354C3.94844e-05 67.8447 3.94844e-05 54.3353 3.94844e-05 40.826C3.94844e-05 27.118 3.94844e-05 13.5093 3.94844e-05 -1.77622e-05H103.108C103.108 8.34399 103.108 16.688 103.108 25.032C103.108 33.1773 103.108 41.422 103.108 49.766C103.108 78.5727 103.108 107.479 103.108 136.484C103.108 165.489 103.108 194.495 103.108 223.5H3.94844e-05ZM352.755 38.74C352.755 52.0507 352.755 65.4607 352.755 78.97C352.755 92.4793 352.755 105.989 352.755 119.498C352.755 131.021 352.755 142.643 352.755 154.364C352.755 165.887 352.755 177.409 352.755 188.932C352.755 200.455 352.755 211.977 352.755 223.5H249.647C249.647 215.156 249.647 206.713 249.647 198.17C249.647 189.627 249.647 181.085 249.647 172.542C249.647 163.801 249.647 155.357 249.647 147.212C249.647 128.736 249.647 110.657 249.647 92.976C249.647 75.096 249.647 57.0173 249.647 38.74H352.755ZM218.059 38.74C218.059 49.2693 218.059 59.898 218.059 70.626C218.059 81.1553 218.059 91.6847 218.059 102.214C218.059 112.743 218.059 123.372 218.059 134.1C218.059 138.471 218.755 142.047 220.145 144.828C221.735 147.411 223.721 149.298 226.105 150.49C228.688 151.483 231.37 151.98 234.151 151.98C236.933 151.98 239.714 151.483 242.495 150.49C245.475 149.497 247.859 148.305 249.647 146.914L225.807 220.52C220.245 223.301 213.391 225.586 205.245 227.374C197.299 229.162 188.955 230.056 180.213 230.056C172.267 230.056 164.419 229.063 156.671 227.076C148.923 225.288 141.871 222.209 135.513 217.838C129.355 213.467 124.388 207.706 120.613 200.554C116.839 193.402 114.951 184.462 114.951 173.734C114.951 159.43 114.951 145.126 114.951 130.822C114.951 116.518 114.951 102.214 114.951 87.91C114.951 79.7647 114.951 71.6193 114.951 63.474C114.951 55.13 114.951 46.8853 114.951 38.74H218.059Z"/>
-</svg>
+    <svg viewBox="0 0 201 86" fill="none" class="pre-logo-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path class="pre-logo-letter pre-logo-letter--u" fill="currentColor" d="M92.3828 0H138.033C138.033 7.99334 138.033 15.4733 138.033 22.44C138.033 29.4067 138.033 36.3733 138.033 43.34C138.033 44.44 138.253 45.3933 138.693 46.2C139.206 47.0067 139.829 47.7033 140.563 48.29C141.369 48.8033 142.249 49.2067 143.203 49.5C144.229 49.7933 145.256 49.94 146.283 49.94C148.409 49.94 150.316 49.39 152.003 48.29C153.689 47.19 154.533 45.5767 154.533 43.45C154.533 39.93 154.533 36.4467 154.533 33C154.533 29.5533 154.533 26.07 154.533 22.55C154.533 19.03 154.533 15.4 154.533 11.66C154.533 7.92 154.533 4.03333 154.533 0H200.183C200.183 5.57334 200.183 11.2933 200.183 17.16C200.183 23.0267 200.183 28.93 200.183 34.87C200.183 40.7367 200.183 46.4567 200.183 52.03C200.183 57.6767 198.643 62.6267 195.563 66.88C192.556 71.06 188.486 74.58 183.353 77.44C178.219 80.2267 172.426 82.3167 165.973 83.71C159.593 85.1033 153.029 85.8 146.283 85.8C140.929 85.8 135.613 85.36 130.333 84.48C125.126 83.6 120.213 82.2433 115.593 80.41C111.046 78.5767 107.013 76.34 103.493 73.7C100.046 70.9867 97.3328 67.8333 95.3528 64.24C93.3728 60.5733 92.3828 56.5033 92.3828 52.03C92.3828 49.2433 92.3828 46.3833 92.3828 43.45C92.3828 40.4433 92.3828 37.4733 92.3828 34.54C92.3828 30.6533 92.3828 26.7667 92.3828 22.88C92.3828 18.9933 92.3828 15.1433 92.3828 11.33C92.3828 7.44333 92.3828 3.66667 92.3828 0Z"/>
+      <path class="pre-logo-letter pre-logo-letter--l" fill="currentColor" d="M45.65 49.94C45.65 50.0133 45.65 50.0867 45.65 50.16C45.7233 50.16 45.7967 50.16 45.87 50.16H88.77V82.5H0C0 77.9533 0 73.4067 0 68.86C0 64.3133 0 59.7667 0 55.22C0 50.6 0 46.0167 0 41.47C0 36.9233 0 32.3767 0 27.83C0 23.21 0 18.59 0 13.97C0 9.27667 0 4.62 0 0H45.65C45.65 4.18 45.65 8.36 45.65 12.54C45.65 16.6467 45.65 20.79 45.65 24.97C45.65 29.15 45.65 33.33 45.65 37.51C45.65 41.6167 45.65 45.76 45.65 49.94Z"/>
+    </svg>
   </div>
 </div>
 
@@ -86,12 +88,28 @@
   <div class="pulse-white" id="pulseWhite"></div>
   <div class="aura" id="aura"><i></i></div>
   <div class="hero-band" id="heroBand"></div>
+  <div class="hero-particles" id="heroParticles" aria-hidden="true">
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+  </div>
+  <div class="hero-cursor-trail" id="heroCursorTrail" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="hero-glow" id="heroGlow"><div class="gimg gh"></div></div>
   <div class="hero" id="business">
-    <h1 id="heroH1">Будущее<br>путешествий<br>здесь</h1>
-    <p id="heroP">Путешествие планируется целиком: куда сходить, где поесть, что забронировать и чем заняться. План меняется по ходу поездки, а вся рутина остаётся за кадром</p>
-    <div class="hero-download-zone"><a class="hero-download" href="#download"><span class="hero-download__label">Скачать</span></a></div>
-    <div class="scroll-cue" aria-hidden="true"><img loading="lazy" src="/assets/generated/428bbe296096.svg" width="58" height="38" alt=""></div>
+    <h1 class="font-nunito-light-wide" id="heroH1">Будущее<br>путешествий<br>уже здесь</h1>
+    <p class="font-nunito-medium" id="heroP">Одно приложение, которое соберёт путешествие вокруг ваших желаний и поможет в дороге.</p>
+    <div class="hero-download-zone">
+      <a class="hero-download font-nunito-medium" href="#download">
+        <span class="hero-download__label"><span>Скачать</span><img class="hero-download__apple" src="/assets/ui/login_apple.svg" width="23" height="29" loading="lazy" alt="" aria-hidden="true"></span>
+      </a>
+      <button class="hero-scroll scroll-cue" type="button" aria-label="Листать дальше">
+        <svg class="scroll-cue-arrows" viewBox="0 0 40 19" aria-hidden="true"><path class="scroll-chevron" pathLength="1" d="M3 3.5L20 16.5L37 3.5"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- шары: data-speed задаёт свою скорость параллакса -->
@@ -154,9 +172,8 @@
   <div class="influx" id="influx"></div>
   <div class="plan-explosion" id="planExplosion" aria-hidden="true"></div>
   <div class="fall" id="fall"></div>
-  <div class="demo-cursor" id="demoCursor"></div>
 
-  <!-- подсказка убрана: жест показывает серый кружок-восьмёрка -->
+  <!-- Подсказка скрыта в текущем сценарии. -->
   <div class="hint-move" id="hintMove" hidden>
     <svg viewBox="0 0 24 24" fill="none"><path d="M6.3 2.8c-.9-.4-1.9.4-1.6 1.4l4.3 15.3c.3 1 1.6 1.1 2.1.2l2.5-4.6 4.9 3.4c.8.6 1.9-.1 1.8-1.1l-1.7-6.1c-.1-.4-.4-.7-.8-.8L6.3 2.8Z" fill="currentColor"/></svg>
     <span>Поводите курсором</span>
@@ -356,11 +373,17 @@
           <div class="face front device-frame">
             <div class="screen device-screen">
               <iframe id="appFrame" src="./assets/embedded/plan-app.html" title="Чепош Парк" scrolling="no"></iframe>
-              <img id="heroShot" class="hero-shot" src="/assets/media/hero-screen.webp" width="786" height="1704" loading="lazy" decoding="async" alt="">
+              <img id="heroShot" class="hero-shot" src="/assets/media/hero-screen.png" width="898" height="1782" decoding="async" fetchpriority="high" alt="">
+              <div class="screen-placeholder" id="screenPlaceholder" aria-hidden="true"></div>
             </div>
-            <div class="loader" id="loader">
-              <div class="loader-ring"></div>
-              <div class="loader-t">Собираю план</div>
+            <div class="loader" id="loader" aria-label="Собираю путешествие">
+              <div class="loader-t font-nunito-medium" aria-hidden="true">
+                <span>Изучаю ваши пожелания</span>
+                <span>Подбираю лучшие места</span>
+                <span>Собираю маршрут</span>
+                <span>Добавляю впечатления</span>
+                <span>Завершаю план поездки</span>
+              </div>
             </div>
             <div class="inflow" id="inflow"></div>
             <div class="charge" id="chargeGlow"></div>
