@@ -36,7 +36,7 @@
   "checks": {
     "inlineCssMax": 10240,
     "requireLazyImages": true,
-    "eagerAllow": ["./assets/media/hero-screen.png"],
+    "eagerAllow": ["./assets/media/hero-screen.png", "/WEB-KKR/assets/media/hero-screen.png"],
     "requireDimensions": true,
     "dataUriMax": 2048,
     "forbidStaticWillChange": true
