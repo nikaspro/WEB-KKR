@@ -714,9 +714,9 @@ html{
   overflow:hidden;
   border:1px solid rgba(255,255,255,.14);
   border-radius:4.55cqi;
-  background:linear-gradient(145deg,rgba(255,255,255,.26),rgba(255,255,255,.18));
-  -webkit-backdrop-filter:blur(18px);
-  backdrop-filter:blur(18px);
+  background:rgba(255,255,255,.035);
+  -webkit-backdrop-filter:blur(14px) saturate(135%);
+  backdrop-filter:blur(14px) saturate(135%);
   box-shadow:0 5.7cqi 8.8cqi rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.16);
   transform-style:preserve-3d;
   pointer-events:none;
@@ -749,13 +749,33 @@ html{
 }
 
 .hotel-info-card__menu-caption{
+  position:relative;
   display:flex;
   flex:1;
   flex-direction:column;
   justify-content:space-between;
   min-height:0;
   padding:3.1cqi 2.38cqi 2.75cqi;
+  overflow:hidden;
+  border-top:1px solid rgba(255,255,255,.2);
+  background:linear-gradient(145deg,rgba(255,255,255,.27),rgba(255,255,255,.15));
+  -webkit-backdrop-filter:blur(24px) saturate(155%) brightness(1.06);
+  backdrop-filter:blur(24px) saturate(155%) brightness(1.06);
+  box-shadow:inset 0 1px rgba(255,255,255,.13),inset 0 -1px rgba(255,255,255,.04);
   color:rgba(255,255,255,.74);
+}
+
+.hotel-info-card__menu-caption::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(120deg,rgba(255,255,255,.13),transparent 35% 70%,rgba(255,255,255,.035));
+  pointer-events:none;
+}
+
+.hotel-info-card__menu-caption > *{
+  position:relative;
+  z-index:1;
 }
 
 .hotel-info-card__menu-name{
@@ -805,7 +825,7 @@ html{
   min-height:0;
   overflow:hidden;
   border:0;
-  border-radius:7.62% / 6.667%;
+  border-radius:42px;
   background:#2c2c2c url('/assets/hotels/menu-background-final.webp') center/100% 100% no-repeat;
   -webkit-backdrop-filter:none;
   backdrop-filter:none;
@@ -1568,7 +1588,7 @@ body.hotel-page .foot-legal a.foot-link-label:hover{
   .hotel-info-card--menu{
     aspect-ratio:7/8;
     min-height:0;
-    border-radius:7.62% / 6.667%;
+    border-radius:30px;
   }
 
   .hotel-info-card--menu .hotel-info-card__copy{
