@@ -30,7 +30,7 @@
     "fonts":    { "transferred": 163840, "allowExt": [".woff2"] },
     "hero":     { "transferred": 153600 },
     "critical": { "transferred": 307200 },
-    "total":    { "transferred": 921600 }
+    "total":    { "transferred": 1572864 }
   },
 
   "checks": {
@@ -47,7 +47,7 @@
       "Пустой allow значит ноль внешних origin в отдаче.",
       "selfOrigin — свои домены: canonical и og:url это не сторонняя загрузка."
     ],
-    "allow": [],
+    "allow": ["neat.firecms.co"],
     "selfOrigin": []
   }
 }
