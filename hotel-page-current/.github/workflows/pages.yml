@@ -5,10 +5,12 @@ on:
     branches:
       - claude/upload-files-repo-utgsi7
       - main
+      - hotels
   pull_request:
     branches:
       - claude/upload-files-repo-utgsi7
       - main
+      - hotels
   workflow_dispatch:
 
 permissions:
@@ -24,22 +26,57 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout preview source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: hotels-source
+          ref: hotels
+
+      - name: Checkout published source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: published-source
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version-file: .nvmrc
+          node-version-file: hotels-source/.nvmrc
           cache: npm
+          cache-dependency-path: |
+            hotels-source/package-lock.json
+            published-source/package-lock.json
 
-      - name: Install dependencies
+      - name: Install published dependencies
+        working-directory: published-source
         run: npm ci
 
-      - name: Build for GitHub Pages
+      - name: Install preview dependencies
+        working-directory: hotels-source
+        run: npm ci
+
+      - name: Build published page
+        working-directory: published-source
         run: npm run build
         env:
           SITE_BASE_PATH: /WEB-KKR/
+
+      - name: Build hotels preview
+        working-directory: hotels-source
+        run: npm run build
+        env:
+          SITE_BASE_PATH: /WEB-KKR/hotels/
+
+      - name: Combine published page and hotels preview
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          mkdir -p site/hotels
+          cp -R published-source/dist/. site/
+          cp -R hotels-source/dist/. site/hotels/
+          while IFS= read -r -d '' file; do
+            sed -i 's#\(/assets/\)#/WEB-KKR/hotels/assets/#g' "$file"
+          done < <(find site/hotels -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -print0)
 
       - name: Configure Pages
         if: github.event_name == 'push'
@@ -49,7 +86,7 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: ./dist
+          path: ./site
 
   deploy:
     if: github.event_name == 'push'
