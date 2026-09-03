@@ -1,0 +1,2932 @@
+@font-face{
+    font-family:'Onest';
+    src:url('/assets/fonts/onest.woff2') format('woff2');
+    font-style:normal;
+    font-weight:100 900;
+    font-display:swap;
+  }
+  @font-face{
+    font-family:'SF Pro Expanded';
+    src:url('/assets/fonts/sf-pro-expanded-medium.woff2') format('woff2');
+    font-style:normal;
+    font-weight:500;
+    font-display:swap;
+  }
+  @font-face{
+    font-family:'Nunito Sans Light Wide';
+    src:url('/assets/fonts/nunito-sans-light-wide-v2.woff2') format('woff2');
+    font-style:normal;
+    font-weight:300;
+    font-stretch:105%;
+    font-display:swap;
+  }
+  @font-face{
+    font-family:'Nunito Sans Medium';
+    src:url('/assets/fonts/nunito-sans-medium-v2.woff2') format('woff2');
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    font-display:swap;
+  }
+  @property --ghost-hue{
+    syntax:'<angle>';
+    inherits:true;
+    initial-value:168deg;
+  }
+  @property --rim-spin{
+    syntax:'<angle>';
+    inherits:true;
+    initial-value:0deg;
+  }
+  :root{
+    --ink:#14202A;
+    --accent:#0FA5D8;
+    --page:#FFFFFF;
+    --charge-bg:#EFFF5D;
+    --pad:clamp(24px,5vw,96px);   /* боковые отступы страницы */
+    /* заголовки разделов: Climate Crisis с Google Fonts, фолбэк системный */
+    --display:'Onest',system-ui,sans-serif;
+    --display-cc:'Onest',system-ui,sans-serif;   /* прежний шрифт заголовков */
+    --heading:'SF Pro Expanded','Onest',system-ui,sans-serif;
+    --font-nunito-light-wide:'Nunito Sans Light Wide','Onest',system-ui,sans-serif;
+    --font-nunito-medium:'Nunito Sans Medium','Onest',system-ui,sans-serif;
+    --hero-copy-size:clamp(20px,1.35vw,28px);
+    --face-side:#12202B;
+  }
+  /* Проектные имена начертаний. Оси wdth и YTLC уже зафиксированы в WOFF2. */
+  .font-nunito-light-wide{
+    font-family:var(--font-nunito-light-wide);
+    font-style:normal;
+    font-weight:300;
+    font-stretch:105%;
+    font-synthesis:none;
+  }
+  .font-nunito-medium{
+    font-family:var(--font-nunito-medium);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--page)}
+  body{
+    margin:0;
+    font:16px/1.4 'Onest',system-ui,sans-serif;
+    color:var(--ink);
+    background:var(--page);
+  }
+
+  .scene{
+    position:sticky; top:0; height:100vh;
+    display:grid; place-items:center;
+    perspective:1050px; perspective-origin:50% 45%;
+    overflow:hidden;
+  }
+  /* слой на GPU: без этого iframe с приложением перерастрируется каждый кадр.
+     will-change снимается только в финальном приближении, где нужна резкость */
+  /* roll вынесен наружу: внутри одного элемента GSAP применяет rotate(z)
+     раньше rotationX/Y, и крен считался бы в системе объекта, а не экрана */
+  .roll-layer,.scroll-layer,.tilt-layer,.intro-layer{transform-style:preserve-3d}
+  /* корпус выше свечения: без индекса он рисовался под .aura (z-index 1),
+     потому что положительный индекс всегда выше auto */
+  .roll-layer{
+    position:relative;
+    z-index:6;
+    pointer-events:none;
+    transition:opacity .24s cubic-bezier(.4,0,.2,1),visibility 0s linear 0s;
+  }
+  body.trip-hub-active .roll-layer{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .24s cubic-bezier(.4,0,.2,1),visibility 0s linear .24s;
+  }
+  .roll-layer.is-transition-hidden{
+    opacity:0!important;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .scroll-layer{position:relative;z-index:6}
+
+  .idle-y{transform-style:preserve-3d;animation:floatY 5.6s ease-in-out infinite}
+  .idle-r{transform-style:preserve-3d;animation:floatR 9.1s ease-in-out infinite;animation-delay:-2.3s}
+  @keyframes floatY{0%,100%{transform:translate3d(0,-11px,0)}50%{transform:translate3d(0,11px,0)}}
+  @keyframes floatR{0%{transform:rotateY(-5deg) rotateX(2.4deg)}50%{transform:rotateY(5deg) rotateX(-2.4deg)}100%{transform:rotateY(-5deg) rotateX(2.4deg)}}
+
+  .box{
+    /* высота в процентах от экрана, ширина из пропорции 393:812.
+       толщина и радиус производные, чтобы корпус не терял вид на любом размере */
+    --h:clamp(560px, 78vh, 1000px);
+    --w:calc(var(--h) * 0.4840);
+    --d:0px;
+    --r:calc(var(--h) * 0.0694);
+    --rim-top:calc(var(--h) * .0035);
+    --rim-right:calc(var(--h) * .010);
+    --rim-bottom:calc(var(--h) * .008);
+    --rim-left:calc(var(--h) * .004);
+    --ghost-hue:168deg;
+    --rim-hue:160deg;
+    --rim-lightness:52%;
+    --rim-cyan:72,211,226;
+    --rim-green:61,255,136;
+    --rim-spin:0deg;
+    position:relative; width:var(--w); height:var(--h);
+    transform-style:preserve-3d;
+    animation:
+      ghostHue 22s linear infinite,
+      rimRun 12s linear -4.5s infinite;
+  }
+  @keyframes ghostHue{to{--ghost-hue:528deg}}
+  /* Непрерывный равномерный обход без возвратов и смены скорости. */
+  @keyframes rimRun{to{--rim-spin:360deg}}
+  /* На светлой теме — стабильная mint/cyan-палитра из референса.
+     В тёмных главах остаётся медленная футуристичная смена hue. */
+  body.menu-on-dark .box{--rim-hue:var(--ghost-hue)}
+  /* --- поток по рамке ---
+     пятно света физически идёт по контуру корпуса через offset-path.
+     два пятна: одно поднимается по правой стороне, второе по левой,
+     оба стартуют снизу и сходятся у верхней кромки */
+  .flow{
+    position:absolute;
+    inset:0;
+    z-index:5;
+    opacity:0;
+    pointer-events:none;
+    transform:translateZ(calc(var(--d) / 2 + 1px));
+  }
+  .flow i{
+    position:absolute;
+    left:0; top:0;
+    width:calc(var(--h) * 0.30);
+    height:calc(var(--h) * 0.30);
+    margin:calc(var(--h) * -0.15) 0 0 calc(var(--h) * -0.15);
+    border-radius:50%;
+    background:radial-gradient(circle,
+      rgba(255,255,255,.95) 0%,
+      rgba(209,255,250,.75) 26%,
+      rgba(15,165,216,.45)  52%,
+      rgba(15,165,216,0)    78%);
+    filter:blur(14px);
+    mix-blend-mode:screen;
+    offset-rotate:0deg;
+  }
+
+  /* поток внутри экрана: свет входит сверху и уходит вглубь */
+  .inflow{
+    position:absolute;
+    inset:0;
+    z-index:6;
+    border-radius:inherit;
+    opacity:0;
+    pointer-events:none;
+    overflow:hidden;
+    mix-blend-mode:screen;
+  }
+  /* только вход у верхней кромки, без ровной шапки на весь экран */
+  .inflow::before{
+    content:'';
+    position:absolute;
+    left:6%; right:6%;
+    top:0;
+    height:26%;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.80) 0%,
+      rgba(209,255,250,.50) 34%,
+      rgba(15,165,216,.14)  72%,
+      rgba(15,165,216,0)    100%);
+    filter:blur(14px);
+  }
+  /* мягкая волна, стекающая вниз по экрану */
+  .inflow::after{
+    content:'';
+    position:absolute;
+    left:-20%; right:-20%;
+    top:-30%;
+    height:46%;
+    background:radial-gradient(50% 60% at 50% 40%, rgba(255,255,255,.55), rgba(209,255,250,.20) 55%, rgba(209,255,250,0) 100%);
+    filter:blur(20px);
+    animation:flowDown 4.2s cubic-bezier(.35,0,.4,1) infinite;
+  }
+  @keyframes flowDown{
+    0%  {transform:translateY(-10%); opacity:0}
+    16% {opacity:.9}
+    100%{transform:translateY(210%); opacity:0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .inflow::after{animation:none}
+    .box{animation:none}
+    .roll-layer{transition:none}
+  }
+
+  .rim{
+    position:absolute;
+    inset:0;
+    z-index:10;
+    border-radius:var(--r);
+    box-shadow:
+      inset 0 0 calc(var(--h) * .014) rgba(205,255,247,.34),
+      inset 0 0 calc(var(--h) * .030) rgba(78,231,220,.20),
+      0 0 calc(var(--h) * .020) rgba(75,225,221,.28),
+      0 0 calc(var(--h) * .045) rgba(70,255,181,.15);
+    /* Blur цветной ленты обрезается по внешнему силуэту и раскрывается
+       только внутрь корпуса — внешняя форма остаётся собранной. */
+    overflow:hidden;
+    pointer-events:none;
+  }
+  /* Весь объём корпуса — одна непрерывная градиентная лента. */
+  .rim::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    padding:var(--rim-top) var(--rim-right) var(--rim-bottom) var(--rim-left);
+    border-radius:inherit;
+    /* Широкое световое облако покрывает весь периметр: у него нет пустого
+       участка, только мягко перемещающийся максимум яркости. Второй слой
+       добавляет стеклу светлую фаску и едва заметную глубину. */
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(var(--rim-cyan),.28) 0deg,
+        rgba(var(--rim-cyan),.48) 70deg,
+        rgba(var(--rim-green),.74) 154deg,
+        rgba(var(--rim-cyan),.52) 232deg,
+        rgba(var(--rim-green),.34) 310deg,
+        rgba(var(--rim-cyan),.28) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,255,.16),
+        rgba(255,255,255,.025) 34%,
+        rgba(0,0,0,.07) 72%,
+        rgba(255,255,255,.08));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    filter:
+      blur(14px)
+      drop-shadow(0 0 20px rgba(var(--rim-cyan),.25))
+      drop-shadow(0 0 30px rgba(var(--rim-green),.18));
+    opacity:.86;
+  }
+  /* Первый экран: холодный ободок из референса — тёмный teal слева,
+     cyan на переходе и плотный electric blue на яркой стороне. */
+  body.hero-rim-blue .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(4,55,68,.82) 0deg,
+        rgba(32,211,228,.94) 68deg,
+        rgba(29,113,255,.98) 142deg,
+        rgba(16,25,255,1) 226deg,
+        rgba(20,91,155,.92) 302deg,
+        rgba(4,55,68,.82) 360deg),
+      linear-gradient(125deg,
+        rgba(174,249,255,.30),
+        rgba(37,157,255,.08) 34%,
+        rgba(4,8,76,.25) 72%,
+        rgba(83,229,255,.18));
+    /* Blur после кольцевой маски раздувался внутрь экрана при 3D-наклоне
+       и создавал овальные цветные пятна. Сам conic-gradient уже плавный,
+       поэтому оставляем только компактное равномерное свечение. */
+    filter:none;
+    opacity:.94;
+  }
+  body.hero-rim-blue .rim::after{
+    filter:none;
+    opacity:.07;
+  }
+  /* «Заряжаем поездку»: лимонное стекло в тон жёлтой сцене. Тёплая
+     полутень сохраняет объём корпуса, не превращаясь в чёрный контур. */
+  body.is-charge .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(231,245,76,.72) 0deg,
+        rgba(255,255,220,.94) 72deg,
+        rgba(247,255,126,.88) 154deg,
+        rgba(206,223,55,.68) 236deg,
+        rgba(255,255,196,.90) 310deg,
+        rgba(231,245,76,.72) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,239,.42),
+        rgba(248,255,144,.12) 34%,
+        rgba(151,166,36,.18) 72%,
+        rgba(255,255,213,.28));
+    filter:
+      blur(10px)
+      drop-shadow(0 0 16px rgba(248,255,129,.36))
+      drop-shadow(0 8px 22px rgba(153,168,39,.16));
+    opacity:.92;
+  }
+  body.weather-active:not(.weather-storm) .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(112,211,255,.30) 0deg,
+        rgba(112,211,255,.50) 70deg,
+        rgba(201,242,255,.76) 154deg,
+        rgba(112,211,255,.54) 232deg,
+        rgba(201,242,255,.38) 310deg,
+        rgba(112,211,255,.30) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,255,.18),
+        rgba(255,255,255,.035) 34%,
+        rgba(54,137,176,.07) 72%,
+        rgba(255,255,255,.10));
+    filter:
+      blur(14px)
+      drop-shadow(0 0 20px rgba(112,211,255,.27))
+      drop-shadow(0 0 30px rgba(201,242,255,.20));
+  }
+  body.weather-storm .rim::before,
+  .box.is-weather-storm .rim::before{
+    background:
+      conic-gradient(from var(--rim-spin),
+        rgba(112,211,255,.30) 0deg,
+        rgba(112,211,255,.50) 70deg,
+        rgba(201,242,255,.76) 154deg,
+        rgba(112,211,255,.54) 232deg,
+        rgba(201,242,255,.38) 310deg,
+        rgba(112,211,255,.30) 360deg),
+      linear-gradient(125deg,
+        rgba(255,255,255,.18),
+        rgba(255,255,255,.035) 34%,
+        rgba(54,137,176,.07) 72%,
+        rgba(255,255,255,.10));
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    filter:
+      blur(14px)
+      drop-shadow(0 0 20px rgba(112,211,255,.27))
+      drop-shadow(0 0 30px rgba(201,242,255,.20));
+    opacity:.34;
+  }
+  /* Мелкое монохромное зерно добавляет материалу тактильность, но не
+     образует ещё один контур: используется та же маска и та же толщина. */
+  .rim::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    padding:var(--rim-top) var(--rim-right) var(--rim-bottom) var(--rim-left);
+    border-radius:inherit;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.72'/%3E%3C/svg%3E");
+    background-size:96px 96px;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    mix-blend-mode:soft-light;
+    filter:blur(3px);
+    opacity:.065;
+    pointer-events:none;
+  }
+  /* вспышка обводки при въезде частиц: статичная тень, анимируется только opacity */
+  .rim-pulse{
+    position:absolute;
+    inset:-2px;
+    border-radius:calc(var(--r) + 2px);
+    transform:translateZ(calc(var(--d) / 2 + 1px));
+    box-shadow:
+      0 0 14px rgba(120,240,205,.38),
+      0 0 5px rgba(209,255,235,.45),
+      inset 0 0 18px rgba(120,240,205,.22);
+    opacity:0;
+    pointer-events:none;
+  }
+
+  .face{position:absolute;inset:0;border-radius:var(--r);backface-visibility:hidden}
+
+  .front{
+    background:transparent;
+    transform:translateZ(calc(var(--d)/2));
+    overflow:hidden;
+  }
+  /* --- экран: реальное приложение в iframe --- */
+  .screen{
+    position:absolute; inset:calc(var(--h) * 0.0129);
+    border-radius:calc(var(--r) - var(--h) * 0.0129);
+    overflow:hidden;
+    background:#dce8e4;
+    opacity:1;
+    filter:none;
+    mix-blend-mode:normal;
+    isolation:isolate;
+  }
+  /* Стартовый экран лежит поверх iframe и уходит вместе с нырком корпуса. */
+  .screen .hero-shot{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    object-position:center top;
+    display:block;
+    z-index:2;
+  }
+
+  /* приложение рисуется в честных 390x844, потом сжимается под корпус.
+     иначе мобильная раскладка ужмётся до 262px и поедет */
+  .screen iframe{
+    position:absolute;
+    top:0; left:0;
+    /* размер задаёт JS: экран рендерится с запасом по плотности,
+       иначе на масштабе финала растр не тянет */
+    border:0;
+    opacity:1;
+    filter:none;
+    mix-blend-mode:normal;
+    background:#000;
+    transform-origin:0 0;
+    /* scale считает JS от фактического размера .screen */
+  }
+  /* Второй экран: вместо готового плана видна стеклянная подложка корпуса.
+     Перелив двигается transform-свойством одного псевдоэлемента. */
+  .screen-placeholder{
+    position:absolute;
+    inset:0;
+    z-index:3;
+    overflow:hidden;
+    background:linear-gradient(145deg,
+      rgba(255,255,255,.96) 0%,
+      rgba(255,255,255,.18) 37%,
+      rgba(255,255,255,.76) 68%,
+      rgba(255,255,255,.08) 100%);
+    opacity:0;
+    pointer-events:none;
+  }
+  .screen-placeholder::before{
+    content:'';
+    position:absolute;
+    inset:-18% -88%;
+    background:linear-gradient(110deg,
+      rgba(255,255,255,0) 23%,
+      rgba(255,255,255,.28) 36%,
+      rgba(255,255,255,1) 48%,
+      rgba(255,255,255,.32) 61%,
+      rgba(255,255,255,0) 77%);
+    transform:translate3d(-26%,0,0);
+    animation:screenGlassDrift 3.8s ease-in-out infinite alternate;
+    animation-play-state:paused;
+  }
+  .screen-placeholder.is-active::before{animation-play-state:running}
+  @keyframes screenGlassDrift{to{transform:translate3d(26%,0,0)}}
+  /* От исходной iPhone-геометрии остаются только пропорции и скругление. */
+  .box.device-iphone-14-pro{
+    --w:calc(var(--h) * 0.49309); /* 428 / 868 */
+    --r:calc(var(--h) * 0.07834); /* 68 / 868 */
+  }
+  .box.device-iphone-14-pro .device-frame{
+    /* Корпус рисует только единый градиентный ободок: тёмной внутренней
+       рамки между ним и экраном больше нет. */
+    background:transparent;
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+    border:0;
+    box-shadow:none;
+  }
+  .box.device-iphone-14-pro .device-screen{
+    inset:calc(var(--h) * .0045);
+    border-radius:calc(var(--r) - var(--h) * .0045);
+  }
+  /* --- градиент первого экрана: уходит вместе с героем --- */
+  /* исходит из-под корпуса, смещено вниз: цвета больше в кадре */
+  /* градиентная полоса главного экрана: во всю ширину, гаснет к низу */
+  .hero-band{
+    position:absolute;
+    left:0; right:0; top:0;
+    /* Запас снизу нужен для GSAP-сдвига сцены: край уезжает за кадр,
+       пока слой мягко растворяется, а не открывает белую полосу. */
+    height:calc(100vh + clamp(120px,14vh,220px));
+    z-index:0;
+    opacity:0;
+    pointer-events:none;
+    transform-origin:50% 0;
+    background:#0A1722;
+    -webkit-mask-image:none;
+    mask-image:none;
+  }
+
+  .hero-glow{
+    display:none;   /* v4: фон задаёт .hero-band, пастельное свечение перебивало цвет */
+    position:absolute;
+    left:50%; top:50%;
+    width:min(140vw,1900px);
+    height:min(140vw,1900px);
+    margin-left:min(-70vw,-950px);
+    margin-top:min(-44vw,-600px);     /* центр пятна ниже центра сцены */
+    z-index:0;
+    opacity:0;
+    pointer-events:none;
+    /* подложка добавляет цвета: акцент и тёплый край, без фильтров */
+    background:
+      radial-gradient(closest-side, rgba(15,165,216,.26), transparent 72%),
+      radial-gradient(closest-side at 62% 38%, rgba(255,214,120,.24), transparent 66%),
+      radial-gradient(closest-side at 34% 66%, rgba(120,240,190,.24), transparent 64%);
+  }
+  /* маска гасит прямую кромку картинки: у исходника градиент обрезан прямоугольником */
+  .hero-glow .gimg{
+    position:absolute;
+    inset:0;
+    -webkit-mask-image:radial-gradient(closest-side, #000 42%, rgba(0,0,0,.35) 72%, transparent 100%);
+    mask-image:radial-gradient(closest-side, #000 42%, rgba(0,0,0,.35) 72%, transparent 100%);
+  }
+
+  /* --- тёмная тема с раздела «ИИ-идеи» --- */
+  .veil{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    background:radial-gradient(120% 90% at 50% 32%, #131820 0%, #05070A 72%);
+    opacity:0;
+    pointer-events:none;
+  }
+  .assistant-bg{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    opacity:0;
+    overflow:hidden;
+    pointer-events:none;
+    background:#070D11;
+  }
+  .assistant-bg::after{
+    content:'';
+    position:absolute;
+    inset:-3%;
+    opacity:var(--assistant-glow,0);
+    transform:scale(var(--assistant-glow-scale,1.055));
+    transform-origin:68% 18%;
+    background:url('/assets/generated/assistant-blue-glow.svg') center/cover no-repeat;
+  }
+  @media(max-width:900px){
+    .assistant-bg::after{inset:-7%;background-position:58% 14%}
+  }
+
+  /* --- магический свет по периметру ---
+     приём из панели агента в приложении: под кадром крутится большой
+     сплющенный конический эллипс, поверх лежит размытая плита цвета фона.
+     плита закрывает середину, но её размытый край не доходит до границы —
+     там и виден свет. толщину полосы задаёт радиус блюра плиты */
+  .aura{
+    position:absolute;
+    inset:0;
+    z-index:1;            /* под контентом: на 11 плита закрывала телефон и текст */
+    opacity:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  /* свет: эллипс шире кадра, цвет меняется по периметру.
+     стопов много, поэтому по каждой стороне свой оттенок, как на референсе */
+  /* палитра как у световых пятен на рамке: белое ядро, мятный, голубой, акцент */
+  .aura::before,.aura i{
+    content:'';
+    position:absolute;
+    left:50%; top:50%;
+    translate:-50% -50%;
+    width:168%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    background:conic-gradient(
+      rgba(255,255,255,.55)  0deg,
+      rgba(209,255,250,.92)  38deg,
+      rgba(124,228,255,.88)  86deg,
+      rgba(15,165,216,.86)   134deg,
+      rgba(255,255,255,.50)  180deg,
+      rgba(209,255,250,.86)  226deg,
+      rgba(124,228,255,.90)  278deg,
+      rgba(15,165,216,.70)   324deg,
+      rgba(255,255,255,.55)  360deg);
+    filter:blur(52px);
+  }
+  /* вращение с покачиванием: одна скорость читалась как ровный ореол */
+  .aura::before{animation:auraSpin 9s linear infinite}
+  /* второй слой крутится в обратную сторону: свет перетекает, а не просто едет */
+  .aura i{
+    width:150%;
+    filter:blur(64px);
+    opacity:.7;
+    animation:auraSpinBack 13s linear infinite;
+  }
+  /* плита цвета фона: её скругление и есть форма рамки, а радиус блюра —
+     толщина видимой полосы. на референсе рамка скруглённая, отсюда 30px */
+  .aura::after{
+    content:'';
+    position:absolute;
+    inset:40px;
+    border-radius:30px;
+    background:#05070A;
+    filter:blur(34px);
+  }
+  @keyframes auraSpin{
+    0%  {transform:rotate(0deg);   scale:1 .62}
+    25% {                          scale:1.08 .54}
+    50% {transform:rotate(180deg); scale:.94 .70}
+    75% {                          scale:1.06 .56}
+    100%{transform:rotate(360deg); scale:1 .62}
+  }
+  @keyframes auraSpinBack{
+    0%  {transform:rotate(360deg); scale:1 .58}
+    50% {transform:rotate(180deg); scale:1.05 .66}
+    100%{transform:rotate(0deg);   scale:1 .58}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .aura::before,.aura i{animation:none}
+  }
+
+  body.is-dark .caption{color:#FFFFFF}
+  body.is-dark .hero h1{color:#FFFFFF}
+  body.is-dark .hero p{color:#C9D3DA}
+  body.is-dark .caption em{color:#8B959D}
+  body.is-dark .orb span{color:#EDF3F8}
+  body.is-dark .hdr{color:#EDF3F8}
+  .hdr,.caption,.caption em,.orb span,
+  .hero h1,.hero p{
+    transition:color .6s, background-color .6s;
+  }
+
+  /* --- шапка --- */
+  .hdr{
+    position:fixed;
+    top:0; left:0; right:0;
+    z-index:20;
+    display:flex;
+    align-items:center;
+    gap:24px;
+    padding:26px var(--pad);
+    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  }
+  @media (min-width:700px){
+    .box{--h:clamp(500px,min(78vh,54vw),1000px)}
+  }
+  body.menu-open{overflow-x:hidden}
+  .site-menu{
+    position:fixed;
+    inset:0 0 auto;
+    z-index:40;
+    display:flex;
+    flex-direction:column;
+    padding:0 clamp(24px,2.65vw,52px);
+    height:0;
+    background:#151515;
+    color:#fff;
+    border-radius:0 0 clamp(22px,2vw,38px) clamp(22px,2vw,38px);
+    box-shadow:0 16px 42px rgba(10,23,34,.20);
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    overflow:hidden;
+    transition:
+      height .68s cubic-bezier(.76,0,.24,1),
+      padding .68s cubic-bezier(.76,0,.24,1),
+      opacity .18s ease,
+      visibility 0s linear .68s;
+  }
+  .site-menu.is-open{
+    visibility:visible;
+    opacity:1;
+    pointer-events:auto;
+    height:clamp(320px,33vh,460px);
+    padding:clamp(24px,2.65vw,52px);
+    transition-delay:0s;
+  }
+  /* Меню раскрывается по высоте и сдвигает страницу, сохраняя её размер. */
+  .site-shell{
+    position:relative;
+    margin-top:0;
+    transition:margin-top .68s cubic-bezier(.76,0,.24,1);
+  }
+  body.menu-open .site-shell{
+    margin-top:clamp(320px,33vh,460px);
+  }
+  .menu-top{
+    position:relative;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:42px;
+  }
+  .menu-brand{
+    color:#fff;
+  }
+
+  .hero-cursor-trail{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .hero-particles{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    overflow:hidden;
+    opacity:0;
+    pointer-events:none;
+  }
+  .hero-particles i{
+    position:absolute;
+    display:block;
+    width:calc(var(--particle-size,2px) / 1.65);
+    height:calc(var(--particle-size,2px) / 1.65);
+    border-radius:50%;
+    background:rgba(255,255,255,.96);
+    box-shadow:0 0 11px rgba(255,255,255,.92);
+    opacity:0;
+    animation:heroParticleFloat var(--particle-duration,11s) ease-in-out var(--particle-delay,0s) infinite;
+    animation-play-state:paused;
+  }
+  body.hero-rim-blue .hero-particles i{animation-play-state:running}
+  .hero-particles i:nth-child(1){left:8%;top:28%;--particle-size:5px;--particle-duration:10.8s;--particle-delay:-7.2s}
+  .hero-particles i:nth-child(2){left:17%;top:71%;--particle-size:4px;--particle-duration:13.4s;--particle-delay:-3.1s}
+  .hero-particles i:nth-child(3){left:29%;top:17%;--particle-size:7px;--particle-duration:14.6s;--particle-delay:-11.8s}
+  .hero-particles i:nth-child(4){left:38%;top:83%;--particle-size:5px;--particle-duration:9.7s;--particle-delay:-5.4s}
+  .hero-particles i:nth-child(5){left:47%;top:35%;--particle-size:4px;--particle-duration:12.1s;--particle-delay:-9.2s}
+  .hero-particles i:nth-child(6){left:56%;top:68%;--particle-size:5px;--particle-duration:15.2s;--particle-delay:-1.7s}
+  .hero-particles i:nth-child(7){left:64%;top:14%;--particle-size:4px;--particle-duration:11.5s;--particle-delay:-6.8s}
+  .hero-particles i:nth-child(8){left:72%;top:77%;--particle-size:7px;--particle-duration:13.9s;--particle-delay:-10.3s}
+  .hero-particles i:nth-child(9){left:81%;top:43%;--particle-size:5px;--particle-duration:10.2s;--particle-delay:-2.6s}
+  .hero-particles i:nth-child(10){left:91%;top:22%;--particle-size:4px;--particle-duration:14.3s;--particle-delay:-8.5s}
+  .hero-particles i:nth-child(11){left:24%;top:49%;--particle-size:4px;--particle-duration:12.8s;--particle-delay:-4.7s}
+  .hero-particles i:nth-child(12){left:86%;top:88%;--particle-size:5px;--particle-duration:15.8s;--particle-delay:-12.4s}
+  .hero-particles i:nth-child(13){left:13%;top:48%;--particle-size:4px;--particle-duration:11.9s;--particle-delay:-9.7s}
+  .hero-particles i:nth-child(14){left:43%;top:13%;--particle-size:5px;--particle-duration:14.8s;--particle-delay:-5.9s}
+  .hero-particles i:nth-child(15){left:68%;top:52%;--particle-size:4px;--particle-duration:10.6s;--particle-delay:-8.1s}
+  .hero-particles i:nth-child(16){left:95%;top:64%;--particle-size:7px;--particle-duration:15.4s;--particle-delay:-13.2s}
+  .hero-particles i:nth-child(17){left:4%;top:58%;--particle-size:4px;--particle-duration:12.7s;--particle-delay:-2.4s}
+  .hero-particles i:nth-child(18){left:11%;top:89%;--particle-size:5px;--particle-duration:14.1s;--particle-delay:-10.6s}
+  .hero-particles i:nth-child(19){left:20%;top:9%;--particle-size:4px;--particle-duration:10.3s;--particle-delay:-6.2s}
+  .hero-particles i:nth-child(20){left:26%;top:63%;--particle-size:7px;--particle-duration:15.7s;--particle-delay:-13.8s}
+  .hero-particles i:nth-child(21){left:33%;top:39%;--particle-size:5px;--particle-duration:11.4s;--particle-delay:-4.1s}
+  .hero-particles i:nth-child(22){left:36%;top:6%;--particle-size:4px;--particle-duration:13.8s;--particle-delay:-8.9s}
+  .hero-particles i:nth-child(23){left:41%;top:58%;--particle-size:7px;--particle-duration:9.9s;--particle-delay:-5.1s}
+  .hero-particles i:nth-child(24){left:50%;top:91%;--particle-size:4px;--particle-duration:14.9s;--particle-delay:-12.7s}
+  .hero-particles i:nth-child(25){left:52%;top:21%;--particle-size:5px;--particle-duration:12.4s;--particle-delay:-3.8s}
+  .hero-particles i:nth-child(26){left:58%;top:45%;--particle-size:4px;--particle-duration:15.9s;--particle-delay:-11.4s}
+  .hero-particles i:nth-child(27){left:61%;top:87%;--particle-size:7px;--particle-duration:10.9s;--particle-delay:-7.4s}
+  .hero-particles i:nth-child(28){left:66%;top:31%;--particle-size:5px;--particle-duration:13.2s;--particle-delay:-1.9s}
+  .hero-particles i:nth-child(29){left:70%;top:93%;--particle-size:4px;--particle-duration:11.8s;--particle-delay:-9.5s}
+  .hero-particles i:nth-child(30){left:75%;top:7%;--particle-size:7px;--particle-duration:15.1s;--particle-delay:-6.5s}
+  .hero-particles i:nth-child(31){left:77%;top:61%;--particle-size:4px;--particle-duration:10.1s;--particle-delay:-3.4s}
+  .hero-particles i:nth-child(32){left:83%;top:12%;--particle-size:5px;--particle-duration:14.5s;--particle-delay:-12.1s}
+  .hero-particles i:nth-child(33){left:88%;top:54%;--particle-size:7px;--particle-duration:12.9s;--particle-delay:-8.3s}
+  .hero-particles i:nth-child(34){left:93%;top:80%;--particle-size:4px;--particle-duration:15.6s;--particle-delay:-4.9s}
+  .hero-particles i:nth-child(35){left:6%;top:76%;--particle-size:5px;--particle-duration:11.1s;--particle-delay:-10.9s}
+  .hero-particles i:nth-child(36){left:31%;top:94%;--particle-size:4px;--particle-duration:13.6s;--particle-delay:-7.9s}
+  .hero-particles i:nth-child(37){left:46%;top:72%;--particle-size:7px;--particle-duration:10.5s;--particle-delay:-2.8s}
+  .hero-particles i:nth-child(38){left:60%;top:4%;--particle-size:5px;--particle-duration:14.7s;--particle-delay:-11.7s}
+  .hero-particles i:nth-child(39){left:79%;top:95%;--particle-size:4px;--particle-duration:12.2s;--particle-delay:-5.7s}
+  .hero-particles i:nth-child(40){left:97%;top:37%;--particle-size:7px;--particle-duration:15.3s;--particle-delay:-9.1s}
+  @keyframes heroParticleFloat{
+    0%,100%{transform:translate3d(0,12px,0) scale(.65);opacity:0}
+    18%{opacity:.38}
+    48%{transform:translate3d(7px,-6px,0) scale(1);opacity:.82}
+    78%{opacity:.32}
+    90%{transform:translate3d(-4px,-22px,0) scale(.78);opacity:0}
+  }
+  .hero-cursor-trail i{
+    position:absolute;
+    left:0;
+    top:0;
+    display:block;
+    width:clamp(320px,38vw,560px);
+    aspect-ratio:1;
+    border-radius:50%;
+    opacity:0;
+    pointer-events:none;
+  }
+  .hero-cursor-trail i:nth-child(1){
+    background:radial-gradient(circle,rgba(4,0,250,.58) 0%,rgba(4,0,250,.26) 38%,transparent 72%);
+  }
+  .hero-cursor-trail i:nth-child(2){
+    width:clamp(280px,32vw,470px);
+    background:radial-gradient(circle,rgba(255,0,184,.46) 0%,rgba(255,0,184,.20) 40%,transparent 72%);
+  }
+  .hero-cursor-trail i:nth-child(3){
+    width:clamp(220px,25vw,370px);
+    background:radial-gradient(circle,rgba(58,220,255,.40) 0%,rgba(58,220,255,.16) 42%,transparent 72%);
+  }
+  .menu-brand img{
+    display:block;
+    width:clamp(72px,6vw,96px);
+    height:auto;
+    filter:brightness(0) invert(1);
+  }
+  .menu-close{
+    position:absolute;
+    top:0;
+    left:calc(clamp(112px,10vw,150px) / 2 - 21px);
+    z-index:1;
+    display:inline-flex;
+    align-items:center;
+    gap:0;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:#fff;
+    font:600 13px/1 'Onest',system-ui,sans-serif;
+    cursor:pointer;
+  }
+  .menu-close > span{display:none}
+  .menu-close b{
+    display:grid;
+    place-items:center;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:#3DFF88;
+    color:#101714;
+    font-size:27px;
+    font-weight:300;
+    line-height:1;
+    transition:transform .35s cubic-bezier(.22,1,.36,1),background-color .25s;
+  }
+  .menu-close:hover b{transform:rotate(90deg);background:#48D3E2}
+  .menu-links{
+    position:relative;
+    z-index:1;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    align-items:center;
+    flex:1;
+    gap:clamp(28px,5vw,110px);
+    padding:clamp(34px,5vh,72px) 0 0;
+  }
+  .menu-column{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:clamp(10px,1.2vh,17px);
+    min-width:0;
+    opacity:0;
+    transform:translateY(38px);
+    transition:opacity .6s ease,transform .7s cubic-bezier(.22,1,.36,1);
+  }
+  .site-menu.is-open .menu-column{opacity:1;transform:translateY(0)}
+  .site-menu.is-open .menu-column:nth-child(1){transition-delay:.16s}
+  .site-menu.is-open .menu-column:nth-child(2){transition-delay:.23s}
+  .site-menu.is-open .menu-column:nth-child(3){transition-delay:.30s}
+  .menu-kicker{
+    margin:0 0 clamp(8px,1.5vh,18px);
+    color:rgba(255,255,255,.42);
+    font:600 12px/1 'Onest',system-ui,sans-serif;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+  }
+  .menu-links a{
+    color:#fff;
+    font:650 clamp(22px,2.25vw,40px)/1.03 'Onest',system-ui,sans-serif;
+    letter-spacing:-.04em;
+    text-decoration:none;
+    transition:color .2s ease;
+  }
+  .menu-links a:hover{color:#3DFF88}
+  .menu-languages{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:clamp(12px,2vh,24px);
+  }
+  .menu-language{
+    appearance:none;
+    border:0;
+    padding:0;
+    background:transparent;
+    color:rgba(255,255,255,.35);
+    font:700 clamp(24px,2.6vw,45px)/1 'Onest',system-ui,sans-serif;
+    letter-spacing:-.04em;
+    cursor:pointer;
+    transition:color .2s ease,transform .25s ease;
+  }
+  .menu-language:hover{color:#fff;transform:translateY(-2px)}
+  .menu-language.is-on{color:#3DFF88}
+  .menu-language + .menu-language::before{
+    content:'/';
+    margin-right:8px;
+    color:rgba(255,255,255,.18);
+  }
+  .menu-note{
+    position:relative;
+    z-index:1;
+    margin:0;
+    text-align:left;
+    color:rgba(255,255,255,.62);
+    font:500 14px/1.4 'Onest',system-ui,sans-serif;
+  }
+  .site-menu .menu-note{display:none}
+  @media (max-width:760px){
+    .site-menu{height:58svh;overflow-y:auto}
+    .site-menu.is-open{height:58svh}
+    .site-menu:not(.is-open){height:0}
+    body.menu-open .site-shell{margin-top:58svh}
+    .menu-links{
+      grid-template-columns:1fr;
+      align-items:start;
+      gap:34px;
+      padding-top:48px;
+    }
+    .menu-column{gap:9px}
+    .menu-links a{font-size:clamp(30px,9vw,44px)}
+    .menu-note{padding-bottom:8px}
+  }
+  .logo-slot{opacity:0}
+
+  /* --- герой --- */
+  .hero{
+    position:absolute;
+    left:var(--pad);
+    top:15vh;
+    z-index:2;            /* выше свечения */
+    pointer-events:none;
+    max-width:min(70vw,1240px);
+    padding-right:24px;
+    font-family:'Onest',system-ui,sans-serif;
+  }
+  .hdr,.hdr *{font-family:'Onest',system-ui,sans-serif}
+  .hero{font-family:var(--heading)}
+  .hero h1{
+    margin:0;
+    font-kerning:normal;
+    text-rendering:optimizeLegibility;
+    transform:translateZ(0);
+    font-family:var(--heading);
+    font-weight:500;
+    text-transform:none;
+    font-size:clamp(62px,6.84vw,102.61px);
+    /* внутри маски строчный бокс полный, иначе overflow срезает буквы.
+       расстояние между строками задаёт --lead */
+    line-height:.83;
+    --lead:.62em;   /* строки прижаты сильнее: .78 -> .70 -> .62em */
+    letter-spacing:-.02em;
+    color:var(--ink);
+  }
+  .hero p{
+    margin:40px 0 0;
+    max-width:660px;
+    font-size:clamp(20px,1.75vw,26px);
+    line-height:1.45;
+    color:var(--ink);
+  }
+  .hero h1,.hero p{opacity:0}
+
+  /* --- первый экран: тёмная сцена с цветным свечением --- */
+  .hero-band{
+    background:#0A1722 url('/assets/media/hero-background.webp') center / cover no-repeat;
+    overflow:hidden;
+  }
+  .hero-band::before,
+  .hero-band::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    display:none;
+  }
+  .hero-band::before{
+    /* Цвет даёт сам Ellipse 5583.svg — без дополнительных пятен поверх него. */
+    opacity:0;
+  }
+  /* Исходный Ellipse 5583.svg растянут как в референсе: большая тёмная
+     внутренняя дуга сверху, голубая и зелёная части выходят за края окна. */
+  .hero-band::after{
+    inset:auto;
+    left:50%;
+    top:0;
+    width:max(152vw,200vh);
+    aspect-ratio:2270/2329;
+    background:url('/assets/media/hero-glow.svg') center/100% 100% no-repeat;
+    opacity:1;
+    transform:translate(-50%,-58%) rotate(-15deg);
+  }
+  .hdr{color:#fff}
+  .hero{
+    left:0;
+    right:0;
+    top:20vh;
+    z-index:5;
+    max-width:none;
+    padding:0 var(--pad);
+    text-align:left;
+  }
+  .hero h1{
+    color:rgba(255,255,255,.6);
+    font-family:var(--font-nunito-light-wide);
+    font-style:normal;
+    font-weight:300;
+    font-stretch:105%;
+    font-size:clamp(96px,9vw,130px);
+    line-height:.88;
+    letter-spacing:-.035em;
+    white-space:nowrap;
+    text-align:left;
+  }
+  .hero p,
+  .hero p *{
+    font-family:var(--font-nunito-medium);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+  }
+  .hero p{
+    margin:32px 0 0;
+    max-width:28vw;
+    color:rgba(255,255,255,.4);
+    font-size:var(--hero-copy-size);
+    line-height:1.35;
+    letter-spacing:-.01em;
+    text-align:left;
+  }
+  .hero-download-zone{
+    --hero-cta-height:clamp(92px,7vw,120px);
+    display:flex;
+    align-items:stretch;
+    gap:clamp(12px,1vw,18px);
+    width:max-content;
+    height:var(--hero-cta-height);
+    margin-top:clamp(34px,3vw,52px);
+    pointer-events:auto;
+  }
+  .hero:not(.is-interactive) .hero-download-zone,
+  .hero:not(.is-interactive) .hero-download,
+  .hero:not(.is-interactive) .hero-scroll{pointer-events:none}
+  .hero-download{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:min(440px,31vw);
+    height:100%;
+    border-radius:999px;
+    background:#0400FA;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.32),
+      inset 0 0 28px rgba(125,205,255,.28),
+      0 20px 62px rgba(4,0,250,.48),
+      0 0 30px rgba(54,73,255,.24);
+    color:#fff;
+    font-family:var(--font-nunito-medium);
+    font-size:var(--hero-copy-size);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    line-height:1;
+    text-decoration:none;
+    pointer-events:auto;
+    transform-origin:50% 50%;
+    transition:box-shadow .85s cubic-bezier(.22,.61,.36,1),background .3s;
+  }
+  .hero-download__label{display:inline-flex;align-items:center;gap:.42em}
+  .hero-download__label,
+  .hero-download__apple,
+  .scroll-cue-arrows{transition:text-shadow .5s ease,filter .5s ease}
+  .hero-download__apple{
+    display:block;
+    width:auto;
+    height:1em;
+    flex:0 0 auto;
+    filter:brightness(0) invert(1);
+  }
+  @keyframes blueButtonInnerPulse{
+    0%,100%{
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.62),
+        inset 0 0 46px rgba(154,221,255,.62),
+        inset 0 0 82px rgba(86,84,255,.32),
+        0 28px 78px rgba(4,0,250,.58),
+        0 0 64px rgba(255,0,184,.36);
+    }
+    50%{
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.82),
+        inset 0 0 64px rgba(182,235,255,.92),
+        inset 0 0 112px rgba(108,91,255,.56),
+        0 28px 78px rgba(4,0,250,.58),
+        0 0 64px rgba(255,0,184,.36);
+    }
+  }
+  .hero-download:hover,
+  .hero-scroll:hover{
+    animation:blueButtonInnerPulse 2.5s ease-in-out infinite;
+  }
+  .hero-download:hover,
+  .hero-scroll:hover{
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.56),
+      inset 0 0 44px rgba(154,221,255,.48),
+      0 28px 78px rgba(4,0,250,.60),
+      0 0 64px rgba(255,0,184,.40),
+      0 0 120px rgba(255,0,184,.24);
+  }
+  .hero-download:hover .hero-download__label{
+    text-shadow:0 0 8px rgba(255,255,255,.95),0 0 20px rgba(128,218,255,.78);
+  }
+  .hero-download:hover .hero-download__apple{
+    filter:brightness(0) invert(1) drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 15px rgba(128,218,255,.7));
+  }
+  .hero-scroll:hover .scroll-cue-arrows{
+    filter:drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 16px rgba(128,218,255,.76));
+  }
+  .hero-download:focus-visible,
+  .hero-scroll:focus-visible{outline:3px solid #fff;outline-offset:5px}
+  .scroll-cue{
+    flex:0 0 var(--hero-cta-height);
+    width:var(--hero-cta-height);
+    height:var(--hero-cta-height);
+    margin:0;
+    padding:0;
+    display:grid;
+    place-items:center;
+    border:0;
+    border-radius:50%;
+    background:#0400FA;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.32),
+      inset 0 0 28px rgba(125,205,255,.28),
+      0 20px 62px rgba(4,0,250,.48),
+      0 0 30px rgba(54,73,255,.24);
+    color:#fff;
+    cursor:pointer;
+    pointer-events:auto;
+    transition:box-shadow .85s cubic-bezier(.22,.61,.36,1),background .3s;
+  }
+  .scroll-cue-arrows{
+    width:40px;
+    height:18px;
+    overflow:visible;
+  }
+  .scroll-chevron{
+    fill:none;
+    stroke:currentColor;
+    stroke-width:4;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    opacity:0;
+  }
+  @media (min-width:901px) and (max-height:700px){
+    .hero-download-zone{--hero-cta-height:72px;gap:10px;margin-top:24px}
+    .hero-download{width:min(320px,30vw);font-size:24px}
+  }
+  @media (max-width:900px){
+    .scene{height:100svh}
+    .hero{
+      left:20px;right:20px;top:clamp(132px,16svh,154px);
+      max-width:none;padding:0;
+    }
+    .hero h1{white-space:normal;font-size:clamp(40px,11.2vw,64px);line-height:.94}
+    .hero p{max-width:620px;margin-top:24px;font-size:clamp(17px,4.6vw,20px);line-height:1.38}
+    .hero-download-zone{
+      --hero-cta-height:58px;
+      width:100%;
+      gap:10px;
+      margin-top:28px;
+    }
+    .hero-download{flex:1 1 auto;width:auto;font-size:20px}
+    .scroll-cue-arrows{width:30px;height:14px}
+    .hero-band{height:calc(100svh + 120px)}
+    .hero-band::after{width:max(230vw,190vh);transform:translate(-50%,-68%) rotate(-15deg)}
+  }
+  @media (prefers-reduced-motion:reduce){.hero-download,.hero-scroll{transition:none}}
+
+  /* маска включена: буквы поднимаются из-за нижнего края строки.
+     padding с отрицательным margin оставляет место выносным, край клипа ниже базовой линии */
+  .m-line{display:block;overflow:hidden;padding:.42em .16em .34em 0;margin:-.42em -.16em -.34em 0}
+  .m-line + .m-line{margin-top:calc(-.42em - (1em - var(--lead, 1em)))}
+  .m-line > span{display:inline-block;white-space:pre}
+  .m-word{display:inline-block;white-space:nowrap}
+  .m-word > span{display:inline-block}
+
+  /* --- прелоадер: синий Lu появляется на чёрном и уезжает в шапку --- */
+  .pre{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    background:#000;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .pre-gradient{
+    position:absolute;
+    inset:auto -12vw -32vh;
+    height:82vh;
+    background:radial-gradient(ellipse at 50% 100%,rgba(4,0,250,.92) 0%,rgba(4,0,250,.46) 33%,rgba(4,0,250,0) 72%);
+    opacity:0;
+    transform:scaleY(.72);
+    transform-origin:50% 100%;
+    pointer-events:none;
+  }
+  .pre-logo{
+    position:absolute;
+    left:50%; top:50%;
+    width:min(22vw,402px);
+    aspect-ratio:201/86;
+    color:#0400FA;
+  }
+  .pre-logo-svg{display:block;width:100%;height:100%;overflow:visible}
+  .pre-logo-letter{
+    visibility:hidden;
+    opacity:0;
+    transform-box:fill-box;
+    transform-origin:center;
+  }
+  body.is-loading{overflow:hidden}
+
+  /* --- шары вайбов: выезжают снизу с разной скоростью --- */
+  .orb{
+    position:absolute;
+    z-index:8;               /* поверх корпуса */
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    opacity:0;
+    pointer-events:none;
+    transition:filter .4s;
+  }
+  #orb0{width:360px;height:360px;left:6%;top:14%}
+  #orb1{width:320px;height:320px;left:12%;top:52%}
+  #orb2{width:340px;height:340px;left:33%;top:74%}
+  #orb3{width:380px;height:380px;right:7%;top:48%}
+  #orb4{width:400px;height:400px;right:4%;top:11%}
+  /* картинка уже размыта: filter:blur на движущемся элементе пересчитывался каждый кадр.
+     multiply только на картинке: корпус просвечивает, а подпись остаётся читаемой */
+  .orb .gimg{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    mix-blend-mode:multiply;
+  }
+  .orb span{
+    position:relative;
+    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-size:clamp(17px,1.5vw,24px);
+    font-weight:700;
+    letter-spacing:-.03em;
+    white-space:nowrap;
+    color:var(--ink);
+    transition:color .7s;
+  }
+  .orb:hover{filter:brightness(1.12) saturate(1.15)}
+
+  /* картинки объявлены по одному разу: в разметке было по три копии каждой */
+  .gimg{background-repeat:no-repeat;background-position:center;background-size:contain}
+  .g1{background-image:url(/assets/generated/d5ef11bace0f.webp)}
+  .g2{background-image:url(/assets/generated/fb27c9fff4b8.webp)}
+  .gh{background-image:url(/assets/generated/f3e457f0870b.webp)}
+
+  /* --- облако тегов: расходится, освобождая центр под промт --- */
+  .tags{
+    position:absolute;
+    inset:0;
+    z-index:6;
+    pointer-events:none;
+  }
+  .tag-pos{
+    position:absolute;
+    transform:translate(-50%,-50%);
+  }
+  .tag-pos:nth-child(1){left:11.7%;top:95%}
+  .tag-pos:nth-child(2){left:87.9%;top:28%}
+  .tag-pos:nth-child(3){left:92%;top:16.5%}
+  .tag-pos:nth-child(4){left:49.1%;top:60.4%}
+  .tag-pos:nth-child(5){left:50.8%;top:82.9%}
+  .tag-pos:nth-child(6){left:62.8%;top:49.4%}
+  .tag-pos:nth-child(7){left:75.1%;top:84.1%}
+  .tag-pos:nth-child(8){left:24.3%;top:16.6%}
+  .tag-pos:nth-child(9){left:86.9%;top:71.5%}
+  .tag-pos:nth-child(10){left:36.4%;top:94.3%}
+  .tag-pos:nth-child(11){left:50.6%;top:38.7%}
+  .tag-pos:nth-child(12){left:12.4%;top:50.4%}
+  .tag-pos:nth-child(13){left:63.2%;top:27.9%}
+  .tag-pos:nth-child(14){left:86.7%;top:49.7%}
+  .tag-pos:nth-child(15){left:92%;top:61.7%}
+  .tag-pos:nth-child(16){left:87.9%;top:95%}
+  .tag-pos:nth-child(17){left:12.1%;top:72%}
+  .tag-pos:nth-child(18){left:25.8%;top:60.6%}
+  .tag-pos:nth-child(19){left:37.2%;top:27%}
+  .tag-pos:nth-child(20){left:92%;top:84.1%}
+  .tag-pos:nth-child(21){left:63.2%;top:72.3%}
+  .tag-pos:nth-child(22){left:37.7%;top:49.9%}
+  .tag-pos:nth-child(23){left:75.2%;top:39.2%}
+  .tag-pos:nth-child(24){left:12.5%;top:28.2%}
+  .tag-pos:nth-child(25){left:62.7%;top:5.4%}
+  .tag-pos:nth-child(26){left:38.4%;top:5%}
+  .tag-pos:nth-child(27){left:73.9%;top:15.9%}
+  .tag-pos:nth-child(28){left:92%;top:38.1%}
+  .tag-pos:nth-child(29){left:26.1%;top:38.6%}
+  .tag-pos:nth-child(30){left:37%;top:71.9%}
+  .tag-pos:nth-child(31){left:13.5%;top:6.4%}
+  .tag-pos:nth-child(32){left:73.9%;top:60.7%}
+  .tag-pos:nth-child(33){left:49.3%;top:16.6%}
+  .tag-pos:nth-child(34){left:25.7%;top:83.7%}
+  .tag-pos:nth-child(35){left:61.4%;top:95%}
+  .tag-pos:nth-child(36){left:87.6%;top:5%}
+  .tag{
+    display:inline-block;
+    white-space:nowrap;
+    padding:17px 28px;
+    border-radius:1000px;
+    background:#F1F3F5;
+    color:var(--ink);
+    font-family:var(--font-nunito-medium);
+    font-style:normal;
+    font-size:clamp(17px,1.75vw,28px);
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
+    letter-spacing:-.01em;
+    opacity:0;
+  }
+  .tag-pos:nth-child(6n + 1) .tag{padding:15px 25px;font-size:clamp(16px,1.54vw,25px)}
+  .tag-pos:nth-child(6n + 2) .tag{padding:18px 30px;font-size:clamp(18px,1.88vw,30px)}
+  .tag-pos:nth-child(6n + 3) .tag{padding:16px 27px;font-size:clamp(17px,1.68vw,27px)}
+  .tag-pos:nth-child(6n + 4) .tag{padding:18px 29px;font-size:clamp(18px,1.82vw,29px)}
+  .tag-pos:nth-child(6n + 5) .tag{padding:14px 24px;font-size:clamp(16px,1.48vw,24px)}
+  .tag-pos:nth-child(6n + 6) .tag{padding:17px 28px;font-size:clamp(17px,1.75vw,28px)}
+
+  /* --- промт пользователя на пустом экране --- */
+  .prompt{
+    position:absolute;
+    left:0; right:0;
+    top:50%;
+    z-index:7;
+    display:flex;
+    align-items:center;
+    justify-content:center;   /* центр держит раскладка, а не отрицательный margin */
+    text-align:center;
+    font-family:var(--font-nunito-medium);
+    /* кегль от ширины окна: строка не должна разбиваться на две */
+    font-size:min(4.1vw,58px);
+    line-height:1.04;
+    letter-spacing:-.03em;
+    font-weight:500;
+    color:var(--ink);
+    opacity:0;
+    pointer-events:none;
+  }
+  .prompt-q{
+    position:relative;
+    display:inline-block;
+    padding:.46em .92em;
+    border-radius:1000px;
+    background:#F1F3F5;
+    white-space:nowrap;      /* только одна строка */
+    transform-origin:50% 50%;
+  }
+  .prompt-q::after{
+    content:'';
+    position:absolute;
+    z-index:-1;
+    left:50%;
+    top:54%;
+    width:32%;
+    height:clamp(70px,14vh,190px);
+    border-radius:15% 15% 999px 999px;
+    background:#F1F3F5;
+    opacity:var(--stream-opacity,0);
+    transform:translateX(-50%) scaleX(var(--stream-x,.5)) scaleY(var(--stream-y,0));
+    transform-origin:50% 0;
+    filter:blur(var(--stream-blur,0px));
+    pointer-events:none;
+    display:none;
+  }
+  .prompt-text{
+    position:relative;
+    z-index:1;
+    display:inline-block;
+  }
+
+  /* --- падающие подсказки: физика с отскоком, толкаются курсором --- */
+  .fall{
+    position:absolute;
+    inset:0;
+    z-index:5;           /* ниже корпуса (6): карточки не должны его закрывать */
+    pointer-events:none;
+    overflow:hidden;     /* карточка уходит за низ кадра и там исчезает */
+  }
+  /* превью мест для падающих карточек: 13 штук, каждая объявлена один раз */
+  .f1{background-image:url(/assets/generated/4aad4ce16dd2.webp)}
+  .f2{background-image:url(/assets/generated/5d02e09acabc.webp)}
+  .f3{background-image:url(/assets/generated/0b8f40ebc364.webp)}
+  .f4{background-image:url(/assets/generated/a043c9466588.webp)}
+  .f5{background-image:url(/assets/generated/7eb6769ef975.webp)}
+  .f6{background-image:url(/assets/generated/a06351d623af.webp)}
+  .f7{background-image:url(/assets/generated/fb4dcc8241fe.webp)}
+  .f8{background-image:url(/assets/generated/74eecf8f566c.webp)}
+  .f9{background-image:url(/assets/generated/b7b95b3a8994.webp)}
+  .f10{background-image:url(/assets/generated/56f4a345a4eb.webp)}
+  .f11{background-image:url(/assets/generated/34838674f179.webp)}
+  .f12{background-image:url(/assets/generated/7a2f1492992c.webp)}
+  .f13{background-image:url(/assets/generated/a6a7c376897d.webp)}
+
+  /* --- влёт превью в телефон: поток фотографий сходится к корпусу --- */
+  .influx{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+  .influx i{
+    position:absolute;
+    left:50%; top:50%;
+    width:clamp(132px,20vmin,340px);
+    aspect-ratio:1/1;
+    border-radius:14%;
+    background-color:transparent;
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:contain;
+    opacity:0;
+    transform-origin:center;
+    contain:layout paint style;
+    backface-visibility:hidden;
+  }
+  .influx i.is-photo{background-size:cover;background-color:#E4E8EC}
+  .influx i.is-object{border-radius:0}
+
+  /* Финальный взрыв собранного плана: объекты разлетаются из корпуса,
+     оставаясь за телефоном, чтобы источник движения читался естественно. */
+  .plan-explosion{position:absolute;inset:0;z-index:5;overflow:hidden;pointer-events:none}
+  .plan-explosion img{
+    position:absolute;
+    left:50%;top:50%;
+    width:clamp(72px,8vw,180px);
+    height:clamp(72px,8vw,180px);
+    object-fit:contain;
+    opacity:0;
+    backface-visibility:hidden;
+  }
+
+  /* карточка рождается под курсором и живёт до конца падения */
+  /* рой шариков: под корпусом, поэтому втягивание читается как въезд внутрь */
+  .swarm{position:absolute;inset:0;z-index:5;pointer-events:none}
+  /* жёлтая подложка фазы зарядки: над тёмной вуалью, под контентом */
+  .charge-bg{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    background:var(--charge-bg);
+    opacity:0;
+    pointer-events:none;
+  }
+  /* белая волна финала: круг из центра корпуса, мягкая кромка */
+  .pulse-white{
+    position:absolute;
+    left:50%; top:56%;
+    width:240vmax; height:240vmax;
+    margin:-120vmax 0 0 -120vmax;
+    border-radius:50%;
+    background:radial-gradient(circle, #FFFFFF 58%, rgba(255,255,255,0) 72%);
+    transform:scale(0);
+    z-index:2;                 /* над жёлтой подложкой, под контентом */
+    pointer-events:none;
+  }
+
+  /* Подписи занимают свободную верхнюю зону и не перекрывают заголовок. */
+  .vibes{position:absolute;inset:0;z-index:3;pointer-events:none}
+  .vibes span{
+    position:absolute;
+    font-family:var(--display);
+    font-weight:650;
+    font-size:clamp(17px,min(1.45vw,2.5vh),28px);
+    letter-spacing:-.035em;
+    color:#070B0C;
+    opacity:0;
+  }
+  .vibes span:nth-child(1){left:8%;top:22vh}
+  .vibes span:nth-child(2){left:16%;top:29vh}
+  .vibes span:nth-child(3){left:27%;top:18vh}
+  .vibes span:nth-child(4){right:22%;top:29vh}
+  .vibes span:nth-child(5){right:10%;top:22vh}
+
+  /* на жёлтом screen-блендинг слепнет: частицы переходят на плотный акцент */
+  /* на жёлтом бирюза мутнела в оливу; #5DFF5D в тон фону остаётся чистым */
+  body.is-charge .swarm i{
+    mix-blend-mode:normal;
+    background:radial-gradient(circle,
+      rgba(93,255,93,.72),
+      rgba(93,255,93,.34) 40%,
+      rgba(93,255,93,0) 72%);
+  }
+
+  /* мягкое свечение без «пластиковой сферы»: яркое ядро быстро тает в гало */
+  .swarm i{
+    position:absolute; left:50%; top:50%;
+    border-radius:50%;
+    /* рассеянное пятно света: ядро тусклое, всё в гало */
+    background:radial-gradient(circle,
+      rgba(214,248,244,.75),
+      rgba(150,235,224,.38) 34%,
+      rgba(84,224,208,.16) 58%,
+      rgba(84,224,208,0) 76%);
+    mix-blend-mode:screen;
+    opacity:0;
+  }
+  /* подсветка внутри экрана: пятно в цвет шарика под каждой точкой входа */
+  .charge{
+    position:absolute; inset:0;
+    z-index:6;
+    border-radius:inherit;
+    overflow:hidden;
+    pointer-events:none;
+    mix-blend-mode:screen;
+  }
+  .charge i{
+    position:absolute;
+    width:17%; padding-top:17%;
+    margin:-8.5% 0 0 -8.5%;
+    border-radius:50%;
+    background:radial-gradient(circle,
+      rgba(209,255,250,.80),
+      rgba(15,165,216,.35) 48%,
+      rgba(15,165,216,0) 76%);
+    opacity:0;
+  }
+
+  .hint-move{
+    display:none !important;   /* убрано: ниже в правиле был display:flex */
+    position:absolute;
+    left:calc(50% + 300px); top:14vh;   /* левый край совпадает с блоком описания */
+    align-items:center; gap:9px;
+    padding:11px 18px;
+    border-radius:1000px;
+    background:#F0F5F7;
+    color:var(--ink);
+    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-size:15px; font-weight:600; letter-spacing:-.01em;
+    z-index:6;
+    opacity:0;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .hint-move svg{width:17px;height:17px;flex:0 0 auto}
+
+  .fall-img{
+    position:absolute;
+    top:0; left:0;
+    width:12vw; height:12vw;
+    min-width:130px; min-height:130px;
+    border-radius:14%;
+    /* только длинные свойства: короткая запись background сбрасывала
+       background-image, заданный классами .f1-.f13 выше */
+    background-color:#E4E8EC;
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:cover;
+    z-index:5;
+    pointer-events:none;
+  }
+
+  /* --- загрузка внутри экрана --- */
+  .loader{
+    position:absolute;
+    inset:calc(var(--h) * 0.0129);
+    /* тот же радиус, что у экрана: без него белые углы вылезали на рамку */
+    border-radius:calc(var(--r) - var(--h) * 0.0129);
+    overflow:hidden;
+    z-index:5;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+    opacity:0;
+    pointer-events:none;
+  }
+  .loader-t{
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:82%;
+    min-height:2.2em;
+    font-family:var(--font-nunito-medium);
+    font-size:clamp(22px,calc(var(--h) * .036),34px);
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
+    line-height:1.08;
+    letter-spacing:-.02em;
+    color:rgba(20,32,42,.62);
+  }
+  .loader-t span{
+    grid-area:1 / 1;
+    display:block;
+    width:100%;
+    text-align:center;
+    text-wrap:balance;
+    white-space:normal;
+    opacity:0;
+  }
+  .loader-t span:first-child{opacity:1}
+
+  /* надписи по сторонам корпуса, чередуются лево-право */
+  .caption{
+    position:absolute;
+    top:50%;
+    width:min(42vw,760px);
+    font-family:'Onest',system-ui,sans-serif;
+    font-size:clamp(76px,7.5vw,126px);
+    line-height:.84;
+    letter-spacing:-.055em;
+    font-weight:700;
+    text-transform:none;
+    color:var(--ink);
+    opacity:0;
+    pointer-events:none;
+    z-index:4;   /* под корпусом: телефон идёт поверх надписи */
+  }
+  /* маска слова: как у .m-line в герое. padding оставляет место выносным,
+     отрицательный margin возвращает вёрстку, край клипа ниже базовой линии */
+  .caption .cw{
+    display:inline-block;
+    overflow:hidden;
+    vertical-align:bottom;
+    padding:.30em .12em .26em .05em;
+    margin:-.30em -.12em -.26em -.05em;
+  }
+  .caption .cw>i{display:inline-block;font-style:normal;}
+  .caption-heading{
+    display:block;
+    font-family:var(--heading);
+    font-weight:500;
+  }
+  #cap0{font-family:var(--heading);font-weight:500}
+  .caption.left {right:calc(50% + 190px); text-align:right}
+  .caption.right{left: calc(50% + 190px); text-align:left}
+  /* «Чем заняться»: блок правее и ниже центра, как на фото */
+  #cap1{
+    top:50%;
+    transform:translateY(-50%);   /* блок центрируется: чипсы больше не уезжают за кадр */
+    left:calc(50% + 12px);
+    width:min(43vw,740px);
+    font-size:clamp(70px,6.25vw,108px);
+    line-height:.82;
+  }
+  #cap1 em{margin-top:28px;max-width:25em}
+  #cap1 .cchips{margin-top:26px}
+  /* «Помощник»: оставляем короткое пояснение, основной сюжет идёт сообщениями. */
+  #cap2{
+    top:24vh;
+    transform:none;
+    left:clamp(72px,8vw,150px); right:auto;
+    text-align:left;
+    width:min(30vw,510px);
+    font-size:inherit;
+  }
+  #cap2 .caption-heading{display:none}
+  #cap2 em{
+    margin:0;
+    max-width:19em;
+    color:rgba(255,255,255,.66);
+    font-size:clamp(21px,1.65vw,30px);
+    font-weight:500;
+    line-height:1.34;
+    letter-spacing:-.025em;
+  }
+  body.is-dark #cap2 em{color:rgba(255,255,255,.66)}
+  .assistant-chat{
+    position:absolute;
+    z-index:4;
+    left:38vw;
+    right:clamp(62px,7vw,140px);
+    top:23vh;
+    height:min(67vh,720px);
+    pointer-events:none;
+  }
+  .assistant-exchange{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    gap:clamp(24px,3.4vh,42px);
+    opacity:0;
+    pointer-events:none;
+  }
+  .assistant-message{
+    position:relative;
+    box-sizing:border-box;
+    margin:0;
+    opacity:0;
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+  }
+  .assistant-message p{margin:0}
+  .assistant-message__label{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    margin-bottom:clamp(13px,1.5vh,18px);
+    font:650 clamp(13px,.9vw,16px)/1 'Onest',system-ui,sans-serif;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .assistant-message--user{
+    isolation:isolate;
+    overflow:hidden;
+    align-self:flex-end;
+    width:min(77%,760px);
+    padding:clamp(28px,3.1vw,48px) clamp(32px,3.6vw,58px);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:clamp(30px,2.8vw,48px) clamp(30px,2.8vw,48px) 12px clamp(30px,2.8vw,48px);
+    color:#fff;
+    background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.055));
+    box-shadow:0 30px 80px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.10);
+    font:500 clamp(34px,3.25vw,62px)/1.02 var(--heading);
+    letter-spacing:-.045em;
+  }
+  .assistant-message--user::before{
+    content:'';
+    position:absolute;
+    z-index:-1;
+    inset:0;
+    background:linear-gradient(110deg,rgba(151,255,226,.27),rgba(114,222,255,.16));
+    transform:scaleX(var(--request-fill,0));
+    transform-origin:left center;
+  }
+  .assistant-message--user .assistant-message__label{color:rgba(255,255,255,.54)}
+  .assistant-message--agent{
+    align-self:flex-start;
+    width:min(92%,920px);
+    padding:clamp(30px,3.35vw,54px) clamp(34px,4vw,66px);
+    border:1px solid rgba(255,255,255,.58);
+    border-radius:12px clamp(32px,3vw,52px) clamp(32px,3vw,52px) clamp(32px,3vw,52px);
+    color:#101626;
+    background:
+      radial-gradient(circle at 92% 10%,rgba(89,84,255,.20),transparent 38%),
+      linear-gradient(135deg,rgba(255,255,255,.98),rgba(225,231,255,.94));
+    box-shadow:0 34px 110px rgba(11,5,100,.34),0 0 90px rgba(52,45,255,.18);
+    font:500 clamp(31px,2.85vw,54px)/1.08 var(--heading);
+    letter-spacing:-.045em;
+  }
+  .assistant-message--agent strong{font-weight:700}
+  .assistant-message--agent .assistant-message__label{color:rgba(16,22,38,.54)}
+  .assistant-message--agent .assistant-message__label i{
+    width:9px;height:9px;border-radius:50%;
+    background:#433CFF;
+    box-shadow:0 0 0 5px rgba(67,60,255,.12),0 0 18px rgba(67,60,255,.72);
+  }
+  @media(max-width:900px){
+    #cap2{left:24px;right:24px;top:15vh;bottom:auto!important;width:auto}
+    #cap2 em{font-size:clamp(18px,4.6vw,24px);max-width:25em}
+    .assistant-chat{left:20px;right:20px;top:34vh;height:58vh}
+    .assistant-exchange{gap:18px}
+    .assistant-message--user{width:88%;padding:24px 26px;font-size:clamp(27px,7vw,38px)}
+    .assistant-message--agent{width:96%;padding:26px 28px;font-size:clamp(25px,6.4vw,35px)}
+  }
+  .ticks{display:flex;flex-direction:column;align-items:flex-start;gap:9px;margin-top:26px}
+  .tick{
+    position:relative;
+    overflow:hidden;          /* заливка обрезается по форме пилюли */
+    display:inline-flex;
+    align-items:center;
+    padding:11px 20px;
+    border-radius:1000px;
+    background:#F1F3F5;
+    color:var(--ink);
+    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-size:clamp(15px,1.3vw,19px);   /* как у абзаца выше */
+    font-weight:400;           /* как обычный текст, не акцент */
+    letter-spacing:-.01em;
+    line-height:1.2;
+    text-transform:none;
+    white-space:nowrap;
+    opacity:0;
+  }
+  /* мятная заливка наезжает слева направо: сделанный пункт видно цветом,
+     а не тонкой чертой. рост пишет таймлайн надписей */
+  .tick u{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    text-decoration:none;
+    background:linear-gradient(135deg,#D1FFEB,#D1FFFA);
+    transform:scaleX(0);
+    transform-origin:0 50%;
+  }
+  .tick b{position:relative;z-index:1;font-weight:400}
+  /* иконка-галочка раскрывается вместе с заливкой */
+  .tick s{
+    position:relative;
+    z-index:1;
+    width:0;
+    overflow:hidden;
+    display:inline-flex;
+    align-items:center;
+    text-decoration:none;
+    color:#14202A;
+  }
+  .tick s svg{display:block;flex:0 0 auto;width:17px;height:17px;margin-left:9px}
+  body.is-dark .tick{background:rgba(255,255,255,.10);color:#fff}
+  /* «куда сходить»: заголовок слева, абзац ниже, теги справа — по макету */
+  #cap0{left:9.6vw;right:auto;top:32.6vh;text-align:left;width:min(31.5vw,472px)}
+  #side0{left:9.6vw;top:56.8vh;width:min(30.5vw,458px)}
+  #side0 p{margin:0}   /* без верхнего отступа: абзац встаёт ровно по линии чипсов */
+  /* чипсы: внутри заголовков и отдельным облаком справа */
+  .cchips{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .cchip{
+    display:inline-block;
+    padding:14px 21px;
+    border-radius:1000px;
+    background:#F1F3F5;
+    color:var(--ink);
+    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    font-size:clamp(16px,1.28vw,21px);
+    font-weight:600;
+    letter-spacing:-.01em;
+    line-height:1.2;
+    text-transform:none;
+    white-space:nowrap;
+  }
+  .cchip.acc{background:linear-gradient(135deg,#D1FFEB,#D1FFFA)}
+  .ctags{
+    position:absolute;
+    left:68.2vw;
+    right:auto;
+    top:58.7vh;
+    align-content:flex-start;
+    z-index:5;
+    width:min(31vw,500px);
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:flex-start;   /* по левому краю блока */
+    opacity:0;
+    pointer-events:none;
+  }
+  @media (max-width:1180px){.ctags{display:none}}
+  @media (max-aspect-ratio:4/3) and (min-width:1181px){
+    #cap1{left:calc(50% + 205px);width:min(32vw,570px);font-size:clamp(76px,5.7vw,94px)}
+  }
+  /* «Заряжаем / поездку»: строки центрируются по своему содержимому без рамки. */
+  #cap3{
+    left:50%; right:auto;
+    top:50%;
+    width:max-content;
+    max-width:none;
+    z-index:4;
+    overflow:visible;
+    translate:-50% -50%;
+    text-align:center;
+    white-space:nowrap;
+    line-height:0.84;
+    letter-spacing:-.075em;
+  }
+  #cap3 .ln{
+    display:block;
+    width:max-content;
+    max-width:none;
+    margin-inline:auto;
+    overflow:visible;
+    font-family:var(--heading);
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
+    /* заливка зарядки: граница едет по скроллу через --chg (пишет тикер).
+       незалитая часть плотнее: на .55 огромный кегль читался тонким */
+    background:linear-gradient(90deg, #14202A 48%, rgba(20,32,42,.30) 52%);
+    background-size:205% 100%;
+    background-position:var(--chg,100%) 0;
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  #cap3 .l1{font-size:clamp(60px,min(12.5vw,25vh),320px)}
+  #cap3 .l2{font-size:clamp(66px,min(14.4vw,27vh),350px)}
+  @media (min-width:901px) and (min-aspect-ratio:16/9){
+    #cap3{top:47%;line-height:.78}
+  }
+  /* боковой блок: пояснение справа от корпуса */
+  .sidebox{
+    position:absolute;
+    top:50%;
+    left:calc(50% + 300px);
+    width:min(30vw,420px);
+    z-index:4;
+    opacity:0;
+    pointer-events:none;
+    font-family:'Geologica',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  }
+  .sidebox b{
+    display:block;
+    font-size:clamp(19px,1.7vw,26px);
+    font-weight:600;
+    letter-spacing:-.02em;
+    color:var(--ink);
+  }
+  .sidebox p{
+    margin:18px 0 0;
+    font-size:clamp(18px,1.45vw,22px);
+    line-height:1.42;
+    letter-spacing:-.02em;
+    font-weight:500;
+    color:#26333D;
+  }
+  body.is-dark .sidebox b{color:#fff}
+  body.is-dark .sidebox p{color:#9AA4AC}
+  /* пояснение у помощника: кегль как у остальных пояснений */
+  #side2{top:31vh; width:min(30vw,460px)}   /* блок с абзацем и списком по центру кадра */
+  body.is-dark #side2 p{color:rgba(255,255,255,.94)}
+  @media (max-width:900px){ .sidebox{display:none} }
+
+  /* подпись под заголовком раздела */
+  .caption em{
+    display:block;
+    margin-top:28px;
+    max-width:28em;
+    font-family:'Onest',system-ui,sans-serif;
+    font-style:normal;
+    font-size:clamp(18px,1.45vw,22px);
+    font-weight:500;
+    line-height:1.42;
+    letter-spacing:-.02em;
+    text-transform:none;
+    color:#26333D;
+  }
+  .caption.right em{margin-left:0}
+  @media (max-width:900px){
+    .caption,.caption.left,.caption.right{
+      width:auto;left:0;right:0;top:auto;bottom:7vh;text-align:center;font-size:34px;
+    }
+    #cap3{top:55%;bottom:auto;line-height:.82}
+    #cap3 .l1{font-size:min(12.5vw,10vh,88px)}
+    #cap3 .l2{font-size:min(14.4vw,11vh,96px)}
+    .vibes span{display:block;font-size:clamp(14px,3.6vw,18px)}
+    .vibes span:nth-child(1){left:5%!important;top:18vh!important}
+    .vibes span:nth-child(2){left:6%!important;top:36vh!important}
+    .vibes span:nth-child(3){left:29%!important;top:26vh!important}
+    .vibes span:nth-child(4){right:5%!important;top:37vh!important}
+    .vibes span:nth-child(5){right:5%!important;top:19vh!important}
+  }
+
+  /* Дополнительная длина отдана четырём диалогам помощника. Пропорция сохраняет
+     прежнюю скорость всех глав до и после него. */
+  .spacer{height:1860vh}
+
+  /* сцена и спейсер в одной обёртке: sticky заканчивается на её границе,
+     дальше страница идёт обычным потоком */
+  .stage{position:relative}
+
+  /* Погода продолжает pinned-сцену «Куда сходить». Фон находится в том же
+     stacking context, поэтому один живой телефон проходит поверх него без дубля. */
+  body.weather-active #cap0,
+  body.weather-active #side0,
+  body.weather-active #ctags{
+    opacity:0!important;
+    visibility:hidden!important;
+  }
+  .weather-story{
+    position:absolute;
+    inset:0;
+    z-index:4;
+    overflow:hidden;
+    color:#14202A;
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    isolation:isolate;
+    contain:layout paint;
+  }
+  .weather-layer{position:absolute;inset:-1px;pointer-events:none}
+  .weather-base{
+    z-index:0;
+    background:linear-gradient(128deg,#D8F6FF 0%,#92D9F8 100%);
+  }
+  .weather-picture{z-index:1;display:block;margin:0;overflow:hidden}
+  .weather-picture--dark{z-index:2;opacity:0}
+  .weather-picture--freezing{z-index:3;opacity:0}
+  .weather-picture img{
+    width:100%;height:100%;display:block;object-fit:cover;object-position:center;
+    transform:scale(1.015);
+  }
+  .weather-noise{
+    z-index:3;
+    opacity:.25;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.62'/%3E%3C/svg%3E");
+    background-size:180px 180px;
+    mix-blend-mode:soft-light;
+  }
+  .weather-composition{position:absolute;inset:0;z-index:5}
+  .weather-temp{
+    position:absolute;
+    left:clamp(44px,9.5vw,190px);
+    top:48%;
+    width:min(38vw,760px);
+    height:clamp(280px,40vmin,500px);
+    color:#fff;
+    font:500 clamp(230px,36vmin,470px)/.78 var(--heading);
+    font-kerning:none;
+    letter-spacing:0;
+    white-space:nowrap;
+    overflow:hidden;
+    perspective:900px;
+    perspective-origin:50% 50%;
+    transform:translateY(-50%);
+    text-shadow:0 10px 45px rgba(54,136,183,.12);
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 13%,#000 87%,transparent 100%);
+    mask-image:linear-gradient(180deg,transparent 0,#000 13%,#000 87%,transparent 100%);
+  }
+  .weather-temp-reel{
+    width:100%;
+    height:calc(var(--weather-count) * 100%);
+    display:flex;
+    flex-direction:column;
+    transform-style:preserve-3d;
+  }
+  .weather-temp-reel span{
+    position:relative;
+    inset:auto;
+    display:flex;
+    flex:0 0 calc(100% / var(--weather-count));
+    align-items:center;
+    transform-style:preserve-3d;
+    transform-origin:50% 50%;
+    backface-visibility:hidden;
+  }
+  .weather-title{
+    position:absolute;
+    left:65vw;
+    right:auto;
+    top:48%;
+    width:min(34vw,620px);
+    margin:0;
+    color:#183242;
+    font:500 clamp(46px,5.1vmin,82px)/.91 var(--heading);
+    letter-spacing:-.052em;
+    transform:translateY(-42%);
+  }
+  .weather-title span{display:block}
+  @media(max-width:900px){
+    .weather-picture img{object-position:58% center}
+    .weather-temp{
+      left:18px;top:25%;width:auto;height:clamp(112px,32vw,210px);
+      font-size:clamp(112px,32vw,210px);transform:none;
+    }
+    .weather-title{
+      left:clamp(22px,7vw,54px);right:auto;top:auto;bottom:clamp(42px,8vh,90px);
+      width:min(78vw,520px);font-size:clamp(42px,11.5vw,70px);transform:none;
+    }
+  }
+  @media(max-width:520px){
+    .weather-temp{top:18%;font-size:clamp(96px,29vw,150px)}
+    .weather-title{width:84vw;font-size:clamp(38px,10.8vw,56px)}
+  }
+  @media(max-height:700px) and (min-width:901px){
+    .weather-temp{font-size:clamp(158px,27vmin,250px)}
+    .weather-title{font-size:clamp(38px,6.2vmin,58px)}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .weather-picture img{transform:none!important}
+  }
+
+  /* Следующая глава использует тот же sticky-контекст и тот же телефон.
+     Порядок слоёв: фон 1, trail 2, заголовки 3, телефон 6, аудио 7. */
+  .split-story{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    overflow:hidden;
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    isolation:isolate;
+    contain:layout paint;
+    background:#F7F8F7;
+  }
+  .split-story.is-active{pointer-events:auto}
+  .split-half{
+    position:relative;
+    min-width:0;
+    overflow:hidden;
+    background:#F7F8F7;
+  }
+  .split-half--left{border-right:1px solid rgba(10,23,34,.05)}
+  .split-half__active-bg{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    opacity:0;
+    background:linear-gradient(135deg,#47D7D8 0%,#32E5AC 100%);
+    pointer-events:none;
+  }
+  .split-future-assets{
+    position:absolute;
+    inset:0;
+    z-index:1;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .split-trail{
+    position:absolute;
+    inset:0;
+    z-index:8;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .scene > .split-trail{inset:0 50% 0 0}
+  .split-trail__item{
+    position:absolute;
+    left:0;
+    top:0;
+    width:var(--trail-width,80px);
+    height:var(--trail-height,50px);
+    display:block;
+    object-fit:contain;
+    filter:drop-shadow(0 9px 12px rgba(10,23,34,.12));
+    pointer-events:none;
+    user-select:none;
+  }
+  .split-kicker{
+    position:absolute;
+    z-index:3;
+    left:clamp(52px,6vw,118px);
+    top:clamp(150px,18vh,220px);
+    margin:0;
+    color:#D2D4D5;
+    font:500 clamp(36px,2.7vw,54px)/1.02 var(--heading);
+    letter-spacing:-.045em;
+    pointer-events:none;
+    transition:color .25s ease;
+  }
+  body.split-left-active .split-kicker{color:#FFF}
+  .split-heading{
+    position:absolute;
+    z-index:3;
+    left:clamp(52px,6vw,118px);
+    bottom:clamp(58px,9vh,118px);
+    margin:0;
+    color:#14202A;
+    font:500 clamp(38px,3.1vw,60px)/.98 var(--heading);
+    letter-spacing:-.055em;
+    pointer-events:none;
+  }
+  .split-half--right .split-heading{
+    left:auto;
+    right:clamp(52px,6vw,118px);
+    text-align:center;
+  }
+  .split-audio-control{
+    position:absolute;
+    z-index:9;
+    left:0;
+    top:0;
+    width:clamp(68px,6vw,96px);
+    height:clamp(68px,6vw,96px);
+    padding:0;
+    border:0;
+    border-radius:50%;
+    color:#07131C;
+    background:rgba(247,255,253,.92);
+    box-shadow:0 10px 32px rgba(10,23,34,.14);
+    opacity:0;
+    pointer-events:none;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .split-audio-control.is-visible{opacity:1;pointer-events:auto}
+  body.split-audio-cursor .scene,
+  body.split-audio-cursor .scene *{cursor:none!important}
+  .split-audio-control:focus-visible{
+    outline:3px solid #14202A;
+    outline-offset:5px;
+  }
+  .split-audio-ring{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:rotate(-90deg);
+    opacity:0;
+  }
+  .split-audio-control.has-progress .split-audio-ring{opacity:1}
+  .split-audio-ring circle{fill:none;stroke-width:2}
+  .split-audio-ring__track{stroke:rgba(10,23,34,.14)}
+  .split-audio-ring__progress{
+    stroke:currentColor;
+    stroke-linecap:round;
+    stroke-dasharray:100;
+    stroke-dashoffset:100;
+  }
+  .split-audio-icon{
+    position:absolute;
+    inset:0;
+    display:grid;
+    place-items:center;
+  }
+  .split-audio-icon i{
+    display:block;
+    width:0;
+    height:0;
+    margin-left:7%;
+    border-top:12px solid transparent;
+    border-bottom:12px solid transparent;
+    border-left:19px solid currentColor;
+  }
+  .split-audio-icon b{display:none;width:18px;height:24px;border-left:6px solid currentColor;border-right:6px solid currentColor}
+  .split-audio-control.is-playing .split-audio-icon i{display:none}
+  .split-audio-control.is-playing .split-audio-icon b{display:block}
+  @media(max-width:900px){
+    .split-story{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+    .split-half--left{border-right:0;border-bottom:1px solid rgba(10,23,34,.05)}
+    .split-heading{
+      left:clamp(22px,4vw,34px);
+      bottom:clamp(24px,5vh,48px);
+      font-size:clamp(32px,5.4vw,40px);
+    }
+    .split-kicker{
+      left:clamp(22px,4vw,34px);
+      top:clamp(96px,13vh,122px);
+      font-size:clamp(28px,4.8vw,36px);
+    }
+    .split-half--right .split-heading{
+      left:clamp(22px,4vw,34px);
+      right:auto;
+      text-align:left;
+    }
+    .split-audio-control{width:72px;height:72px}
+  }
+  @media(hover:none),(pointer:coarse){
+    .split-trail{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .split-trail{display:none}
+    .split-half__active-bg{transition:none}
+  }
+
+  .trip-hub{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    overflow:hidden;
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    contain:layout paint;
+    background:
+      radial-gradient(circle at 50% 42%,rgba(43,75,82,.34),transparent 48%),
+      #070D11;
+    color:#FFF;
+  }
+  .trip-hub.is-active{pointer-events:auto}
+  .trip-hub__title{
+    position:absolute;
+    z-index:2;
+    left:50%;
+    top:clamp(132px,16vh,210px);
+    width:min(82vw,1100px);
+    margin:0;
+    transform:translateX(-50%);
+    font:500 clamp(58px,min(6vw,11vh),112px)/.84 var(--heading);
+    letter-spacing:-.065em;
+    text-align:center;
+  }
+  .trip-hub__title-line-mask{
+    padding:.08em .06em .13em;
+    margin:-.08em -.06em -.13em;
+  }
+  .trip-hub__title-line{transform-origin:50% 100%}
+  .trip-hub__content{
+    position:absolute;
+    z-index:1;
+    left:clamp(24px,7vw,140px);
+    right:clamp(24px,7vw,140px);
+    top:clamp(330px,35vh,500px);
+    bottom:clamp(34px,5vh,76px);
+    max-width:1500px;
+    margin:auto;
+  }
+  .trip-hub__list{
+    position:absolute;
+    inset:50% 0 auto;
+    z-index:2;
+    display:grid;
+    row-gap:clamp(8px,1.2vh,14px);
+    transform:translateY(-50%);
+  }
+  .trip-hub__item{
+    position:relative;
+    isolation:isolate;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    width:100%;
+    min-height:clamp(66px,8vh,86px);
+    padding:0;
+    border:0;
+    border-bottom:1px solid rgba(255,255,255,.14);
+    border-radius:0;
+    background:none;
+    color:rgba(255,255,255,.46);
+    font:inherit;
+    text-align:left;
+    cursor:default;
+    transition:color .42s cubic-bezier(.4,0,.2,1);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .trip-hub__item:first-child{border-top:1px solid rgba(255,255,255,.14)}
+  .trip-hub__item:is(:hover,.is-active){color:#FFF}
+  .trip-hub__number{
+    grid-column:2;
+    grid-row:1;
+    align-self:center;
+    justify-self:end;
+    font:650 clamp(14px,1vw,17px)/1 'Onest',system-ui,sans-serif;
+    letter-spacing:.16em;
+    color:rgba(255,255,255,.46);
+    transition:color .42s cubic-bezier(.4,0,.2,1);
+  }
+  .trip-hub__item:is(:hover,.is-active) .trip-hub__number{color:rgba(255,255,255,.92)}
+  .trip-hub__label{
+    position:relative;
+    z-index:0;
+    grid-column:1;
+    grid-row:1;
+    display:block;
+    width:fit-content;
+    max-width:980px;
+    padding:16px 0;
+    font:500 clamp(23px,1.85vw,34px)/1.16 'Onest',system-ui,sans-serif;
+    letter-spacing:-.025em;
+  }
+  .trip-hub__label::before{
+    content:'';
+    position:absolute;
+    z-index:-1;
+    left:-.15em;
+    right:-.15em;
+    bottom:.16em;
+    height:.76em;
+    border-radius:100%;
+    opacity:0;
+    background:#0400FA;
+    box-shadow:0 0 28px rgba(4,0,250,.72),0 0 54px rgba(4,0,250,.42);
+    filter:blur(18px);
+    transform:scaleX(.72) scaleY(.72);
+    transform-origin:center;
+    transition:opacity .58s cubic-bezier(.22,.7,.24,1),transform .72s cubic-bezier(.16,.7,.22,1);
+  }
+  .trip-hub__item:is(:hover,.is-active) .trip-hub__label::before{
+    opacity:.9;
+    transform:scaleX(1) scaleY(.92);
+  }
+  .trip-hub__preview{
+    position:absolute;
+    z-index:4;
+    left:0;
+    top:0;
+    width:clamp(380px,34vw,572px);
+    aspect-ratio:320/432;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform-style:preserve-3d;
+    backface-visibility:hidden;
+  }
+  .trip-hub__preview-card{
+    position:absolute;
+    inset:0;
+    display:block;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:clamp(20px,2vw,30px);
+    background:#111A20;
+    box-shadow:0 28px 70px rgba(0,0,0,.38),0 0 0 1px rgba(255,255,255,.04) inset;
+    opacity:0;
+    visibility:hidden;
+    contain:paint;
+  }
+  .trip-hub__preview-image{
+    position:absolute;
+    inset:0;
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .trip-hub__preview-image--blur{
+    opacity:1;
+    filter:blur(16px);
+    transform:scale(1.14);
+  }
+  .trip-hub__preview-image--sharp{opacity:0}
+  .trip-hub__preview-image--secondary{display:none}
+  .trip-hub__preview-card.is-flight-glass{
+    inset:auto 0 auto;
+    top:36%;
+    width:100%;
+    aspect-ratio:331/204;
+    overflow:hidden;
+    border:1px solid rgba(139,196,221,.24);
+    border-radius:clamp(28px,2.8vw,44px);
+    background:rgba(7,17,22,.26);
+    box-shadow:
+      inset 1px 1px 0 rgba(214,241,250,.12),
+      inset -1px -1px 0 rgba(54,96,255,.14),
+      0 28px 58px rgba(0,0,0,.34);
+    -webkit-backdrop-filter:blur(34px) saturate(1.18) contrast(1.04);
+    backdrop-filter:blur(34px) saturate(1.18) contrast(1.04);
+    contain:paint;
+  }
+  .trip-hub__preview-card.is-flight-glass .trip-hub__preview-image{
+    z-index:2;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+  .trip-hub__preview-card.is-flight-glass .trip-hub__preview-image--primary{
+    left:0;
+    top:0;
+  }
+  .trip-hub__preview-card.is-flight-glass .trip-hub__preview-image--blur{
+    transform:scale(1.055);
+  }
+  .trip-hub__preview-card.is-flight-glass .trip-hub__preview-image--sharp{
+    transform:none;
+    filter:drop-shadow(0 24px 34px rgba(0,0,0,.32));
+  }
+  .trip-hub__preview-card.is-flight-glass.is-flight-art .trip-hub__preview-image--blur{
+    transform:rotate(-3.0743deg) scale(1.055);
+  }
+  .trip-hub__preview-card.is-flight-glass.is-flight-art .trip-hub__preview-image--sharp{
+    transform:rotate(-3.0743deg);
+  }
+  .trip-hub__preview-card.is-flight-glass.is-weather-art .trip-hub__preview-image{
+    box-sizing:border-box;
+    padding:0 6%;
+    object-position:50% 50%;
+  }
+  .trip-hub__preview-card.is-flight-glass.is-weather-art .trip-hub__preview-image--blur{
+    transform:scale(1.04);
+  }
+  .trip-hub__preview-card.is-flight-glass.is-weather-art .trip-hub__preview-image--sharp{
+    transform:none;
+  }
+  .trip-hub__preview-card.is-flight-glass.is-route-art .trip-hub__preview-image--primary{
+    inset:-1% auto auto 0;
+    width:78%;
+    height:78%;
+  }
+  .trip-hub__preview-card.is-flight-glass.is-route-art .trip-hub__preview-image--secondary{
+    inset:auto 0 -1% auto;
+    display:block;
+    width:78%;
+    height:78%;
+  }
+  .trip-hub__preview-card.is-flight-glass::before,
+  .trip-hub__preview-card.is-flight-glass::after{
+    content:'';
+    position:absolute;
+    z-index:1;
+    inset:0;
+    border-radius:inherit;
+    pointer-events:none;
+  }
+  .trip-hub__preview-card.is-flight-glass::before{
+    background:
+      radial-gradient(80% 110% at 3% -5%,rgba(95,194,221,.10),transparent 48%),
+      radial-gradient(72% 86% at 105% 112%,rgba(61,75,255,.09),transparent 60%),
+      linear-gradient(135deg,rgba(198,232,241,.035),transparent 46%,rgba(20,46,58,.10));
+  }
+  .trip-hub__preview-card.is-flight-glass::after{
+    z-index:3;
+    border:1px solid rgba(190,225,238,.15);
+    background:
+      radial-gradient(72% 18% at 50% -2%,rgba(215,246,255,.09),transparent 74%),
+      linear-gradient(180deg,rgba(216,244,252,.055),transparent 8%,transparent 86%,rgba(63,102,255,.08));
+    box-shadow:
+      inset 2px 2px 2px rgba(216,242,249,.09),
+      inset -2px -2px 3px rgba(50,86,222,.13),
+      inset 0 0 26px rgba(188,232,245,.025);
+    opacity:1;
+  }
+  @media(hover:none),(pointer:coarse){
+    .trip-hub__preview{display:none}
+  }
+  @media(max-width:900px){
+    .trip-hub__title{top:clamp(104px,15vh,150px);width:90vw;font-size:clamp(46px,min(12vw,9vh),78px)}
+    .trip-hub__content{
+      top:clamp(240px,31vh,320px);
+      bottom:18px;
+    }
+    .trip-hub__item{
+      grid-template-columns:minmax(0,1fr) auto;
+      min-height:clamp(43px,6.4vh,56px);
+    }
+    .trip-hub__label{
+      grid-column:1;
+      padding:9px 0;
+      font-size:clamp(18px,4.4vw,22px);
+      line-height:1.18;
+    }
+  }
+  @media(max-height:820px) and (min-width:901px){
+    .trip-hub__title{top:84px;font-size:clamp(54px,8.5vh,72px)}
+    .trip-hub__content{top:230px;bottom:24px}
+    .trip-hub__item{min-height:62px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .trip-hub__item,
+    .trip-hub__number,
+    .trip-hub__label,
+    .trip-hub__label::before{transition:none}
+    .trip-hub__item:is(:hover,.is-active) .trip-hub__label::before{opacity:.88;transform:scale(1)}
+  }
+
+  /* Финальный белый кадр остаётся закреплённым вместе с телефоном, пока
+     следующий за ним подвал естественно поднимается поверх него снизу. */
+  .go-band{
+    position:sticky;
+    z-index:7;
+    top:0;
+    display:flex;
+    align-items:flex-end;
+    min-height:100svh;
+    background:transparent;
+    margin-top:0;
+    padding:7vh 4vw 18svh;
+  }
+  .go-btn{
+    display:block;
+    width:100%;
+    padding:0;
+    border:0;
+    cursor:pointer;
+    border-radius:1000px;
+    height:min(34vh,300px);
+    background:var(--ink);
+    color:#fff;
+    font-family:var(--display);
+    font-weight:900;
+    font-size:clamp(64px,9vw,170px);
+    text-transform:lowercase;
+    letter-spacing:-.01em;
+    line-height:1;
+    transform-origin:50% 50%;
+  }
+  /* у Geologica боковых отбивок меньше, чем у Climate Crisis: зазор шире */
+  .go-t{display:inline-flex; align-items:center; gap:.42em}
+  .go-apple{width:.58em; height:auto; flex:0 0 auto; margin-top:-.08em}
+  /* Кнопка — неподвижная часть финального кадра: без hover-сдвигов,
+     покачивания и плавного появления. */
+
+  /* --- подвал --- */
+  .foot{
+    position:relative;
+    z-index:8;
+    width:100%;
+    height:100svh;
+    min-height:560px;
+    overflow:hidden;
+    padding:clamp(32px,5.9vh,55px) clamp(24px,6.65vw,100px);
+    background:#050505;
+    color:#fff;
+    font-family:'Onest',system-ui,sans-serif;
+    box-sizing:border-box;
+  }
+  .foot-edge{
+    position:absolute;
+    z-index:0;
+    top:0;
+    left:0;
+    display:block;
+    width:100%;
+    height:auto;
+    pointer-events:none;
+  }
+  .foot-top{
+    position:relative;
+    z-index:2;
+    display:grid;
+    grid-template-columns:1fr 1fr .85fr 1.15fr;
+    gap:clamp(24px,3.3vw,50px);
+    align-items:start;
+  }
+  .foot-download{display:flex;align-items:flex-start;gap:15px}
+  .foot-qr{display:block;width:100px;height:100px;object-fit:cover}
+  .foot-download p{margin:3px 0 0;font-size:16px;font-weight:500;line-height:1.35}
+  .foot-col{display:flex;flex-direction:column;align-items:flex-start;gap:13px}
+  .foot a,.foot-link-label{width:max-content;color:#fff;font-size:16px;font-weight:500;line-height:1.25;text-decoration:none}
+  .foot a{transition:color .2s ease}
+  .foot a:hover{color:#00FACC}
+  .foot-business{display:inline-flex;align-items:center;gap:7px}
+  .foot-business__arrow{
+    display:inline-grid;
+    width:20px;
+    height:20px;
+    place-items:center;
+    border:1.5px solid currentColor;
+    border-radius:50%;
+    font-size:13px;
+    line-height:1;
+  }
+  .foot-muted{color:rgba(255,255,255,.16);font-size:16px;font-weight:500;line-height:1.25}
+  .foot-legal{align-items:flex-end;text-align:right}
+  .foot-legal .foot-link-label{color:rgba(255,255,255,.2)}
+  .foot-wordmark{
+    position:absolute;
+    z-index:1;
+    left:0;
+    right:0;
+    bottom:1.1vh;
+    aspect-ratio:1500/619;
+  }
+  .foot-wordmark img{
+    position:absolute;
+    top:0;
+    display:block;
+    height:auto;
+    transform-origin:50% 100%;
+  }
+  .foot-wordmark__l{left:1.533%;width:42.867%}
+  .foot-wordmark__u{left:46.067%;width:52.067%}
+  .letter-roll{display:inline-flex;perspective:600px;white-space:pre}
+  .roll-letter{
+    position:relative;
+    display:inline-block;
+    height:1.18em;
+    overflow:hidden;
+    vertical-align:bottom;
+  }
+  .roll-front,.roll-back{
+    display:block;
+    line-height:1.18;
+    transform-origin:50% 50%;
+  }
+  .roll-back{position:absolute;left:0;top:100%;color:currentColor}
+  @media (prefers-reduced-motion:reduce){
+    .roll-front,.roll-back{}
+  }
+  @media (max-width:760px){
+    .foot{min-height:580px;padding:26px 16px calc(88px + env(safe-area-inset-bottom,0px))}
+    .foot-top{grid-template-columns:1.2fr .8fr;gap:24px 16px}
+    .foot-download{grid-column:1/-1}
+    .foot-qr{width:84px;height:84px}
+    .foot-download p,.foot a,.foot-link-label,.foot-muted{font-size:14px}
+    .foot-col{gap:9px}
+    .foot-legal{align-items:flex-start;text-align:left}
+  }
+
+  .hero h1,
+  .caption-heading,
+  #cap0,
+  #cap3 .ln,
+  .weather-title,
+  .split-kicker,
+  .split-heading,
+  .trip-hub__title{letter-spacing:0}
+  /* Неподвижная шкала всей страницы: JS меняет только длину и прозрачность рисок. */
+  .scroll-indicator{
+    --indicator-color:rgb(0 0 0 / .05);
+    position:fixed;
+    z-index:24;
+    left:0;
+    top:clamp(96px,12vh,128px);
+    width:64px;
+    height:min(70vh,932px);
+    color:var(--indicator-color);
+    pointer-events:none;
+    overflow:hidden;
+    opacity:1;
+    transition:color 300ms ease,opacity .35s ease;
+    contain:layout paint;
+  }
+  .scroll-indicator__scale{
+    position:absolute;
+    inset:0;
+  }
+  .scroll-indicator__line{
+    position:absolute;
+    left:16px;
+    display:block;
+    width:9px;
+    height:3px;
+    border-radius:1.5px;
+    background:currentColor;
+  }
+  body.is-loading .scroll-indicator{opacity:0}
+  body.is-loading .scroll-indicator,
+  body.is-dark .scroll-indicator,
+  body.trip-hub-active .scroll-indicator,
+  body.menu-on-dark .scroll-indicator,
+  body.menu-open .scroll-indicator,
+    body.weather-active .scroll-indicator,
+    body.split-left-active .scroll-indicator{
+    --indicator-color:rgb(255 255 255 / 1);
+  }
+  body.footer-active .site-header,
+  body.footer-active .scroll-indicator{
+    opacity:0;
+    pointer-events:none;
+  }
+  body.is-charge .scroll-indicator{--indicator-color:rgb(10 23 34 / .72)}
+  @media (max-width:1100px){
+    .scroll-indicator{width:56px}
+  }
+  @media (max-width:900px){.scroll-indicator{display:none}}
+  @media (prefers-reduced-motion:reduce){
+    .idle-y,.idle-r{animation:none}
+    .scroll-indicator{transition:none}
+  }
+
+  /* Единый глобальный хедер: самостоятельные элементы вместо цельного SVG-макета. */
+  .site-header{
+    --header-ink:#0A1722;
+    top:0;
+    z-index:45;
+    display:block;
+    padding:clamp(36px,4.95vh,54px) var(--pad) clamp(24px,3.3vh,36px);
+    color:var(--header-ink);
+    pointer-events:none;
+    transition:color .28s ease,transform .62s cubic-bezier(.22,1,.36,1);
+  }
+  /* Перебивает старое служебное правило .hdr, скрывавшее прямых потомков. */
+  .site-header > *{visibility:visible!important}
+  .site-header__nav *{visibility:visible}
+  .site-header__nav{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    min-width:0;
+  }
+  .site-header__brand{
+    display:block;
+    flex:0 0 auto;
+    width:clamp(77px,6.3vw,94px);
+    color:inherit;
+    background:#0400FA;
+    -webkit-mask:url('/assets/ui/luna-logo.svg') center/contain no-repeat;
+    mask:url('/assets/ui/luna-logo.svg') center/contain no-repeat;
+    pointer-events:auto;
+  }
+  .site-header__brand img{
+    display:block;
+    width:100%;
+    height:auto;
+    opacity:0;
+    filter:none!important;
+    transition:filter .28s ease,opacity .28s ease;
+  }
+  .site-header__audience-position{
+    position:absolute;
+    left:50%;
+    top:0;
+    transform:translateX(-50%);
+    pointer-events:auto;
+  }
+  .site-header__audience{
+    display:flex;
+    width:380px;
+    height:70px;
+    padding:5px;
+    border-radius:999px;
+    background:#F1F3F5;
+    box-shadow:none;
+    transition:background-color .34s ease;
+  }
+  .site-header__audience-tab{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+    height:60px;
+    padding:0 20px;
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    color:rgba(10,23,34,.42);
+    font-family:var(--font-nunito-medium);
+    font-size:18px;
+    font-style:normal;
+    font-weight:500;
+    font-stretch:100%;
+    line-height:1;
+    text-decoration:none;
+    white-space:nowrap;
+    transition:color .34s ease;
+  }
+  .site-header__audience-tab:first-child{flex:5}
+  .site-header__audience-tab:last-child{flex:3}
+  .site-header__audience-tab.is-active{background:#0400FA;color:rgba(255,255,255,.6)}
+  .site-header__audience-tab:disabled{cursor:not-allowed;opacity:1}
+  body.is-loading .site-header__audience,
+  body.is-dark .site-header__audience,
+  body.trip-hub-active .site-header__audience,
+  body.weather-storm .site-header__audience,
+  body.menu-on-dark .site-header__audience,
+  body.menu-open .site-header__audience{background:#050505;box-shadow:none}
+  body.is-loading .site-header__audience-tab:not(.is-active),
+  body.is-dark .site-header__audience-tab:not(.is-active),
+  body.trip-hub-active .site-header__audience-tab:not(.is-active),
+  body.weather-storm .site-header__audience-tab:not(.is-active),
+  body.menu-on-dark .site-header__audience-tab:not(.is-active),
+  body.menu-open .site-header__audience-tab:not(.is-active){color:rgba(255,255,255,.6)}
+  .site-header__download{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    min-width:154px;
+    height:60px;
+    padding:0 25px;
+    border-radius:999px;
+    background:#0400FA;
+    color:#fff;
+    font-family:var(--font-nunito-medium);
+    font-size:18px;
+    font-weight:500;
+    line-height:1;
+    text-decoration:none;
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translateY(-12px);
+    transition:opacity .34s ease,transform .46s cubic-bezier(.22,1,.36,1),visibility 0s linear .46s;
+  }
+  .site-header__download img{
+    display:block;
+    width:auto;
+    height:18px;
+    filter:brightness(0) invert(1);
+  }
+  .site-header__download.is-visible{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transform:translateY(0);
+    transition-delay:0s;
+  }
+  /* Геометрия глобальной шапки едина во всех сценах.
+     Состояния body ниже меняют только контрастные цвета под фон. */
+  .site-header__menu{
+    display:none;
+    position:relative;
+    width:48px;
+    height:48px;
+    border:0;
+    border-radius:50%;
+    padding:0;
+    color:inherit;
+    background:rgba(255,255,255,.12);
+    cursor:pointer;
+    pointer-events:auto;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .site-header__menu span{
+    position:absolute;
+    left:12px;
+    width:24px;
+    height:2.5px;
+    border-radius:99px;
+    background:currentColor;
+    transition:top .28s ease,transform .28s ease;
+  }
+  .site-header__menu span:first-child{top:18px}
+  .site-header__menu span:last-child{top:28px}
+  body.menu-open .site-header__menu span:first-child{top:23px;transform:rotate(45deg)}
+  body.menu-open .site-header__menu span:last-child{top:23px;transform:rotate(-45deg)}
+  body.is-loading .site-header,
+  body.is-dark .site-header,
+  body.trip-hub-active .site-header,
+  body.weather-storm .site-header,
+  body.menu-on-dark .site-header,
+  body.menu-open .site-header{
+    --header-ink:#fff;
+  }
+  /* Жёлтая зарядка всегда светлая: тёмная шапка перекрывает прежнюю тёмную фазу. */
+  body.is-charge .site-header{
+    --header-ink:#0A1722;
+  }
+  body.is-charge .site-header__brand img{filter:none}
+  .site-header a:focus-visible,
+  .site-header button:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+  .site-menu .menu-close{display:none}
+  .site-menu .menu-business-link,
+  .site-menu .menu-download-link{display:inline-flex;align-items:center;width:max-content}
+  .site-menu .menu-business-link{gap:8px}
+  .site-menu .menu-business-link svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7}
+  .site-menu .menu-download-link{
+    gap:9px;min-width:148px;min-height:50px;padding:0 24px;
+    justify-content:center;border-radius:999px;background:#fff;color:#0A1722;
+    box-shadow:inset 5px 4px 12px rgba(255,255,255,.24),0 12px 28px rgba(0,0,0,.18)
+  }
+  .site-menu .menu-download-link:hover{color:#0A1722;transform:translateY(-2px)}
+  .site-menu .menu-download-link svg{width:18px;height:18px;flex:0 0 auto}
+  @media (max-width:760px), (max-height:520px) and (pointer:coarse){
+    .site-header{padding:14px 20px}
+    .site-header__brand{width:86px}
+    .site-header__audience-position{top:62px;transform:translateX(-50%)}
+    .site-header__audience{width:min(340px,calc(100vw - 40px))}
+    .site-header__audience-tab{font-size:clamp(14px,4vw,16px);padding-inline:10px}
+    .site-header__menu{display:block}
+    .site-header__download{display:none}
+    .site-menu,.site-menu.is-open{padding-top:88px}
+    .go-band{padding:6svh 16px calc(6svh + 82px + env(safe-area-inset-bottom,0px))}
+    .go-btn{height:min(26svh,190px);font-size:clamp(52px,17vw,82px)}
+  }
+  @media (max-width:900px),(hover:none),(pointer:coarse){
+    body{overflow-x:clip}
+    .box,.idle-y,.idle-r,.aura::before,.aura i{animation:none}
+    .aura i{display:none}
+    .aura::before{filter:blur(32px)}
+    .aura::after{filter:blur(20px)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .site-header,.site-header *{transition-duration:.01ms!important}
+  }

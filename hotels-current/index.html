@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="План путешествия, внутри которого всё уже можно сделать.">
+  <title>Путешествовать — легко</title>
+  <link rel="icon" href="/assets/ui/luna-logo.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/nunito-sans-light-wide-v2.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/nunito-sans-medium-v2.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/src/styles/scene.css">
+</head>
+<body>
+<header class="hdr site-header" id="siteHeader" data-theme="light">
+  <nav class="site-header__nav" aria-label="Главная навигация">
+    <a class="logo-slot site-header__brand" id="logoSlot" href="#" aria-label="Luna — на главную">
+      <img loading="lazy" src="/assets/ui/luna-logo.svg" alt="Luna" width="201" height="86">
+    </a>
+    <div class="site-header__audience-position">
+      <div class="site-header__audience hdr-item" id="hi0" role="tablist" aria-label="Режим сайта">
+        <a class="site-header__audience-tab is-active font-nunito-medium" href="./" role="tab" aria-selected="true">Путешественникам</a>
+        <a class="site-header__audience-tab font-nunito-medium" href="./hotels/" role="tab" aria-selected="false">Отелям</a>
+      </div>
+    </div>
+    <a class="site-header__download font-nunito-medium" id="headerDownload" href="#download" aria-hidden="true" tabindex="-1">
+      <img src="/assets/ui/login_apple.svg" width="23" height="29" loading="lazy" alt="" aria-hidden="true">
+      <span>Скачать</span>
+    </a>
+    <button class="site-header__menu hdr-item" id="menuTrigger" type="button" aria-label="Открыть меню" aria-controls="siteMenu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </nav>
+</header>
+<nav class="site-menu" id="siteMenu" aria-label="Основное меню" aria-hidden="true">
+  <div class="menu-top">
+    <span class="menu-brand"><img loading="lazy" src="/assets/ui/luna-logo.svg" alt="Luna" width="201" height="86"></span>
+    <button class="menu-close" id="menuClose" type="button"><span>Закрыть</span><b aria-hidden="true">×</b></button>
+  </div>
+  <div class="menu-links">
+    <section class="menu-column">
+      <a class="menu-business-link" href="#business" data-menu-close>
+        <span>Для бизнеса</span>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 7.5h5v5M12.5 7.5l-5 5"/><circle cx="10" cy="10" r="8.25"/></svg>
+      </a>
+      <a href="#tripHub" data-menu-close>Возможности</a>
+      <a href="#tripHub" data-menu-close>Маршруты</a>
+      <a href="#assistantChat" data-menu-close>Помощник</a>
+    </section>
+    <section class="menu-column">
+      <a href="#" data-menu-close>Главная</a>
+      <a href="#weatherStory" data-menu-close>Как это работает</a>
+      <a href="#footer" data-menu-close>Контакты</a>
+    </section>
+    <section class="menu-column">
+      <a class="menu-download-link" href="#download" data-menu-close>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M17.3413 6.2148C17.2314 6.29684 15.2908 7.34875 15.2908 9.68773C15.2908 12.3931 17.7601 13.3503 17.834 13.374C17.8227 13.4323 17.4417 14.6847 16.5321 15.9609C15.721 17.0839 14.8739 18.2051 13.5853 18.2051C12.2966 18.2051 11.965 17.4849 10.4774 17.4849C9.02763 17.4849 8.51217 18.2288 7.33343 18.2288C6.1547 18.2288 5.33224 17.1896 4.3866 15.9135C3.29125 14.4149 2.40625 12.0869 2.40625 9.87733C2.40625 6.3333 4.80162 4.45373 7.15909 4.45373C8.41173 4.45373 9.45591 5.24494 10.2424 5.24494C10.9909 5.24494 12.1583 4.40633 13.5834 4.40633C14.1235 4.40633 16.064 4.45373 17.3413 6.2148ZM12.9068 2.90595C13.4962 2.23325 13.9131 1.29984 13.9131 0.366435C13.9131 0.236998 13.9017 0.105737 13.8771 0C12.9182 0.0346381 11.7774 0.614371 11.0895 1.38188C10.5494 1.97255 10.0453 2.90595 10.0453 3.85212C10.0453 3.99432 10.0699 4.13652 10.0813 4.18209C10.1419 4.19303 10.2405 4.20579 10.339 4.20579C11.1994 4.20579 12.2815 3.65159 12.9068 2.90595Z"/></svg>
+        <span>Скачать</span>
+      </a>
+      <div class="menu-languages" aria-label="Выбор языка">
+        <button class="menu-language" type="button" data-language="en">EN</button>
+        <button class="menu-language is-on" type="button" data-language="ru">RU</button>
+      </div>
+    </section>
+  </div>
+  <p class="menu-note">Путешествовать — легко</p>
+</nav>
+
+<div class="scroll-indicator" id="scrollIndicator" aria-hidden="true" hidden>
+  <div class="scroll-indicator__scale" id="scrollIndicatorScale"></div>
+</div>
+
+<div class="pre" id="pre">
+  <div class="pre-gradient" id="preGradient"></div>
+  <div class="pre-logo" id="preLogo">
+    <svg viewBox="0 0 201 86" fill="none" class="pre-logo-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path class="pre-logo-letter pre-logo-letter--u" fill="currentColor" d="M92.3828 0H138.033C138.033 7.99334 138.033 15.4733 138.033 22.44C138.033 29.4067 138.033 36.3733 138.033 43.34C138.033 44.44 138.253 45.3933 138.693 46.2C139.206 47.0067 139.829 47.7033 140.563 48.29C141.369 48.8033 142.249 49.2067 143.203 49.5C144.229 49.7933 145.256 49.94 146.283 49.94C148.409 49.94 150.316 49.39 152.003 48.29C153.689 47.19 154.533 45.5767 154.533 43.45C154.533 39.93 154.533 36.4467 154.533 33C154.533 29.5533 154.533 26.07 154.533 22.55C154.533 19.03 154.533 15.4 154.533 11.66C154.533 7.92 154.533 4.03333 154.533 0H200.183C200.183 5.57334 200.183 11.2933 200.183 17.16C200.183 23.0267 200.183 28.93 200.183 34.87C200.183 40.7367 200.183 46.4567 200.183 52.03C200.183 57.6767 198.643 62.6267 195.563 66.88C192.556 71.06 188.486 74.58 183.353 77.44C178.219 80.2267 172.426 82.3167 165.973 83.71C159.593 85.1033 153.029 85.8 146.283 85.8C140.929 85.8 135.613 85.36 130.333 84.48C125.126 83.6 120.213 82.2433 115.593 80.41C111.046 78.5767 107.013 76.34 103.493 73.7C100.046 70.9867 97.3328 67.8333 95.3528 64.24C93.3728 60.5733 92.3828 56.5033 92.3828 52.03C92.3828 49.2433 92.3828 46.3833 92.3828 43.45C92.3828 40.4433 92.3828 37.4733 92.3828 34.54C92.3828 30.6533 92.3828 26.7667 92.3828 22.88C92.3828 18.9933 92.3828 15.1433 92.3828 11.33C92.3828 7.44333 92.3828 3.66667 92.3828 0Z"/>
+      <path class="pre-logo-letter pre-logo-letter--l" fill="currentColor" d="M45.65 49.94C45.65 50.0133 45.65 50.0867 45.65 50.16C45.7233 50.16 45.7967 50.16 45.87 50.16H88.77V82.5H0C0 77.9533 0 73.4067 0 68.86C0 64.3133 0 59.7667 0 55.22C0 50.6 0 46.0167 0 41.47C0 36.9233 0 32.3767 0 27.83C0 23.21 0 18.59 0 13.97C0 9.27667 0 4.62 0 0H45.65C45.65 4.18 45.65 8.36 45.65 12.54C45.65 16.6467 45.65 20.79 45.65 24.97C45.65 29.15 45.65 33.33 45.65 37.51C45.65 41.6167 45.65 45.76 45.65 49.94Z"/>
+    </svg>
+  </div>
+</div>
+
+<main class="site-shell" id="siteShell">
+<div class="stage">
+<div class="scene">
+  <div class="veil" id="veil"></div>
+  <div class="assistant-bg" id="assistantBg" aria-hidden="true"></div>
+  <div class="charge-bg" id="chargeBg"></div>
+  <div class="pulse-white" id="pulseWhite"></div>
+  <div class="aura" id="aura"><i></i></div>
+  <div class="hero-band" id="heroBand"></div>
+  <div class="hero-particles" id="heroParticles" aria-hidden="true">
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+    <i></i><i></i><i></i><i></i><i></i><i></i>
+  </div>
+  <div class="hero-cursor-trail" id="heroCursorTrail" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="hero-glow" id="heroGlow"><div class="gimg gh"></div></div>
+  <div class="hero" id="business">
+    <h1 class="font-nunito-light-wide" id="heroH1">Будущее<br>путешествий<br>уже здесь</h1>
+    <p class="font-nunito-medium" id="heroP">Одно приложение, которое соберёт путешествие вокруг ваших желаний и поможет в дороге.</p>
+    <div class="hero-download-zone">
+      <a class="hero-download font-nunito-medium" href="#download">
+        <span class="hero-download__label"><span>Скачать</span><img class="hero-download__apple" src="/assets/ui/login_apple.svg" width="23" height="29" loading="lazy" alt="" aria-hidden="true"></span>
+      </a>
+      <button class="hero-scroll scroll-cue" type="button" aria-label="Листать дальше">
+        <svg class="scroll-cue-arrows" viewBox="0 0 40 19" aria-hidden="true"><path class="scroll-chevron" pathLength="1" d="M3 3.5L20 16.5L37 3.5"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- шары: data-speed задаёт свою скорость параллакса -->
+  <!-- шары вайбов отключены: display:none в .orb; вернуть вместе с флагом orbsPhase -->
+  <div class="orb" id="orb0" data-speed="0.62"><div class="gimg g1"></div><span>Культурный</span></div>
+  <div class="orb" id="orb1" data-speed="0.86"><div class="gimg g2"></div><span>Романтичный</span></div>
+  <div class="orb" id="orb2" data-speed="1.14"><div class="gimg g3"></div><span>Гастротур</span></div>
+  <div class="orb" id="orb3" data-speed="1.00"><div class="gimg g1"></div><span>Туристический</span></div>
+  <div class="orb" id="orb4" data-speed="1.42"><div class="gimg g2"></div><span>Тусовочный</span></div>
+
+  <div class="tags" id="tags">
+    <div class="tag-pos"><div class="tag">Хочу в горы на выходные</div></div>
+    <div class="tag-pos"><div class="tag">Куда поехать с ребёнком</div></div>
+    <div class="tag-pos"><div class="tag">Три дня в Казани</div></div>
+    <div class="tag-pos"><div class="tag">Море в сентябре</div></div>
+    <div class="tag-pos"><div class="tag">Гастротур по Питеру</div></div>
+    <div class="tag-pos"><div class="tag">Что посмотреть в Суздале</div></div>
+    <div class="tag-pos"><div class="tag">Романтические выходные</div></div>
+    <div class="tag-pos"><div class="tag">Еду один, хочу тишины</div></div>
+    <div class="tag-pos"><div class="tag">Алтай на неделю</div></div>
+    <div class="tag-pos"><div class="tag">Бюджетно на юг</div></div>
+    <div class="tag-pos"><div class="tag">Куда с собакой</div></div>
+    <div class="tag-pos"><div class="tag">Первый раз в Грузии</div></div>
+    <div class="tag-pos"><div class="tag">Отпуск без планирования</div></div>
+    <div class="tag-pos"><div class="tag">Тёплое море в ноябре</div></div>
+    <div class="tag-pos"><div class="tag">Байкал зимой</div></div>
+    <div class="tag-pos"><div class="tag">Выходные в Выборге</div></div>
+    <div class="tag-pos"><div class="tag">Куда без визы</div></div>
+    <div class="tag-pos"><div class="tag">Термальные источники</div></div>
+    <div class="tag-pos"><div class="tag">Сплав по реке</div></div>
+    <div class="tag-pos"><div class="tag">Экскурсии для подростка</div></div>
+    <div class="tag-pos"><div class="tag">Где поесть в Тбилиси</div></div>
+    <div class="tag-pos"><div class="tag">Пять дней в Армении</div></div>
+    <div class="tag-pos"><div class="tag">Дешёвые авиабилеты</div></div>
+    <div class="tag-pos"><div class="tag">Отель с бассейном</div></div>
+    <div class="tag-pos"><div class="tag">Северное сияние</div></div>
+    <div class="tag-pos"><div class="tag">Куда в марте</div></div>
+    <div class="tag-pos"><div class="tag">Винный тур</div></div>
+    <div class="tag-pos"><div class="tag">Пеший маршрут на два дня</div></div>
+    <div class="tag-pos"><div class="tag">Города Золотого кольца</div></div>
+    <div class="tag-pos"><div class="tag">Что делать в дождь</div></div>
+    <div class="tag-pos"><div class="tag">Куда с коляской</div></div>
+    <div class="tag-pos"><div class="tag">Поездка на машине</div></div>
+    <div class="tag-pos"><div class="tag">Хочу вулканы</div></div>
+    <div class="tag-pos"><div class="tag">Дайвинг для новичка</div></div>
+    <div class="tag-pos"><div class="tag">Куда в горы летом</div></div>
+    <div class="tag-pos"><div class="tag">Кемпинг с палаткой</div></div>
+  </div>
+
+  <div class="vibes" id="vibes">
+    <span>Идеями</span>
+    <span>Вкусами</span>
+    <span>Видами</span>
+    <span>Прогулками</span>
+    <span>Отдыхом</span>
+  </div>
+
+  <div class="swarm" id="swarm"></div>
+
+  <div class="influx" id="influx"></div>
+  <div class="plan-explosion" id="planExplosion" aria-hidden="true"></div>
+  <div class="fall" id="fall"></div>
+
+  <!-- Подсказка скрыта в текущем сценарии. -->
+  <div class="hint-move" id="hintMove" hidden>
+    <svg viewBox="0 0 24 24" fill="none"><path d="M6.3 2.8c-.9-.4-1.9.4-1.6 1.4l4.3 15.3c.3 1 1.6 1.1 2.1.2l2.5-4.6 4.9 3.4c.8.6 1.9-.1 1.8-1.1l-1.7-6.1c-.1-.4-.4-.7-.8-.8L6.3 2.8Z" fill="currentColor"/></svg>
+    <span>Поводите курсором</span>
+  </div>
+
+  <div class="prompt" id="prompt"><span class="prompt-q" id="promptQ"><span class="prompt-text" id="promptText"></span></span></div>
+
+  <div class="caption left"  id="cap0">Куда<br>сходить</div>
+  <div class="sidebox" id="side0">
+    <p>Путешествие планируется целиком: куда сходить, где поесть, что забронировать и чем заняться. План меняется по ходу поездки, а вся рутина остаётся за кадром</p>
+  </div>
+  <div class="ctags" id="ctags">
+    <span class="cchip">кафе</span>
+    <span class="cchip">достопримечательности</span>
+    <span class="cchip">рестораны</span>
+    <span class="cchip">исторические места</span>
+  </div>
+  <div class="caption right" id="cap1"><span class="caption-heading">Вся поездка<br>в одном<br>месте</span><em>Всё важное для поездки: билеты, отель, регистрация на рейс и детали бронирования</em><div class="cchips"><span class="cchip">ранний заезд</span><span class="cchip">онлайн-регистрация</span><span class="cchip">уведомит, если рейс задержат</span><span class="cchip">напомнит о выезде</span></div></div>
+  <div class="caption left"  id="cap2"><span class="caption-heading">Помощник в приложении</span><em>Все, что раньше приходилось делать самостоятельно, теперь помощник выполняет в чате</em></div>
+  <div class="assistant-chat" id="assistantChat" aria-label="Диалог с помощником">
+    <section class="assistant-exchange" data-assistant-exchange>
+      <article class="assistant-message assistant-message--user" data-assistant-message="user">
+        <span class="assistant-message__label">Вы</span>
+        <p>Оформи онлайн-заезд<br>в отель</p>
+      </article>
+      <article class="assistant-message assistant-message--agent" data-assistant-message="agent">
+        <span class="assistant-message__label"><i aria-hidden="true"></i>Luna</span>
+        <p><strong>Готово.</strong> Заезд подтверждён — с 14:00</p>
+      </article>
+    </section>
+    <section class="assistant-exchange" data-assistant-exchange>
+      <article class="assistant-message assistant-message--user" data-assistant-message="user">
+        <span class="assistant-message__label">Вы</span>
+        <p>Закажи ужин<br>в номер</p>
+      </article>
+      <article class="assistant-message assistant-message--agent" data-assistant-message="agent">
+        <span class="assistant-message__label"><i aria-hidden="true"></i>Luna</span>
+        <p><strong>Заказал.</strong> Доставят через 35 минут</p>
+      </article>
+    </section>
+    <section class="assistant-exchange" data-assistant-exchange>
+      <article class="assistant-message assistant-message--user" data-assistant-message="user">
+        <span class="assistant-message__label">Вы</span>
+        <p>Свяжись с<br>администратором</p>
+      </article>
+      <article class="assistant-message assistant-message--agent" data-assistant-message="agent">
+        <span class="assistant-message__label"><i aria-hidden="true"></i>Luna</span>
+        <p><strong>Написал.</strong> Поздний выезд продлён до 14:00</p>
+      </article>
+    </section>
+    <section class="assistant-exchange" data-assistant-exchange>
+      <article class="assistant-message assistant-message--user" data-assistant-message="user">
+        <span class="assistant-message__label">Вы</span>
+        <p>Забронируй столик<br>на завтра</p>
+      </article>
+      <article class="assistant-message assistant-message--agent" data-assistant-message="agent">
+        <span class="assistant-message__label"><i aria-hidden="true"></i>Luna</span>
+        <p><strong>Готово!</strong> На двоих — завтра в 18:00</p>
+      </article>
+    </section>
+  </div>
+  <div class="sidebox" id="side2" hidden>
+    <p>Агент сам подкидывает идеи по ходу поездки. Вечером свободно — предложит фильм в тему места. Много ходили за день — позовёт в спа. Ничего не навязывает: не хочется — просто пропустите.</p>
+    <div class="ticks">
+      <span class="tick"><u></u><b>Заезд в отель онлайн</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+      <span class="tick"><u></u><b>Еда в номер из ресторана</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+      <span class="tick"><u></u><b>Связь с администратором</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+      <span class="tick"><u></u><b>Столик в ресторане</b><s><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.5 12.6l4.7 4.7L19.5 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></s></span>
+    </div>
+  </div>
+  <div class="caption right" id="cap3"><span class="ln l1">Заряжаем</span><span class="ln l2">поездку</span></div>
+
+  <section class="weather-story" id="weatherStory" aria-label="События подстраиваются под погоду">
+    <div class="weather-layer weather-base" aria-hidden="true"></div>
+    <picture class="weather-layer weather-picture weather-picture--light" aria-hidden="true">
+      <img loading="lazy" src="/assets/weather/weather-light.avif" width="1500" height="932" alt="" decoding="async">
+    </picture>
+    <picture class="weather-layer weather-picture weather-picture--dark" id="weatherDarkPicture" aria-hidden="true">
+      <img loading="lazy" src="/assets/weather/weather-dark.avif" width="1500" height="932" alt="" decoding="async">
+    </picture>
+    <picture class="weather-layer weather-picture weather-picture--freezing" id="weatherFreezingPicture" aria-hidden="true">
+      <img loading="lazy" src="/assets/weather/weather-freezing.avif" width="1500" height="932" alt="" decoding="async">
+    </picture>
+    <div class="weather-layer weather-noise" aria-hidden="true"></div>
+    <div class="weather-composition">
+      <div class="weather-temp" aria-label="Температура меняется с двадцати до минус двух градусов">
+        <div class="weather-temp-reel" style="--weather-count:23" aria-hidden="true">
+          <span>20°</span>
+          <span>19°</span>
+          <span>18°</span>
+          <span>17°</span>
+          <span>16°</span>
+          <span>15°</span>
+          <span>14°</span>
+          <span>13°</span>
+          <span>12°</span>
+          <span>11°</span>
+          <span>10°</span>
+          <span>9°</span>
+          <span>8°</span>
+          <span>7°</span>
+          <span>6°</span>
+          <span>5°</span>
+          <span>4°</span>
+          <span>3°</span>
+          <span>2°</span>
+          <span>1°</span>
+          <span>0°</span>
+          <span>−1°</span>
+          <span>−2°</span>
+        </div>
+      </div>
+      <h2 class="weather-title"><span>События</span><span>подстраиваются</span><span>под погоду</span></h2>
+    </div>
+  </section>
+
+  <section class="split-story" id="splitStory" aria-label="Спрашивайте текстом или слушайте голосом">
+    <div class="split-half split-half--left" data-split-side="left">
+      <div class="split-half__active-bg" aria-hidden="true"></div>
+      <div class="split-future-assets split-future-assets--left" aria-hidden="true"></div>
+      <div class="split-trail" id="splitTextTrail" aria-hidden="true"></div>
+      <p class="split-kicker">Узнавайте<br>больше про<br>каждое место</p>
+      <h2 class="split-heading">Спрашивайте<br>текстом</h2>
+    </div>
+    <div class="split-half split-half--right" data-split-side="right">
+      <div class="split-half__active-bg" aria-hidden="true"></div>
+      <div class="split-future-assets split-future-assets--right" aria-hidden="true"></div>
+      <h2 class="split-heading">Слушайте<br>голосом</h2>
+    </div>
+    <button class="split-audio-control" id="splitAudioControl" type="button"
+      aria-label="Воспроизвести аудио" aria-pressed="false">
+      <svg class="split-audio-ring" viewBox="0 0 48 48" aria-hidden="true">
+        <circle class="split-audio-ring__track" cx="24" cy="24" r="21"></circle>
+        <circle class="split-audio-ring__progress" id="splitAudioProgress" cx="24" cy="24" r="21" pathLength="100"></circle>
+      </svg>
+      <span class="split-audio-icon" aria-hidden="true"><i></i><b></b></span>
+    </button>
+    <!-- Будущий источник подключается через data-audio-src; пустое значение не создаёт сетевой запрос. -->
+    <audio id="splitAudio" data-audio-src="" preload="metadata"></audio>
+  </section>
+
+  <section class="trip-hub" id="tripHub" aria-labelledby="tripHubTitle">
+    <h2 class="trip-hub__title" id="tripHubTitle">Вся поездка в<br>одном месте</h2>
+    <div class="trip-hub__content">
+      <div class="trip-hub__list" aria-label="Возможности приложения">
+          <div class="trip-hub__item" data-trip-index="0" data-trip-image="./assets/trip-hub/flight-status-a.svg" data-trip-glass data-trip-layout="flight">
+          <span class="trip-hub__number">01</span>
+          <span class="trip-hub__label">Рейс и отслеживание маршрута</span>
+        </div>
+          <div class="trip-hub__item" data-trip-index="1" data-trip-image="./assets/trip-hub/accommodation-status.svg" data-trip-glass>
+          <span class="trip-hub__number">02</span>
+          <span class="trip-hub__label">Проживание и детали заселения</span>
+        </div>
+        <div class="trip-hub__item" data-trip-index="2" data-trip-image="./assets/trip-hub/route-idea-a.webp" data-trip-image-secondary="./assets/trip-hub/route-idea-b.webp" data-trip-glass data-trip-layout="route">
+          <span class="trip-hub__number">03</span>
+          <span class="trip-hub__label">Идеи маршрутов</span>
+        </div>
+        <div class="trip-hub__item" data-trip-index="3" data-trip-image="./assets/trip-hub/restaurant.avif" data-trip-glass>
+          <span class="trip-hub__number">04</span>
+          <span class="trip-hub__label">Брони в ресторанах</span>
+        </div>
+          <div class="trip-hub__item" data-trip-index="4" data-trip-image="./assets/trip-hub/weather-status.svg" data-trip-glass data-trip-layout="weather">
+          <span class="trip-hub__number">05</span>
+          <span class="trip-hub__label">Прогноз погоды на всё время поездки</span>
+        </div>
+        <div class="trip-hub__item" data-trip-index="5" data-trip-image="./assets/generated/0b8f40ebc364.webp" data-trip-glass>
+          <span class="trip-hub__number">06</span>
+          <span class="trip-hub__label">Напоминания о важных событиях</span>
+        </div>
+      </div>
+    </div>
+    <div class="trip-hub__preview" id="tripHubPreview" aria-hidden="true">
+      <span class="trip-hub__preview-card is-flight-glass is-flight-art" data-trip-preview-card>
+        <img class="trip-hub__preview-image trip-hub__preview-image--primary trip-hub__preview-image--blur" data-trip-preview-primary src="./assets/trip-hub/flight-status-a.svg" alt="" width="331" height="204" loading="lazy" decoding="async">
+        <img class="trip-hub__preview-image trip-hub__preview-image--primary trip-hub__preview-image--sharp" data-trip-preview-primary src="./assets/trip-hub/flight-status-a.svg" alt="" width="331" height="204" loading="lazy" decoding="async">
+        <img class="trip-hub__preview-image trip-hub__preview-image--secondary trip-hub__preview-image--blur" data-trip-preview-secondary src="./assets/trip-hub/route-idea-b.webp" alt="" width="329" height="195" loading="lazy" decoding="async">
+        <img class="trip-hub__preview-image trip-hub__preview-image--secondary trip-hub__preview-image--sharp" data-trip-preview-secondary src="./assets/trip-hub/route-idea-b.webp" alt="" width="329" height="195" loading="lazy" decoding="async">
+      </span>
+      <span class="trip-hub__preview-card" data-trip-preview-card>
+        <img class="trip-hub__preview-image trip-hub__preview-image--primary trip-hub__preview-image--blur" data-trip-preview-primary src="./assets/trip-hub/hotel.avif" alt="" width="320" height="432" loading="lazy" decoding="async">
+        <img class="trip-hub__preview-image trip-hub__preview-image--primary trip-hub__preview-image--sharp" data-trip-preview-primary src="./assets/trip-hub/hotel.avif" alt="" width="320" height="432" loading="lazy" decoding="async">
+        <img class="trip-hub__preview-image trip-hub__preview-image--secondary trip-hub__preview-image--blur" data-trip-preview-secondary src="./assets/trip-hub/route-idea-b.webp" alt="" width="329" height="195" loading="lazy" decoding="async">
+        <img class="trip-hub__preview-image trip-hub__preview-image--secondary trip-hub__preview-image--sharp" data-trip-preview-secondary src="./assets/trip-hub/route-idea-b.webp" alt="" width="329" height="195" loading="lazy" decoding="async">
+      </span>
+    </div>
+  </section>
+
+  <div class="roll-layer" id="rollLayer">
+  <div class="scroll-layer">
+    <div class="tilt-layer">
+      <div class="intro-layer" id="introLayer">
+      <div class="idle-y"><div class="idle-r">
+        <div class="box device-iphone-14-pro">
+          <div class="flow" id="flow"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="rim-pulse" id="rimPulse"></div>
+          <div class="rim"></div>
+          <div class="face front device-frame">
+            <div class="screen device-screen">
+              <iframe id="appFrame" src="./assets/embedded/plan-app.html" title="Чепош Парк" scrolling="no"></iframe>
+              <img id="heroShot" class="hero-shot" src="/assets/media/hero-screen.png" width="898" height="1782" decoding="async" fetchpriority="high" alt="">
+              <div class="screen-placeholder" id="screenPlaceholder" aria-hidden="true"></div>
+            </div>
+            <div class="loader" id="loader" aria-label="Собираю путешествие">
+              <div class="loader-t font-nunito-medium" aria-hidden="true">
+                <span>Изучаю ваши пожелания</span>
+                <span>Подбираю лучшие места</span>
+                <span>Собираю маршрут</span>
+                <span>Добавляю впечатления</span>
+                <span>Завершаю план поездки</span>
+              </div>
+            </div>
+            <div class="inflow" id="inflow"></div>
+            <div class="charge" id="chargeGlow"></div>
+          </div>
+          <!-- слой .overlays снят: переход взяли на себя стадии внутри экрана -->
+        </div>
+      </div></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+
+
+</div>
+
+<div class="spacer"></div>
+
+<!-- гигантская кнопка между сценой и «рутиной» -->
+<section class="go-band" id="download">
+  <button class="go-btn" type="button"><span class="go-t"><svg class="go-apple" viewBox="0 0 80 98" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M77.4545 33.4082C76.8845 33.8492 66.8206 39.5038 66.8206 52.0772C66.8206 66.6204 79.6265 71.7654 80.0098 71.8928C79.9509 72.2064 77.9754 78.939 73.258 85.799C69.0516 91.8358 64.6585 97.8628 57.9754 97.8628C51.2924 97.8628 49.5725 93.9918 41.8575 93.9918C34.3391 93.9918 31.6658 97.9902 25.5528 97.9902C19.4398 97.9902 15.1744 92.4042 10.2703 85.5442C4.58968 77.4886 0 64.974 0 53.0964C0 34.0452 12.4226 23.9414 24.6486 23.9414C31.145 23.9414 36.5602 28.1946 40.6388 28.1946C44.5209 28.1946 50.5749 23.6866 57.9656 23.6866C60.7666 23.6866 70.8305 23.9414 77.4545 33.4082ZM54.457 15.6212C57.5135 12.005 59.6757 6.9874 59.6757 1.9698C59.6757 1.274 59.6167 0.5684 59.4889 0C54.516 0.1862 48.5995 3.3026 45.0319 7.4284C42.231 10.6036 39.6167 15.6212 39.6167 20.7074C39.6167 21.4718 39.7445 22.2362 39.8034 22.4812C40.1179 22.54 40.629 22.6086 41.1401 22.6086C45.602 22.6086 51.2138 19.6294 54.457 15.6212Z" fill="currentColor"/></svg>Скачать</span></button>
+</section>
+
+<footer class="foot" id="footer">
+  <img class="foot-edge" loading="lazy" src="/assets/ui/footer-top.svg" alt="" width="1500" height="32">
+  <div class="foot-top">
+    <div class="foot-download">
+      <img class="foot-qr" loading="lazy" src="/assets/ui/footer-qr.webp" alt="" width="240" height="240">
+      <p>Scan this QR code<br>to download LU</p>
+    </div>
+    <nav class="foot-col foot-col--business" aria-label="Компания">
+      <a class="foot-business" href="mailto:hello@luna.travel?subject=%D0%94%D0%BB%D1%8F%20%D0%B1%D0%B8%D0%B7%D0%BD%D0%B5%D1%81%D0%B0"><span class="foot-business__label">Для бизнеса</span><span class="foot-business__arrow" aria-hidden="true">↗</span></a>
+      <span class="foot-muted">Вакансии (Скоро)</span>
+    </nav>
+    <nav class="foot-col" aria-label="Связаться">
+      <a href="mailto:hello@luna.travel">hello@luna.travel</a>
+      <span class="foot-link-label">Telegram</span>
+      <span class="foot-link-label">MAX</span>
+    </nav>
+    <nav class="foot-col foot-legal" aria-label="Правовая информация">
+      <span class="foot-link-label">Конфиденциальность</span>
+      <span class="foot-link-label">Условия использования</span>
+    </nav>
+  </div>
+  <div class="foot-wordmark" role="img" aria-label="LU">
+    <img class="foot-wordmark__l" loading="lazy" src="/assets/ui/footer-l.svg" alt="" width="643" height="595">
+    <img class="foot-wordmark__u" loading="lazy" src="/assets/ui/footer-u.svg" alt="" width="781" height="619">
+  </div>
+</footer>
+
+</div>
+
+</main>
+  <script type="module" src="/src/scene/scene.js"></script>
+</body>
+</html>
