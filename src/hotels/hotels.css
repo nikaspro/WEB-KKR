@@ -18,6 +18,7 @@ html{
   --hotel-blue:#0400FA;
   --hotel-blue-mid:#3439FF;
   --hotel-blue-soft:#AEBEFF;
+  --hotel-rim-gradient:conic-gradient(from var(--hotel-rim-spin),rgba(4,0,250,.18) 0deg,#0400fa 58deg,#fff 83deg,#aebeff 96deg,#3439ff 110deg,rgba(52,57,255,.12) 175deg,rgba(4,0,250,.12) 252deg,#0400fa 318deg,rgba(4,0,250,.18) 360deg);
   --hotel-link:#829BFF;
   --hotel-link-hover:#C8D3FF;
   --hotel-application-surface:#28282a;
@@ -119,10 +120,304 @@ html{
 .hotel-page .hotels-hero .hero-band{
   height:100%;
   opacity:1;
+  overflow:hidden;
+  background:transparent;
 }
 
-.hotel-page .hotels-hero .hero-particles{
+.hotel-hero-backdrop{
+  position:fixed;
+  z-index:0;
+  inset:0;
+  overflow:hidden;
+  background:#0c0c55;
+  contain:strict;
+  transform:translateZ(0);
+  pointer-events:none;
+}
+
+.hotel-hero-light{
+  position:absolute;
+  top:-24vh;
+  right:7vw;
+  width:70vw;
+  height:148vh;
+  pointer-events:none;
+  mix-blend-mode:screen;
+}
+
+.hotel-hero-light--body{
+  background:
+    radial-gradient(ellipse 78% 46% at 70% 7%,rgba(180,212,255,.96) 0%,rgba(168,139,255,.82) 18%,rgba(58,29,208,.66) 42%,rgba(19,6,105,.30) 66%,transparent 100%),
+    radial-gradient(ellipse 28% 78% at 67% 50%,rgba(180,212,255,.72) 0%,rgba(168,139,255,.58) 28%,rgba(58,29,208,.40) 54%,rgba(19,6,105,.18) 74%,transparent 100%),
+    radial-gradient(ellipse 82% 48% at 70% 93%,rgba(180,212,255,.96) 0%,rgba(168,139,255,.82) 18%,rgba(58,29,208,.66) 42%,rgba(19,6,105,.30) 66%,transparent 100%);
+  filter:blur(92px);
+  animation:hotelHeroLightBody 13s ease-in-out infinite alternate;
+}
+
+.hotel-hero-light--cyan{
+  background:
+    radial-gradient(ellipse 62% 44% at 79% 8%,rgba(132,220,255,.96) 0%,rgba(85,192,254,.90) 24%,rgba(49,116,229,.58) 50%,rgba(25,20,159,.20) 72%,transparent 100%),
+    radial-gradient(ellipse 22% 76% at 76% 50%,rgba(132,220,255,.80) 0%,rgba(85,192,254,.70) 30%,rgba(49,116,229,.44) 56%,rgba(25,20,159,.16) 76%,transparent 100%),
+    radial-gradient(ellipse 66% 46% at 79% 92%,rgba(132,220,255,.96) 0%,rgba(85,192,254,.90) 24%,rgba(49,116,229,.58) 50%,rgba(25,20,159,.20) 72%,transparent 100%);
+  filter:blur(112px);
+  opacity:.96;
+  animation:hotelHeroLightCyan 16s ease-in-out infinite alternate;
+}
+
+.hotel-hero-light--violet{
+  background:
+    radial-gradient(ellipse 54% 44% at 63% 9%,rgba(177,151,255,.82) 0%,rgba(113,73,244,.66) 30%,rgba(58,29,208,.34) 58%,transparent 100%),
+    radial-gradient(ellipse 18% 74% at 62% 50%,rgba(177,151,255,.58) 0%,rgba(113,73,244,.46) 36%,rgba(58,29,208,.22) 64%,transparent 100%),
+    radial-gradient(ellipse 56% 46% at 63% 91%,rgba(177,151,255,.82) 0%,rgba(113,73,244,.66) 30%,rgba(58,29,208,.34) 58%,transparent 100%);
+  filter:blur(112px);
+  opacity:.9;
+  animation:hotelHeroLightViolet 18s ease-in-out infinite alternate;
+}
+
+.hotel-hero-light--core{
+  background:
+    radial-gradient(ellipse 34% 38% at 72% 10%,rgba(191,229,255,.54) 0%,rgba(151,211,255,.34) 38%,rgba(96,182,255,.12) 68%,transparent 100%),
+    radial-gradient(ellipse 13% 72% at 71% 50%,rgba(191,229,255,.42) 0%,rgba(151,211,255,.28) 40%,rgba(96,182,255,.10) 68%,transparent 100%),
+    radial-gradient(ellipse 36% 40% at 72% 90%,rgba(191,229,255,.54) 0%,rgba(151,211,255,.34) 38%,rgba(96,182,255,.12) 68%,transparent 100%);
+  filter:blur(124px);
+  opacity:.72;
+  animation:hotelHeroLightCore 10s ease-in-out infinite alternate;
+}
+
+.hotel-hero-light--haze{
+  background:radial-gradient(ellipse 60% 120% at 73% 50%,rgba(72,64,220,.16) 0%,rgba(42,35,175,.09) 55%,transparent 100%);
+  filter:blur(150px);
+}
+
+.hotel-hero-edge{
+  position:absolute;
+  top:-29vh;
+  right:2vw;
+  width:78vw;
+  height:158vh;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  opacity:.56;
+  filter:blur(108px);
+}
+
+.hotel-hero-edge::before,
+.hotel-hero-edge::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse 77% 45% at 70% 8%,rgba(105,84,255,.28) 0%,rgba(64,92,255,.18) 43%,transparent 83%),
+    radial-gradient(ellipse 27% 78% at 68% 50%,rgba(95,157,255,.20) 0%,rgba(65,73,255,.12) 52%,transparent 86%),
+    radial-gradient(ellipse 82% 47% at 70% 92%,rgba(62,135,255,.28) 0%,rgba(48,69,255,.16) 44%,transparent 84%);
+  transform-origin:68% 50%;
+}
+
+.hotel-hero-edge::before{
+  animation:hotelHeroEdgeWanderA 11.7s cubic-bezier(.45,.05,.55,.95) infinite alternate;
+}
+
+.hotel-hero-edge::after{
+  opacity:.7;
+  filter:blur(34px);
+  animation:hotelHeroEdgeWanderB 15.9s cubic-bezier(.4,0,.2,1) infinite alternate;
+}
+
+.hotel-hero-backdrop.is-motion-paused .hotel-hero-light,
+.hotel-hero-backdrop.is-motion-paused .hotel-hero-edge::before,
+.hotel-hero-backdrop.is-motion-paused .hotel-hero-edge::after{
+  animation-play-state:paused;
+}
+
+.hotel-hero-backdrop.is-motion-active .hotel-hero-light,
+.hotel-hero-backdrop.is-motion-active .hotel-hero-edge::before,
+.hotel-hero-backdrop.is-motion-active .hotel-hero-edge::after,
+.hero-band.is-motion-active .hotel-hero-flying-track,
+.hotel-hero-stars:not(.is-paused) .hotel-hero-star{
+  will-change:transform,opacity;
+  backface-visibility:hidden;
+}
+
+@keyframes hotelHeroLightBody{
+  from{transform:translate3d(-16px,0,0) scaleX(.985);opacity:.91}
+  to{transform:translate3d(20px,-4px,0) scaleX(1.035);opacity:1}
+}
+
+@keyframes hotelHeroLightCyan{
+  from{transform:translate3d(18px,-3px,0) scaleX(1.02);opacity:.88}
+  to{transform:translate3d(-18px,5px,0) scaleX(.98);opacity:1}
+}
+
+@keyframes hotelHeroLightViolet{
+  from{transform:translate3d(-8px,5px,0) scaleX(.97);opacity:.82}
+  to{transform:translate3d(16px,-5px,0) scaleX(1.04);opacity:.94}
+}
+
+@keyframes hotelHeroLightCore{
+  from{transform:translate3d(-7px,0,0) scaleX(.96);opacity:.58}
+  to{transform:translate3d(11px,2px,0) scaleX(1.035);opacity:.75}
+}
+
+@keyframes hotelHeroEdgeWanderA{
+  0%{transform:translate3d(-32px,-12px,0) scaleX(.90) scaleY(1.04) skewX(-1.2deg);opacity:.52}
+  37%{transform:translate3d(24px,15px,0) scaleX(1.10) scaleY(.97) skewX(.9deg);opacity:.72}
+  71%{transform:translate3d(-22px,-7px,0) scaleX(.94) scaleY(1.05) skewX(-.8deg);opacity:.58}
+  100%{transform:translate3d(30px,12px,0) scaleX(1.12) scaleY(.96) skewX(1.1deg);opacity:.68}
+}
+
+@keyframes hotelHeroEdgeWanderB{
+  0%{transform:translate3d(30px,14px,0) scaleX(1.11) scaleY(.96) skewX(.8deg);opacity:.32}
+  48%{transform:translate3d(-28px,-16px,0) scaleX(.91) scaleY(1.05) skewX(-1deg);opacity:.52}
+  100%{transform:translate3d(20px,12px,0) scaleX(1.08) scaleY(.98) skewX(.7deg);opacity:.40}
+}
+
+.hotel-page .hotels-hero .hotel-hero-stars{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  overflow:hidden;
   opacity:1;
+  pointer-events:none;
+}
+
+.hotel-hero-star{
+  position:absolute;
+  display:block;
+  width:var(--star-size);
+  height:var(--star-size);
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 0 7px rgba(170,220,255,.35);
+  opacity:var(--star-opacity);
+  animation:hotelHeroStarFloat var(--star-duration,12s) linear infinite;
+}
+
+.hotel-hero-stars.is-paused .hotel-hero-star{
+  animation-play-state:paused;
+}
+
+.hotels-hero.is-scroll-fading .hotel-hero-light,
+.hotels-hero.is-scroll-fading .hotel-hero-edge::before,
+.hotels-hero.is-scroll-fading .hotel-hero-edge::after,
+.hotels-hero.is-scroll-fading .hotel-hero-star{
+  animation-play-state:paused;
+}
+
+.hotel-hero-axis-label{
+  position:absolute;
+  z-index:4;
+  left:68vw;
+  margin:0;
+  color:#000;
+  font-size:var(--hero-copy-size);
+  font-style:normal;
+  font-weight:500;
+  font-stretch:100%;
+  line-height:1.35;
+  letter-spacing:-.01em;
+  white-space:nowrap;
+  pointer-events:none;
+  transform:translateX(-50%);
+}
+
+.hotel-hero-axis-label--top{
+  top:clamp(112px,15vh,168px);
+}
+
+.hotel-hero-axis-label--bottom{
+  bottom:clamp(52px,8vh,92px);
+}
+
+.hotel-hero-axis-letter{display:inline-block}
+
+.hotel-hero-flight-mask{
+  position:absolute;
+  z-index:3;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.hotel-hero-reward-rain{
+  position:absolute;
+  z-index:3;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.hotel-message__bonus.hotel-hero-reward-tag{
+  position:absolute;
+  top:54%;
+  left:68vw;
+  margin:0;
+  opacity:0;
+  background:rgba(235,243,255,.14);
+  backdrop-filter:blur(46px) saturate(165%) brightness(1.1);
+  -webkit-backdrop-filter:blur(46px) saturate(165%) brightness(1.1);
+}
+
+.hotel-hero-flying-track{
+  position:absolute;
+  z-index:3;
+  top:50%;
+  left:50vw;
+  width:max-content;
+  min-height:clamp(104px,7vw,132px);
+  pointer-events:none;
+}
+
+.hotel-message__bonus.hotel-hero-flying-tag{
+  position:relative;
+  top:auto;
+  left:auto;
+  width:auto;
+  min-height:inherit;
+  overflow:hidden;
+  padding:20px clamp(70px,4.5vw,96px);
+  border-radius:1000px;
+  isolation:isolate;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.20),rgba(226,237,255,.09) 44%,rgba(19,14,116,.16)),
+    rgba(235,243,255,.10);
+  font-size:clamp(26px,1.7vw,40px);
+  font-weight:300;
+  letter-spacing:-.02em;
+  line-height:1;
+  white-space:nowrap;
+  opacity:1;
+  backdrop-filter:blur(46px) saturate(165%) brightness(1.1);
+  -webkit-backdrop-filter:blur(46px) saturate(165%) brightness(1.1);
+  pointer-events:none;
+  user-select:none;
+  box-shadow:
+    inset 0 -22px 34px rgba(13,9,96,.18),
+    0 24px 58px rgba(4,0,92,.24);
+}
+
+.hotel-message__bonus.hotel-hero-flying-tag::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:
+    radial-gradient(ellipse 70% 48% at 50% 0%,rgba(255,255,255,.15),transparent 72%),
+    linear-gradient(180deg,transparent 42%,rgba(17,11,111,.12));
+  opacity:.66;
+  pointer-events:none;
+}
+
+.hotel-message__bonus.hotel-hero-flying-tag.is-response{
+  border-color:rgba(255,255,255,.34);
+  background:linear-gradient(100deg,rgba(122,82,250,.50),rgba(18,6,246,.50));
+  box-shadow:
+    inset 0 -22px 34px rgba(13,5,126,.24),
+    0 24px 60px rgba(18,6,246,.32);
+}
+
+@keyframes hotelHeroStarFloat{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(var(--star-drift),200vh,0)}
 }
 
 .hotel-page .hotels-hero .hero,
@@ -152,19 +447,6 @@ html{
       rgba(52,57,255,.10) 34%,
       rgba(4,0,250,.25) 72%,
       rgba(174,190,255,.18));
-}
-
-.hotels-device{
-  transform:rotateZ(6deg);
-}
-
-.hotels-device .scroll-layer{
-  transform:translate3d(20vw,4.5vh,0) rotateX(6deg) rotateY(-6deg) scale(1.386);
-}
-
-.hotel-page.hotels-enhanced .hotels-device,
-.hotel-page.hotels-enhanced .hotels-device .scroll-layer{
-  transform:none;
 }
 
 .hotel-page .foot{
@@ -209,7 +491,7 @@ html{
 .hotel-page.hotel-neat-gradient-active.hotel-neat-gradient-hidden .hotel-neat-gradient{
   opacity:0;
   visibility:hidden;
-  transition:opacity 1.6s cubic-bezier(.22,.61,.36,1),visibility 0s linear 1.6s;
+  transition:opacity .18s linear,visibility 0s linear .18s;
 }
 
 .hotel-analysis{
@@ -217,7 +499,7 @@ html{
   height:460svh;
   min-height:2400px;
   margin-top:-18svh;
-  background:var(--hotel-black);
+  background:transparent;
 }
 
 .hotel-analysis__stage{
@@ -230,7 +512,20 @@ html{
   min-height:620px;
   overflow:hidden;
   isolation:isolate;
-  background:var(--hotel-black);
+  background:transparent;
+}
+
+.hotel-analysis__result-wave{
+  position:absolute;
+  z-index:0;
+  inset:0;
+  opacity:0;
+  background:
+    radial-gradient(ellipse at 50% 52%,rgba(31,45,255,.92) 0%,rgba(4,0,250,.68) 38%,rgba(0,157,255,.30) 69%,transparent 90%),
+    linear-gradient(115deg,rgba(4,0,250,.38),rgba(0,184,255,.18));
+  transform:scale(.92);
+  transform-origin:50% 50%;
+  pointer-events:none;
 }
 
 .hotel-page.hotel-neat-gradient-active .hotel-analysis,
@@ -305,16 +600,7 @@ html{
   position:absolute;
   inset:0;
   border-radius:inherit;
-  background:conic-gradient(from var(--hotel-rim-spin),
-    rgba(4,0,250,.18) 0deg,
-    #0400fa 58deg,
-    #fff 83deg,
-    #aebeff 96deg,
-    #3439ff 110deg,
-    rgba(52,57,255,.12) 175deg,
-    rgba(4,0,250,.12) 252deg,
-    #0400fa 318deg,
-    rgba(4,0,250,.18) 360deg);
+  background:var(--hotel-rim-gradient);
   animation:hotelRimRun 4.6s linear infinite;
   pointer-events:none;
 }
@@ -329,6 +615,9 @@ html{
 }
 
 .hotel-url__input{
+  --hotel-fill-highlight:rgba(255,255,255,0);
+  --hotel-fill-glow:rgba(52,72,255,0);
+  --hotel-fill-depth:rgba(0,0,92,0);
   position:relative;
   z-index:2;
   display:block;
@@ -338,7 +627,11 @@ html{
   border:0;
   border-radius:inherit;
   outline:0;
-  background:var(--hotel-black);
+  background-color:var(--hotel-black);
+  background-image:
+    radial-gradient(circle at 28% 8%,var(--hotel-fill-highlight),transparent 42%),
+    radial-gradient(circle at 82% 88%,var(--hotel-fill-glow),transparent 48%),
+    linear-gradient(145deg,transparent 0 46%,var(--hotel-fill-depth) 100%);
   color:#fff;
   caret-color:var(--hotel-blue-soft);
   font-size:clamp(36px,4.3vw,66px);
@@ -421,6 +714,7 @@ html{
 }
 
 .hotel-analysis__status:not(.hotel-analysis__status--result){
+  padding-top:.42em;
   background:linear-gradient(105deg,
     rgba(255,255,255,.38) 0%,
     rgba(255,255,255,.38) 38%,
@@ -438,16 +732,176 @@ html{
   animation:hotelStatusTextFlow 2s linear infinite;
 }
 
+.hotel-analysis__status.hotel-analysis__status--complete{
+  background:none;
+  color:#fff;
+  -webkit-text-fill-color:#fff;
+  animation:none;
+}
+
 .hotel-analysis__status[aria-hidden='true']{
   animation-play-state:paused;
 }
 
 .hotel-analysis__status--result{
   padding:0;
+  font-size:clamp(30px,3vw,42px);
   line-height:1.02;
   letter-spacing:-.02em;
   text-align:center;
   text-wrap:balance;
+}
+
+.hotel-analysis__cards{
+  position:absolute;
+  z-index:4;
+  top:50%;
+  left:50%;
+  width:0;
+  height:0;
+  overflow:visible;
+  perspective:1200px;
+  pointer-events:none;
+  transform-style:preserve-3d;
+}
+
+.hotel-analysis-card-anchor{
+  position:absolute;
+  inset:0 auto auto 0;
+  width:0;
+  height:0;
+  overflow:visible;
+  transform-style:preserve-3d;
+}
+
+.hotel-analysis-card{
+  --analysis-card-width:clamp(178px,12vw,230px);
+  --analysis-card-height:calc(var(--analysis-card-width) * 1.36);
+  position:absolute;
+  inset:0 auto auto 0;
+  width:var(--analysis-card-width);
+  height:var(--analysis-card-height);
+  margin-top:calc(var(--analysis-card-height) * -.5);
+  margin-left:calc(var(--analysis-card-width) * -.5);
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.30);
+  border-radius:clamp(24px,1.7vw,32px);
+  opacity:0;
+  color:#fff;
+  background:rgba(17,18,29,.58);
+  backdrop-filter:blur(22px) saturate(145%);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    0 20px 42px rgba(4,0,250,.25),
+    0 10px 28px rgba(0,0,0,.28);
+  font-size:clamp(15px,1.05vw,20px);
+  line-height:1.08;
+  text-align:left;
+  isolation:isolate;
+}
+
+.hotel-analysis-card--wide{
+  --analysis-card-width:clamp(286px,21vw,390px);
+  --analysis-card-height:clamp(154px,11.2vw,204px);
+  font-size:clamp(15px,.98vw,19px);
+}
+
+.hotel-analysis-card--compact{
+  --analysis-card-width:clamp(164px,10.5vw,204px);
+  --analysis-card-height:calc(var(--analysis-card-width) * 1.18);
+}
+
+.hotel-analysis-card__inner{
+  display:grid;
+  grid-template-rows:62% 38%;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  border-radius:inherit;
+}
+
+.hotel-analysis-card--wide .hotel-analysis-card__inner{
+  grid-template:1fr / 52% 48%;
+}
+
+.hotel-analysis-card--pancakes .hotel-analysis-card__inner{
+  grid-template-rows:56% 44%;
+}
+
+.hotel-analysis-card--spa .hotel-analysis-card__inner{
+  grid-template-rows:54% 46%;
+}
+
+.hotel-analysis-card__media{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+
+.hotel-analysis-card--sauna .hotel-analysis-card__media{object-position:58% 50%}
+.hotel-analysis-card--checkout .hotel-analysis-card__media{object-position:50% 62%}
+.hotel-analysis-card--spa .hotel-analysis-card__media{object-position:64% 50%}
+
+.hotel-analysis-card__body{
+  position:relative;
+  display:grid;
+  grid-template-rows:1fr auto;
+  gap:8px;
+  padding:clamp(13px,1vw,18px);
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 88% 112%,rgba(0,190,255,.38),transparent 52%),
+    linear-gradient(128deg,rgba(33,18,245,.92),rgba(69,57,255,.72));
+}
+
+.hotel-analysis-card--wide .hotel-analysis-card__body{
+  padding:clamp(16px,1.15vw,22px);
+}
+
+.hotel-analysis-card--pancakes .hotel-analysis-card__body,
+.hotel-analysis-card--spa .hotel-analysis-card__body{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:4px;
+  padding:12px 14px 14px;
+}
+
+.hotel-analysis-card--spa .hotel-analysis-card__body{
+  font-size:clamp(14px,.95vw,18px);
+  justify-content:center;
+}
+
+.hotel-analysis-card--pancakes .hotel-analysis-card__meta,
+.hotel-analysis-card--spa .hotel-analysis-card__meta{align-self:flex-start}
+
+.hotel-analysis-card__body::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(115deg,rgba(255,255,255,.16),transparent 42% 74%,rgba(255,255,255,.08));
+  pointer-events:none;
+}
+
+.hotel-analysis-card__title,
+.hotel-analysis-card__meta{
+  position:relative;
+  z-index:1;
+}
+
+.hotel-analysis-card__title{align-self:start}
+.hotel-analysis-card__meta{align-self:end;white-space:nowrap}
+
+@media (max-width:760px){
+  .hotel-analysis-card{--analysis-card-width:clamp(124px,32vw,164px)}
+  .hotel-analysis-card--wide{
+    --analysis-card-width:clamp(190px,49vw,250px);
+    --analysis-card-height:clamp(112px,29vw,146px);
+  }
+  .hotel-analysis-card--compact{--analysis-card-width:clamp(116px,29vw,150px)}
 }
 
 .sr-only{
@@ -995,6 +1449,9 @@ html{
   --signal-spark-opacity:0;
   --signal-spark-scale:.35;
   --signal-spark-rotation:0deg;
+}
+
+.hotel-message__signal{
   position:relative;
   z-index:0;
   display:inline-block;
@@ -1469,12 +1926,33 @@ body.hotel-page .foot-legal a.foot-link-label:hover{
     min-height:680px;
   }
 
-  .hotels-device{
-    transform:none;
+  .hotel-hero-flying-track{
+    left:20px;
+    width:max-content;
+    min-height:58px;
   }
 
-  .hotels-device .scroll-layer{
-    transform:translate3d(0,max(520px,50vh),0) rotateX(22deg) scale(1.58);
+  .hotel-hero-axis-label{
+    left:50%;
+    font-size:clamp(17px,4.6vw,20px);
+    line-height:1.38;
+  }
+
+  .hotel-hero-axis-label--top{
+    top:clamp(104px,13svh,124px);
+  }
+
+  .hotel-hero-axis-label--bottom{
+    bottom:clamp(28px,5svh,48px);
+  }
+
+  .hotel-message__bonus.hotel-hero-reward-tag{
+    left:50%;
+  }
+
+  .hotel-message__bonus.hotel-hero-flying-tag{
+    padding:14px 24px;
+    font-size:clamp(14px,4vw,20px);
   }
 
   .hotel-dialogue{height:auto}
@@ -1606,6 +2084,10 @@ body.hotel-page .foot-legal a.foot-link-label:hover{
 
 @media (prefers-reduced-motion:reduce){
   .hotel-neat-gradient{transition:none}
+  .hotel-hero-light,
+  .hotel-hero-edge::before,
+  .hotel-hero-edge::after,
+  .hotel-hero-star{animation:none}
   .hotel-url__shell::before,
   .hotel-url__shell::after{animation:none;--hotel-rim-spin:55deg}
   .hotel-analysis__status:not(.hotel-analysis__status--result){
@@ -1650,8 +2132,4 @@ body.hotel-page .foot-legal a.foot-link-label:hover{
   .hotel-application__sticky{position:relative}
   .hotel-application__panel{border-radius:0;transform:none}
 
-  .hotels-device .idle-y,
-  .hotels-device .idle-r{
-    animation:none;
-  }
 }

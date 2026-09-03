@@ -12,6 +12,14 @@
   <link rel="stylesheet" href="/src/hotels/hotels.css">
 </head>
 <body class="hotel-page hero-rim-blue menu-on-dark">
+<div class="hotel-hero-backdrop" id="heroBackdrop" aria-hidden="true">
+  <div class="hotel-hero-edge"></div>
+  <div class="hotel-hero-light hotel-hero-light--body"></div>
+  <div class="hotel-hero-light hotel-hero-light--violet"></div>
+  <div class="hotel-hero-light hotel-hero-light--cyan"></div>
+  <div class="hotel-hero-light hotel-hero-light--core"></div>
+  <div class="hotel-hero-light hotel-hero-light--haze"></div>
+</div>
 <div class="hotel-neat-gradient" id="hotelNeatGradient" data-neat-gradient-host aria-hidden="true"></div>
 <header class="hdr site-header" id="siteHeader" data-theme="dark">
   <nav class="site-header__nav" aria-label="Главная навигация">
@@ -70,21 +78,18 @@
 
 <main class="site-shell">
   <section class="hotels-hero scene" id="business" aria-labelledby="heroH1">
-    <div class="hero-band" id="heroBand"></div>
-    <div class="hero-particles" id="heroParticles" aria-hidden="true">
-      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    <div class="hero-band" id="heroBand">
+      <div class="hotel-hero-flight-mask" aria-hidden="true"></div>
+      <span class="hotel-hero-axis-label hotel-hero-axis-label--top font-nunito-medium" aria-hidden="true">Приложение</span>
+      <span class="hotel-hero-axis-label hotel-hero-axis-label--bottom font-nunito-medium" aria-hidden="true">AI-бот отеля</span>
     </div>
-    <div class="hero-cursor-trail" id="heroCursorTrail" aria-hidden="true"><i></i><i></i><i></i></div>
-
+    <div class="hotel-hero-stars" id="heroParticles" aria-hidden="true"></div>
     <div class="hero is-interactive">
       <h1 class="font-nunito-light-wide" id="heroH1">Подключите<br>свой отель<br>к&nbsp;будущему</h1>
-      <p class="font-nunito-medium" id="heroP">Одно приложение, которое соберёт путешествие вокруг ваших желаний и&nbsp;поможет в&nbsp;дороге.</p>
+      <p class="font-nunito-medium" id="heroP">Luna соберет все о&nbsp;вашем отеле в&nbsp;приложении гостя, вовремя предложит нужные услуги и&nbsp;поможет увеличить выручку</p>
       <div class="hero-download-zone">
-        <a class="hero-download font-nunito-medium" href="#download">
-          <span class="hero-download__label"><span>Скачать</span><img class="hero-download__apple" loading="lazy" src="/assets/ui/login_apple.svg" width="23" height="29" alt="" aria-hidden="true"></span>
+        <a class="hero-download font-nunito-medium" href="#hotel-application">
+          <span class="hero-download__label"><span>Подключить</span></span>
         </a>
         <button class="hero-scroll scroll-cue" type="button" aria-label="Листать дальше">
           <svg class="scroll-cue-arrows" viewBox="0 0 40 19" aria-hidden="true"><path class="scroll-chevron" pathLength="1" d="M3 3.5L20 16.5L37 3.5"/></svg>
@@ -92,28 +97,11 @@
       </div>
     </div>
 
-    <div class="hotels-device roll-layer" aria-hidden="true">
-      <div class="scroll-layer">
-        <div class="tilt-layer">
-          <div class="intro-layer">
-            <div class="idle-y"><div class="idle-r">
-              <div class="box device-iphone-14-pro">
-                <div class="rim"></div>
-                <div class="face front device-frame">
-                  <div class="screen device-screen">
-                    <img class="hero-shot" src="/assets/media/hero-screen.png" width="898" height="1782" decoding="async" fetchpriority="high" alt="">
-                  </div>
-                </div>
-              </div>
-            </div></div>
-          </div>
-        </div>
-      </div>
-    </div>
   </section>
 
   <section class="hotel-analysis" id="analysis" aria-labelledby="hotelPrompt">
     <div class="hotel-analysis__stage">
+      <span class="hotel-analysis__result-wave" aria-hidden="true"></span>
       <div class="hotel-analysis__content">
         <p class="hotel-analysis__prompt font-nunito-light-wide" id="hotelPrompt">Добавляете ссылку на&nbsp;отель</p>
         <div class="hotel-analysis__action">
@@ -131,8 +119,71 @@
             <p class="hotel-analysis__status" data-status="1" aria-hidden="true">Открываю сайт</p>
             <p class="hotel-analysis__status" data-status="2" aria-hidden="true">Изучаю страницы</p>
             <p class="hotel-analysis__status" data-status="3" aria-hidden="true">Собираю главное</p>
-            <p class="hotel-analysis__status hotel-analysis__status--result" data-status="4" aria-hidden="true">Собрал всю информацию<br>про отель у&nbsp;пользователя<br>в&nbsp;телефоне</p>
+            <p class="hotel-analysis__status hotel-analysis__status--complete" data-status="4" aria-hidden="true">Всё собрал</p>
+            <p class="hotel-analysis__status hotel-analysis__status--result" data-status="5" aria-hidden="true">Собрал всю информацию<br>про отель у&nbsp;пользователя<br>в&nbsp;телефоне</p>
           </div>
+        </div>
+      </div>
+
+      <div class="hotel-analysis__cards font-nunito-light-wide" aria-hidden="true">
+        <div class="hotel-analysis-card-anchor">
+          <article class="hotel-analysis-card hotel-analysis-card--toast">
+            <div class="hotel-analysis-card__inner">
+              <img class="hotel-analysis-card__media" src="/assets/hotels/menu-toast-photo.webp" alt="" width="735" height="639" loading="lazy" decoding="async">
+              <div class="hotel-analysis-card__body">
+                <span class="hotel-analysis-card__title">Французские тосты с&nbsp;ягодами</span>
+                <span class="hotel-analysis-card__meta">290&nbsp;₽</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="hotel-analysis-card-anchor">
+          <article class="hotel-analysis-card hotel-analysis-card--pancakes">
+            <div class="hotel-analysis-card__inner">
+              <img class="hotel-analysis-card__media" src="/assets/hotels/menu-pancakes-photo.webp" alt="" width="735" height="639" loading="lazy" decoding="async">
+              <div class="hotel-analysis-card__body">
+                <span class="hotel-analysis-card__title">Панкейки с&nbsp;кленовым сиропом</span>
+                <span class="hotel-analysis-card__meta">390&nbsp;₽</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="hotel-analysis-card-anchor">
+          <article class="hotel-analysis-card hotel-analysis-card--wide hotel-analysis-card--sauna">
+            <div class="hotel-analysis-card__inner">
+              <img class="hotel-analysis-card__media" src="/assets/hotels/services-sauna.webp" alt="" width="1280" height="816" loading="lazy" decoding="async">
+              <div class="hotel-analysis-card__body">
+                <span class="hotel-analysis-card__title">Баня на&nbsp;дровах</span>
+                <span class="hotel-analysis-card__meta">10:00–22:00</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="hotel-analysis-card-anchor">
+          <article class="hotel-analysis-card hotel-analysis-card--wide hotel-analysis-card--checkout">
+            <div class="hotel-analysis-card__inner">
+              <img class="hotel-analysis-card__media" src="/assets/hotels/rooms-bedroom.webp" alt="" width="1122" height="1402" loading="lazy" decoding="async">
+              <div class="hotel-analysis-card__body">
+                <span class="hotel-analysis-card__title">Поздний выезд</span>
+                <span class="hotel-analysis-card__meta">до&nbsp;15:00</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="hotel-analysis-card-anchor">
+          <article class="hotel-analysis-card hotel-analysis-card--compact hotel-analysis-card--spa">
+            <div class="hotel-analysis-card__inner">
+              <img class="hotel-analysis-card__media" src="/assets/hotels/services-sauna.webp" alt="" width="1280" height="816" loading="lazy" decoding="async">
+              <div class="hotel-analysis-card__body">
+                <span class="hotel-analysis-card__title">Спа и&nbsp;бассейн</span>
+                <span class="hotel-analysis-card__meta">до&nbsp;23:00</span>
+              </div>
+            </div>
+          </article>
         </div>
       </div>
     </div>
@@ -261,14 +312,31 @@
 
   <section class="hotel-sales-story" id="hotelSales" data-hotel-section="sales" aria-labelledby="hotelSalesTitle">
     <div class="hotel-sales">
-      <div class="hotel-sales__glow" aria-hidden="true"></div>
+      <div class="hotel-sales__currency-rain" aria-hidden="true"></div>
       <div class="hotel-sales__inner">
-        <h2 class="hotel-sales__title font-nunito-light-wide" id="hotelSalesTitle">Повышайте продажи<br>вашего отеля</h2>
+        <h2 class="hotel-sales__title font-nunito-light-wide" id="hotelSalesTitle">Рост продаж<br>вашего отеля</h2>
+
+        <div class="hotel-sales__ai-switch font-nunito-medium" data-sales-ai-switch aria-hidden="true">
+          <span class="hotel-sales__ai-track">
+            <span class="hotel-sales__ai-liquid" aria-hidden="true">
+              <i class="hotel-sales__ai-blob hotel-sales__ai-blob--one"></i>
+              <i class="hotel-sales__ai-blob hotel-sales__ai-blob--two"></i>
+              <i class="hotel-sales__ai-blob hotel-sales__ai-blob--three"></i>
+              <i class="hotel-sales__ai-blob hotel-sales__ai-blob--four"></i>
+              <i class="hotel-sales__ai-streak"></i>
+            </span>
+            <span class="hotel-sales__ai-thumb"></span>
+          </span>
+        </div>
 
         <div class="hotel-sales__stats" aria-label="Показатели продаж отеля">
           <article class="hotel-sales__stat" aria-label="Плюс 12 процентов к выручке с каждого гостя">
             <div class="hotel-sales__bar-stage" aria-hidden="true">
-              <span class="hotel-sales__bar hotel-sales__bar--revenue"></span>
+              <span class="hotel-sales__bar hotel-sales__bar--revenue">
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--top"></span>
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--bottom"></span>
+              </span>
+              <span class="hotel-sales__impact-wave"></span>
             </div>
             <strong class="hotel-sales__value font-nunito-light-wide" data-sales-counter data-value="12" data-prefix="+" data-suffix="%">+12%</strong>
             <p class="hotel-sales__label font-nunito-medium">К&nbsp;выручке с&nbsp;каждого гостя</p>
@@ -276,7 +344,11 @@
 
           <article class="hotel-sales__stat" aria-label="Плюс 18 процентов повторных бронирований">
             <div class="hotel-sales__bar-stage" aria-hidden="true">
-              <span class="hotel-sales__bar hotel-sales__bar--repeat"></span>
+              <span class="hotel-sales__bar hotel-sales__bar--repeat">
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--top"></span>
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--bottom"></span>
+              </span>
+              <span class="hotel-sales__impact-wave"></span>
             </div>
             <strong class="hotel-sales__value font-nunito-light-wide" data-sales-counter data-value="18" data-prefix="+" data-suffix="%">+18%</strong>
             <p class="hotel-sales__label font-nunito-medium">Повторные бронирования</p>
@@ -284,7 +356,11 @@
 
           <article class="hotel-sales__stat" aria-label="В два раза больше дополнительных покупок">
             <div class="hotel-sales__bar-stage" aria-hidden="true">
-              <span class="hotel-sales__bar hotel-sales__bar--extras"></span>
+              <span class="hotel-sales__bar hotel-sales__bar--extras">
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--top"></span>
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--bottom"></span>
+              </span>
+              <span class="hotel-sales__impact-wave"></span>
             </div>
             <strong class="hotel-sales__value font-nunito-light-wide" data-sales-counter data-value="2" data-prefix="×">×2</strong>
             <p class="hotel-sales__label font-nunito-medium">Дополнительных покупок</p>

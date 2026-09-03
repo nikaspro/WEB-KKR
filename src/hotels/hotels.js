@@ -7,18 +7,102 @@ gsap.registerPlugin(ScrollTrigger);
 initHotelSalesSection();
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let pageIsLeaving = false;
+let pageGradientLatched = false;
+let pageGradientShouldBeVisible = false;
 const destroyAgentMessageGradients = initAgentMessageGradients(document, {reduced});
+const heroScene = document.querySelector('.hotels-hero');
 const hero = document.querySelector('.hotels-hero .hero');
 const heroTitle = document.getElementById('heroH1');
 const heroCopy = document.getElementById('heroP');
 const heroDownload = document.querySelector('.hero-download');
 const scrollCue = document.querySelector('.hero-scroll');
-const device = document.querySelector('.hotels-device');
-const scrollLayer = device.querySelector('.scroll-layer');
 const heroBand = document.getElementById('heroBand');
+const heroBackdrop = document.getElementById('heroBackdrop');
+const heroFlightMask = heroBand?.querySelector('.hotel-hero-flight-mask');
 const heroParticles = document.getElementById('heroParticles');
-const heroCursorTrail = document.getElementById('heroCursorTrail');
+const heroAxisLabels = {
+  top:document.querySelector('.hotel-hero-axis-label--top'),
+  bottom:document.querySelector('.hotel-hero-axis-label--bottom')
+};
+let heroIsScrollingOut = false;
+let stopHeroMotion = () => {};
+let startHeroMotion = () => {};
+const setHeroScrollFading = active => {
+  if (heroIsScrollingOut === active) return;
+  heroIsScrollingOut = active;
+  heroScene?.classList.toggle('is-scroll-fading', active);
+
+  if (active) stopHeroMotion();
+  else startHeroMotion();
+};
 document.body.classList.add('hotels-enhanced');
+heroBand?.classList.add('is-motion-paused');
+heroBackdrop?.classList.add('is-motion-paused');
+
+const heroTagMessages = [
+  {
+    request:'Приезжаю с ребенком рано утром',
+    response:'Подготовил номер к раннему приезду'
+  },
+  {
+    request:'Нужен ранний заезд к 9:00',
+    response:'Оформил ранний заезд'
+  },
+  {
+    request:'Закажи трансфер с детским креслом',
+    response:'Заказал трансфер с детским креслом'
+  }
+];
+const heroVisibleTagCount = heroTagMessages.length;
+const heroFlyingTagTracks = heroTagMessages.map(({request}, index) => {
+  const track = document.createElement('div');
+  track.className = 'hotel-hero-flying-track';
+  track.setAttribute('aria-hidden', 'true');
+  track.hidden = index >= heroVisibleTagCount;
+
+  const tag = document.createElement('div');
+  tag.className = 'hotel-message__bonus hotel-hero-flying-tag font-nunito-light-wide';
+  tag.textContent = request;
+  track.appendChild(tag);
+  (heroFlightMask || heroBand)?.appendChild(track);
+
+  return track;
+});
+const activeHeroFlyingTagTracks = heroFlyingTagTracks.slice(0, heroVisibleTagCount);
+const heroRewardRain = document.createElement('div');
+heroRewardRain.className = 'hotel-hero-reward-rain';
+heroRewardRain.setAttribute('aria-hidden', 'true');
+const heroRewardTags = [...document.querySelectorAll('.hotel-dialogue [data-message-bonus]')]
+  .map(source => {
+    const tag = source.cloneNode(true);
+    tag.classList.add('hotel-hero-reward-tag');
+    tag.removeAttribute('data-message-bonus');
+    heroRewardRain.appendChild(tag);
+    return tag;
+  });
+if (heroRewardTags.length) heroBand?.appendChild(heroRewardRain);
+
+if (heroParticles) {
+  const stars = document.createDocumentFragment();
+  heroParticles.classList.add('is-paused');
+
+  for (let index = 0; index < 24; index += 1) {
+    const star = document.createElement('i');
+    star.className = 'hotel-hero-star';
+    star.style.left = `${38 + Math.random() * 58}%`;
+    star.style.top = `${-100 + Math.random() * 100}%`;
+    star.style.setProperty('--star-size', `${1.2 + Math.random() * 2.8}px`);
+    star.style.setProperty('--star-opacity', (0.30 + Math.random() * 0.62).toFixed(2));
+    star.style.setProperty('--star-drift', `${6 + Math.random() * 16}px`);
+    const starDuration = 10 + Math.random() * 5;
+    star.style.setProperty('--star-duration', `${starDuration.toFixed(2)}s`);
+    star.style.animationDelay = `${(-Math.random() * starDuration).toFixed(2)}s`;
+    stars.appendChild(star);
+  }
+
+  heroParticles.appendChild(stars);
+}
 
 try {
   sessionStorage.setItem('luna:intro-seen', '1');
@@ -26,38 +110,48 @@ try {
   // Страница остаётся рабочей, даже если браузер блокирует sessionStorage.
 }
 
-function getDevicePose() {
-  const desktop = innerWidth > 900;
-  const scale = desktop ? 1.386 : 1.58;
-  const baseY = desktop ? innerHeight * .045 : Math.max(520, innerHeight * .50);
-  const scaleFromTopCompensation = device.querySelector('.box').offsetHeight * (scale - 1) / 2;
-  return {
-    desktop,
-    rotateZ:desktop ? 6 : 0,
-    rotateX:desktop ? 6 : 22,
-    rotateY:desktop ? -6 : 0,
-    x:desktop ? innerWidth * .20 : 0,
-    y:baseY + scaleFromTopCompensation,
-    scale
-  };
-}
-
-function setDevicePose() {
-  const pose = getDevicePose();
-  gsap.set(device, { rotateZ:pose.rotateZ });
-  gsap.set(scrollLayer, {
-    rotateX:pose.rotateX,
-    rotateY:pose.rotateY,
-    x:pose.x,
-    y:pose.y,
-    scale:pose.scale
-  });
-}
-
-setDevicePose();
-addEventListener('resize', setDevicePose, {passive:true});
-
 if (!reduced) {
+  const heroAxisLetters = Object.fromEntries(
+    Object.entries(heroAxisLabels).map(([position, label]) => {
+      if (!label) return [position, []];
+      const fragment = document.createDocumentFragment();
+      const letters = [...label.textContent].map(character => {
+        const letter = document.createElement('span');
+        letter.className = 'hotel-hero-axis-letter';
+        letter.textContent = character === ' ' ? '\u00a0' : character;
+        fragment.appendChild(letter);
+        return letter;
+      });
+      label.replaceChildren(fragment);
+      return [position, letters];
+    })
+  );
+  const heroAxisWaves = Object.fromEntries(
+    Object.entries(heroAxisLetters).map(([position, letters]) => {
+      const timeline = gsap.timeline({paused:true});
+      letters.forEach((letter, index) => {
+        const start = index * .045;
+        timeline
+          .to(letter, {
+            y:-8,
+            scaleY:1.04,
+            duration:.13,
+            ease:'power3.out',
+            overwrite:true
+          }, start)
+          .to(letter, {
+            y:0,
+            scaleY:1,
+            duration:.22,
+            ease:'power2.in',
+            overwrite:'auto'
+          }, start + .13);
+      });
+      return [position, timeline];
+    })
+  );
+  const playHeroAxisWave = position => heroAxisWaves[position]?.restart(true);
+
   gsap.from([heroTitle, heroCopy], {
     y:24,
     autoAlpha:0,
@@ -85,10 +179,441 @@ if (!reduced) {
       .to(arrow, {y:-1, scaleX:1.15, scaleY:.68, duration:.16, ease:'power2.in'})
       .to(arrow, {y:0, scaleX:1, scaleY:1, duration:.78, ease:'elastic.out(1.25,.28)'});
   }
+
+  if (heroBand) {
+    const initialYFactors = [-.31, -.02, .28];
+    const initialSpeeds = [156, 138, 148];
+    const floatAmplitudeX = 18;
+    const floatAmplitudeY = 11;
+    const floatTilt = 13;
+    const suctionScaleLoss = .16;
+    const flightFadeStart = .18;
+    const flightFadeEnd = .28;
+    const initialDirections = activeHeroFlyingTagTracks.map(
+      () => Math.random() < .5 ? -1 : 1
+    );
+    if (initialDirections.length === 1) {
+      initialDirections[0] = 1;
+    } else if (initialDirections.every(direction => direction === initialDirections[0])) {
+      initialDirections[1] *= -1;
+    }
+    const collisionCooldowns = new Map();
+    let flyingTagActive = false;
+    let rewardRainTimeline = null;
+
+    const playHeroRewardRain = () => {
+      if (!heroRewardTags.length) return;
+      rewardRainTimeline?.kill();
+
+      const spread = Math.min(innerWidth * .085, 124);
+      const drop = Math.min(innerHeight * .38, 360);
+      const middle = (heroRewardTags.length - 1) * .5;
+      const poses = heroRewardTags.map((_, index) => {
+        const slot = index - middle;
+        const startX = slot * spread;
+        return {
+          startX,
+          endX:startX + (slot < 0 ? -32 : 32) + slot * 10,
+          endY:drop + Math.abs(slot) * 24,
+          rotation:slot * 7
+        };
+      });
+
+      gsap.set(heroRewardTags, {
+        autoAlpha:0,
+        x:index => poses[index].startX,
+        y:index => -28 - Math.abs(index - middle) * 12,
+        xPercent:-50,
+        yPercent:-50,
+        scale:.72,
+        rotation:index => poses[index].rotation * -.35
+      });
+
+      rewardRainTimeline = gsap.timeline({
+        onComplete:() => { rewardRainTimeline = null; }
+      })
+        .to(heroRewardTags, {
+          autoAlpha:.86,
+          y:index => 24 + Math.abs(index - middle) * 10,
+          scale:1,
+          duration:.34,
+          stagger:.055,
+          ease:'power2.out',
+          overwrite:true
+        })
+        .to(heroRewardTags, {
+          autoAlpha:0,
+          x:index => poses[index].endX,
+          y:index => poses[index].endY,
+          scale:.9,
+          rotation:index => poses[index].rotation,
+          duration:1.35,
+          stagger:.07,
+          ease:'power1.in',
+          overwrite:'auto'
+        }, '>-.04');
+    };
+
+    const flyingTagStates = activeHeroFlyingTagTracks.map((track, index) => {
+      const tag = track.firstElementChild;
+      const copy = heroTagMessages[index];
+      const direction = initialDirections[index];
+      const isResponse = direction < 0;
+      tag.textContent = isResponse ? copy.response : copy.request;
+      tag.classList.toggle('is-response', isResponse);
+
+      return {
+        track,
+        tag,
+        copy,
+        direction,
+        isResponse,
+        axisWaveArmed:direction < 0 ? 'bottom' : 'top',
+        rewardDropArmed:direction < 0,
+        y:innerHeight * initialYFactors[index],
+        x:0,
+        vx:0,
+        vy:0,
+        flowVelocityY:0,
+        speed:initialSpeeds[index] + (Math.random() - .5) * 12,
+        phase:index * 2.15,
+        spin:0,
+        width:0,
+        height:0,
+        suctionOffset:0,
+        exitOffset:0,
+        origin:'',
+        setX:gsap.quickSetter(track, 'x', 'px'),
+        setY:gsap.quickSetter(track, 'y', 'px'),
+        setScale:gsap.quickSetter(track, 'scale'),
+        setRotation:gsap.quickSetter(track, 'rotation', 'deg'),
+        setOpacity:gsap.quickSetter(track, 'opacity')
+      };
+    });
+
+    gsap.set(activeHeroFlyingTagTracks, {yPercent:-50});
+
+    const measureFlyingTags = preservePosition => {
+      flyingTagStates.forEach((state, index) => {
+        const previousExit = state.exitOffset;
+        state.width = state.track.offsetWidth;
+        state.height = state.track.offsetHeight;
+        state.suctionOffset = Math.max(
+          innerHeight * .16,
+          innerHeight * .5 - state.height * 2.25
+        ) * .5;
+        state.exitOffset = innerHeight * .5 + state.height * .7;
+
+        if (preservePosition && previousExit) {
+          state.y = state.y / previousExit * state.exitOffset;
+        } else if (!preservePosition) {
+          state.y = innerHeight * initialYFactors[index];
+        }
+      });
+    };
+
+    let measureFrame = 0;
+    const scheduleFlyingTagMeasure = () => {
+      cancelAnimationFrame(measureFrame);
+      measureFrame = requestAnimationFrame(() => measureFlyingTags(true));
+    };
+
+    const setFlyingTagResponseState = (state, isResponse) => {
+      if (state.isResponse === isResponse) return;
+      state.isResponse = isResponse;
+      state.tag.textContent = isResponse ? state.copy.response : state.copy.request;
+      state.tag.classList.toggle('is-response', isResponse);
+      scheduleFlyingTagMeasure();
+    };
+
+    const getFlyingTagSuction = state => {
+      const edgeDistance = Math.abs(state.y);
+      const edgeRange = Math.max(1, state.exitOffset - state.suctionOffset);
+      const rawSuction = Math.min(1, Math.max(0,
+        (edgeDistance - state.suctionOffset) / edgeRange
+      ));
+      return Math.pow(rawSuction, .68);
+    };
+
+    const getFlyingTagLaneOpacity = state => {
+      const center = innerHeight * .5 + state.y;
+      const topEdge = center - state.height * .5;
+      const bottomEdge = center + state.height * .5;
+      const fadeDistance = Math.max(1,
+        innerHeight * (flightFadeEnd - flightFadeStart)
+      );
+      const topOpacity = Math.min(1, Math.max(0,
+        (bottomEdge - innerHeight * flightFadeStart) / fadeDistance
+      ));
+      const bottomOpacity = Math.min(1, Math.max(0,
+        (innerHeight * (1 - flightFadeStart) - topEdge) / fadeDistance
+      ));
+      const opacity = Math.min(topOpacity, bottomOpacity);
+      return opacity * opacity * (3 - 2 * opacity);
+    };
+
+    const renderFlyingTag = (state, time) => {
+      const suction = getFlyingTagSuction(state);
+      const origin = state.y < 0 ? '50% 0%' : '50% 100%';
+
+      if (state.origin !== origin) {
+        state.origin = origin;
+        state.track.style.transformOrigin = origin;
+      }
+
+      state.setX(state.x + Math.sin(time * .82 + state.phase) * floatAmplitudeX);
+      state.setY(state.y + Math.cos(time * 1.04 + state.phase) * floatAmplitudeY);
+      state.setScale(1 - suction * suctionScaleLoss);
+      state.setRotation(
+        (state.spin + Math.sin(time * .58 + state.phase) * floatTilt) * (1 - suction)
+      );
+      state.setOpacity(getFlyingTagLaneOpacity(state));
+    };
+
+    const clampCollisionVelocity = state => {
+      const maxCollisionSpeed = 28;
+      const velocity = Math.hypot(state.vx, state.vy);
+      if (velocity <= maxCollisionSpeed) return;
+      const scale = maxCollisionSpeed / velocity;
+      state.vx *= scale;
+      state.vy *= scale;
+    };
+
+    const getFlyingTagCollisionBounds = (state, time) => {
+      const floatX = Math.sin(time * .82 + state.phase) * floatAmplitudeX;
+      const floatY = Math.cos(time * 1.04 + state.phase) * floatAmplitudeY;
+      const suction = getFlyingTagSuction(state);
+      const scale = 1 - suction * suctionScaleLoss;
+      const rotation = (
+        (state.spin + Math.sin(time * .58 + state.phase) * floatTilt) * (1 - suction)
+      ) * Math.PI / 180;
+      const cosine = Math.abs(Math.cos(rotation));
+      const sine = Math.abs(Math.sin(rotation));
+
+      return {
+        centerX:state.x + floatX + state.width * .5,
+        centerY:state.y + floatY,
+        halfWidth:(state.width * .5 * cosine + state.height * .5 * sine) * scale,
+        halfHeight:(state.width * .5 * sine + state.height * .5 * cosine) * scale
+      };
+    };
+
+    const resolveFlyingTagCollisions = (delta, time) => {
+      collisionCooldowns.forEach((cooldown, pair) => {
+        const nextCooldown = cooldown - delta;
+        if (nextCooldown <= 0) collisionCooldowns.delete(pair);
+        else collisionCooldowns.set(pair, nextCooldown);
+      });
+
+      for (let iteration = 0; iteration < 3; iteration += 1) {
+        for (let first = 0; first < flyingTagStates.length; first += 1) {
+          for (let second = first + 1; second < flyingTagStates.length; second += 1) {
+            const pair = `${first}:${second}`;
+            const a = flyingTagStates[first];
+            const b = flyingTagStates[second];
+            const boundsA = getFlyingTagCollisionBounds(a, time);
+            const boundsB = getFlyingTagCollisionBounds(b, time);
+            const centerDeltaX = boundsB.centerX - boundsA.centerX;
+            const centerDeltaY = boundsB.centerY - boundsA.centerY;
+            const overlapX = boundsA.halfWidth + boundsB.halfWidth
+              - Math.abs(centerDeltaX);
+            const overlapY = boundsA.halfHeight + boundsB.halfHeight
+              - Math.abs(centerDeltaY);
+            const tagsAreVisible = getFlyingTagSuction(a) < .82
+              && getFlyingTagSuction(b) < .82;
+
+            if (!tagsAreVisible || overlapX <= 0 || overlapY <= 0) continue;
+
+            const useHorizontalNormal = overlapX < overlapY;
+            const normalX = useHorizontalNormal
+              ? Math.sign(centerDeltaX || second - first)
+              : 0;
+            const normalY = useHorizontalNormal
+              ? 0
+              : Math.sign(centerDeltaY || second - first);
+            const overlap = useHorizontalNormal ? overlapX : overlapY;
+            const correction = (overlap + 1.25) * .5;
+
+            a.x -= normalX * correction;
+            a.y -= normalY * correction;
+            b.x += normalX * correction;
+            b.y += normalY * correction;
+
+            if (collisionCooldowns.has(pair)) continue;
+
+            const relativeVelocityX = b.vx - a.vx;
+            const relativeVelocityY = b.flowVelocityY + b.vy
+              - a.flowVelocityY - a.vy;
+            const velocityAlongNormal = relativeVelocityX * normalX
+              + relativeVelocityY * normalY;
+
+            if (velocityAlongNormal >= 0) continue;
+
+            const restitution = .18;
+            const impulseMultiplier = .45;
+            const impulse = Math.min(
+              22,
+              -(1 + restitution) * velocityAlongNormal * .5 * impulseMultiplier
+            );
+            const impulseX = impulse * normalX;
+            const impulseY = impulse * normalY;
+
+            a.vx -= impulseX;
+            a.vy -= impulseY;
+            b.vx += impulseX;
+            b.vy += impulseY;
+
+            const tangentX = -normalY;
+            const tangentY = normalX;
+            const velocityAlongTangent = relativeVelocityX * tangentX
+              + relativeVelocityY * tangentY;
+            const frictionImpulse = Math.max(-3, Math.min(3,
+              -velocityAlongTangent * .04
+            ));
+            a.vx -= frictionImpulse * tangentX;
+            a.vy -= frictionImpulse * tangentY;
+            b.vx += frictionImpulse * tangentX;
+            b.vy += frictionImpulse * tangentY;
+
+            const torqueDirection = Math.sign(
+              velocityAlongTangent || centerDeltaX || normalY || 1
+            );
+            const angularImpulse = Math.min(2.2, impulse * .04);
+            a.spin = Math.max(-4, Math.min(4,
+              a.spin - torqueDirection * angularImpulse
+            ));
+            b.spin = Math.max(-4, Math.min(4,
+              b.spin + torqueDirection * angularImpulse
+            ));
+
+            clampCollisionVelocity(a);
+            clampCollisionVelocity(b);
+            collisionCooldowns.set(pair, .22);
+          }
+        }
+      }
+    };
+
+    const updateFlyingTags = (time, deltaTime) => {
+      if (!flyingTagActive || heroIsScrollingOut) return;
+
+      const delta = Math.min(deltaTime / 1000, .05);
+
+      flyingTagStates.forEach(state => {
+        const suctionAcceleration = 1 + getFlyingTagSuction(state) * 3.2;
+        state.flowVelocityY = state.direction * state.speed * suctionAcceleration;
+        state.y += (state.flowVelocityY + state.vy) * delta;
+        state.x += state.vx * delta;
+        state.vx *= Math.pow(.18, delta);
+        state.vy *= Math.pow(.18, delta);
+        state.spin *= Math.pow(.34, delta);
+
+        if (state.x < -58 || state.x > 58) {
+          state.x = Math.max(-58, Math.min(58, state.x));
+          state.vx *= -.58;
+        }
+
+        if (state.direction > 0 && state.y > state.exitOffset) {
+          state.y = state.exitOffset;
+          state.direction = -1;
+          state.rewardDropArmed = true;
+          state.x = (Math.random() - .5) * 28;
+          state.vy = 0;
+          setFlyingTagResponseState(state, true);
+          state.axisWaveArmed = 'bottom';
+        } else if (state.direction < 0 && state.y < -state.exitOffset) {
+          state.y = -state.exitOffset;
+          state.direction = 1;
+          state.x = (Math.random() - .5) * 28;
+          state.vy = 0;
+          setFlyingTagResponseState(state, false);
+          state.axisWaveArmed = 'top';
+        }
+
+        if (state.axisWaveArmed === 'top'
+          && state.direction > 0
+          && state.y + state.height * .5
+            >= -innerHeight * (.5 - flightFadeStart)) {
+          state.axisWaveArmed = null;
+          playHeroAxisWave('top');
+        } else if (state.axisWaveArmed === 'bottom'
+          && state.direction < 0
+          && state.y - state.height * .5
+            <= innerHeight * (.5 - flightFadeStart)) {
+          state.axisWaveArmed = null;
+          playHeroAxisWave('bottom');
+        }
+
+        if (state.direction < 0
+          && state.rewardDropArmed
+          && state.y <= innerHeight * .08) {
+          state.rewardDropArmed = false;
+          playHeroRewardRain();
+        }
+      });
+
+      resolveFlyingTagCollisions(delta, time);
+      flyingTagStates.forEach(state => renderFlyingTag(state, time));
+    };
+
+    measureFlyingTags(false);
+    flyingTagStates.forEach(state => renderFlyingTag(state, 0));
+    addEventListener('resize', scheduleFlyingTagMeasure, {passive:true});
+
+    const setFlyingTagActive = active => {
+      flyingTagActive = active;
+      heroParticles?.classList.toggle('is-paused', !flyingTagActive);
+      heroBand.classList.toggle('is-motion-active', flyingTagActive);
+      heroBand.classList.toggle('is-motion-paused', !flyingTagActive);
+      heroBackdrop?.classList.toggle('is-motion-active', flyingTagActive);
+      heroBackdrop?.classList.toggle('is-motion-paused', !flyingTagActive);
+    };
+
+    let heroTickerRunning = false;
+    startHeroMotion = () => {
+      if (heroIsScrollingOut) return;
+      setFlyingTagActive(true);
+      if (heroTickerRunning) return;
+      gsap.ticker.add(updateFlyingTags);
+      heroTickerRunning = true;
+    };
+    stopHeroMotion = () => {
+      setFlyingTagActive(false);
+      if (heroTickerRunning) {
+        gsap.ticker.remove(updateFlyingTags);
+        heroTickerRunning = false;
+      }
+      rewardRainTimeline?.kill();
+      Object.values(heroAxisWaves).forEach(timeline => timeline.pause());
+      gsap.set(Object.values(heroAxisLetters).flat(), {y:0, scaleY:1});
+      gsap.set(heroRewardTags, {autoAlpha:0});
+    };
+
+    const flyingTagActivity = ScrollTrigger.create({
+      trigger:'.hotels-hero',
+      start:'top bottom',
+      end:'bottom top',
+      onToggle:self => {
+        if (self.isActive) startHeroMotion();
+        else stopHeroMotion();
+      }
+    });
+
+    if (flyingTagActivity.isActive) startHeroMotion();
+  }
+} else if (heroBand) {
+  activeHeroFlyingTagTracks.forEach((track, index) => {
+    const spacing = Math.min(innerHeight * .16, track.offsetHeight * 1.25);
+    gsap.set(track, {
+      y:(index - (activeHeroFlyingTagTracks.length - 1) * .5) * spacing,
+      yPercent:-50,
+      autoAlpha:1
+    });
+  });
 }
 
 function buildHeroTransition() {
-  if (reduced || !hero || !device || !scrollLayer) return;
+  if (reduced || !hero) return;
 
   const timeline = gsap.timeline({
     defaults:{ ease:'none' },
@@ -96,43 +621,42 @@ function buildHeroTransition() {
       trigger:'.hotels-hero',
       start:'top top',
       end:'+=110%',
-      scrub:.68,
+      // Фон обязан точно следовать скроллу: сглаженный scrub оставлял
+      // предыдущую сцену поверх уже появившейся следующей и создавал шов.
+      scrub:true,
       pin:true,
       pinSpacing:true,
       anticipatePin:1,
-      invalidateOnRefresh:true
+      invalidateOnRefresh:true,
+      onUpdate:self => {
+        setHeroScrollFading(self.progress > .34);
+        setPageGradientVisible(self.progress > .54);
+      }
     }
   });
 
   timeline
     .to(hero, {
       autoAlpha:0,
-      y:-60,
+      y:-32,
+      duration:.24,
+      overwrite:'auto'
+    }, 0)
+    .to([
+      heroFlightMask,
+      ...Object.values(heroAxisLabels),
+      heroRewardRain,
+      heroParticles
+    ], {
+      autoAlpha:0,
       duration:.28,
       overwrite:'auto'
     }, 0)
-    .to([heroBand, heroParticles, heroCursorTrail], {
+    .to(heroBackdrop, {
       autoAlpha:0,
-      y:-90,
-      duration:.48,
+      duration:.38,
       overwrite:'auto'
-    }, .08)
-    .to(scrollLayer, {
-      rotateY:() => getDevicePose().rotateY - 24,
-      x:() => innerWidth * .82,
-      y:() => getDevicePose().y - innerHeight * .08,
-      scale:() => getDevicePose().scale + .26,
-      duration:.34,
-      ease:'power1.in'
-    }, .04)
-    .to(scrollLayer, {
-      rotateY:() => getDevicePose().rotateY - 48,
-      x:() => innerWidth * 1.5,
-      y:() => getDevicePose().y,
-      scale:() => getDevicePose().scale + .52,
-      duration:.34,
-      ease:'power1.out'
-    }, .38);
+    }, .16);
 }
 
 buildHeroTransition();
@@ -142,28 +666,132 @@ scrollCue?.addEventListener('click', () => {
 });
 
 const analysis = document.querySelector('.hotel-analysis');
+const analysisStage = document.querySelector('.hotel-analysis__stage');
+const analysisContent = document.querySelector('.hotel-analysis__content');
 const pageGradientHost = document.querySelector('[data-neat-gradient-host]');
 const analysisPrompt = document.querySelector('.hotel-analysis__prompt');
+const analysisAction = document.querySelector('.hotel-analysis__action');
 const analysisForm = document.getElementById('hotelForm');
 const hotelUrlInput = document.getElementById('hotelUrl');
 const analysisRipple = document.querySelector('[data-hotel-url-ripple]');
+const analysisResultWave = document.querySelector('.hotel-analysis__result-wave');
 const analysisStatusesRegion = document.querySelector('.hotel-analysis__statuses');
 const analysisStatuses = gsap.utils.toArray('.hotel-analysis__status');
+const analysisCards = gsap.utils.toArray('.hotel-analysis-card');
+const analysisCardAnchors = gsap.utils.toArray('.hotel-analysis-card-anchor');
 const hotelUrlPreset = hotelUrlInput?.value || 'my-hotel.ru';
 const hotelUrlTyping = {characters:0};
 let unmountPageGradient = null;
 let pageGradientActivation = null;
-let pageIsLeaving = false;
-let pageGradientLatched = false;
-let pageGradientShouldBeVisible = true;
 let pageGradientModule = null;
 let analysisSequence = null;
 let analysisReveal = null;
 let analysisGradientTimer = 0;
 let analysisExperience = null;
 let analysisFlowStarted = false;
+let analysisResultWaveTimeline = null;
+let analysisRimAnimations = [];
+let analysisTextFlowAnimations = [];
+let analysisMotionAnimationsReady = false;
+
+function syncAnalysisMotionSpeed(progress) {
+  if (!analysisMotionAnimationsReady) {
+    const animations = analysisAction?.getAnimations?.({subtree:true}) || [];
+    analysisRimAnimations = animations.filter(animation => animation.animationName === 'hotelRimRun');
+    analysisTextFlowAnimations = animations.filter(animation => animation.animationName === 'hotelStatusTextFlow');
+    analysisMotionAnimationsReady = true;
+  }
+
+  const rimRate = gsap.utils.interpolate(2, 8.4, progress);
+  const textFlowRate = gsap.utils.interpolate(1, 3.4, progress);
+
+  analysisRimAnimations.forEach(animation => {
+    if (typeof animation.updatePlaybackRate === 'function') animation.updatePlaybackRate(rimRate);
+    else animation.playbackRate = rimRate;
+  });
+  analysisTextFlowAnimations.forEach(animation => {
+    if (typeof animation.updatePlaybackRate === 'function') animation.updatePlaybackRate(textFlowRate);
+    else animation.playbackRate = textFlowRate;
+  });
+}
+
+function getAnalysisCardFlights() {
+  const x = Math.min(500, innerWidth * .31);
+  const y = Math.min(230, innerHeight * .24);
+  const wideX = Math.min(560, innerWidth * .36);
+
+  return [
+    {x:-x, y:-y, z:80, rotation:-12, scale:1.2},
+    {x, y:-y * .92, z:-65, rotation:12, scale:.86},
+    {x:0, y:y * 1.25, z:35, rotation:-2.5, scale:1.08},
+    {x:-wideX, y:y * .78, z:-30, rotation:6.5, scale:.92},
+    {x:wideX, y:y * .68, z:70, rotation:-7, scale:1.18}
+  ];
+}
+
+function getAnalysisActionCenterY() {
+  if (!analysisStage || !analysisContent || !analysisAction) return 0;
+  const actionCenter = analysisContent.offsetTop
+    + analysisAction.offsetTop
+    + analysisAction.offsetHeight * .5;
+  return analysisStage.clientHeight * .5 - actionCenter;
+}
+
+function enableAnalysisCardParallax() {
+  if (!analysis || !analysisCardAnchors.length
+    || !matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+
+  const depths = [56, 48, 68, 52, 60];
+  const controllers = analysisCardAnchors.map((anchor, index) => ({
+    x:gsap.quickTo(anchor, 'x', {duration:.62, ease:'power3.out'}),
+    y:gsap.quickTo(anchor, 'y', {duration:.68, ease:'power3.out'}),
+    rotationX:gsap.quickTo(anchor, 'rotationX', {duration:.72, ease:'power3.out'}),
+    rotationY:gsap.quickTo(anchor, 'rotationY', {duration:.72, ease:'power3.out'}),
+    depth:depths[index]
+  }));
+
+  addEventListener('pointermove', event => {
+    const sectionBounds = analysis.getBoundingClientRect();
+    if (sectionBounds.bottom <= 0 || sectionBounds.top >= innerHeight) return;
+
+    const x = gsap.utils.clamp(-1, 1, (event.clientX / innerWidth - .5) * 2);
+    const y = gsap.utils.clamp(-1, 1, (event.clientY / innerHeight - .5) * 2);
+
+    controllers.forEach(controller => {
+      controller.x(-x * controller.depth);
+      controller.y(-y * controller.depth * .34);
+      controller.rotationX(y * 5.6);
+      controller.rotationY(-x * 7.6);
+    });
+  }, {passive:true});
+}
+
+function playAnalysisResultWave() {
+  if (!analysisResultWave) return;
+  analysisResultWaveTimeline?.kill();
+  gsap.set(analysisResultWave, {autoAlpha:0, scale:.92});
+  analysisResultWaveTimeline = gsap.timeline({
+    onComplete:() => {
+      analysisResultWaveTimeline = null;
+    }
+  })
+    .to(analysisResultWave, {
+      autoAlpha:.86,
+      scale:1.03,
+      duration:.35,
+      ease:'sine.inOut'
+    })
+    .to({}, {duration:.85})
+    .to(analysisResultWave, {
+      autoAlpha:0,
+      scale:1.12,
+      duration:.8,
+      ease:'sine.inOut'
+    });
+}
 
 if (!reduced && analysis) {
+  enableAnalysisCardParallax();
   hotelUrlInput.value = '';
   gsap.set(hotelUrlInput, {
     color:'#fff',
@@ -304,6 +932,18 @@ function runAnalysisSequence() {
     filter:'blur(12px)',
     transformOrigin:'50% 50%'
   });
+  gsap.set(analysisCards, {
+    autoAlpha:0,
+    x:0,
+    y:0,
+    z:0,
+    scale:.18,
+    rotation:0,
+    transformOrigin:'50% 50%'
+  });
+  gsap.set(analysisResultWave, {autoAlpha:0, scale:.92, transformOrigin:'50% 50%'});
+  gsap.set(analysisAction, {scale:1, rotation:0, y:0, transformOrigin:'50% 50%'});
+  syncAnalysisMotionSpeed(0);
   gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
   analysisSequence = gsap.timeline({
     defaults:{ease:'none'},
@@ -321,6 +961,7 @@ function runAnalysisSequence() {
         );
         const activeStatus = analysisStatuses[activeIndex];
         if (activeStatus) showStatus(activeStatus);
+        syncAnalysisMotionSpeed(self.progress);
         analysisForm.setAttribute('aria-busy', String(self.progress < .985));
       }
     }
@@ -340,7 +981,67 @@ function runAnalysisSequence() {
   const statusStart = .32;
   const statusStep = 1.02;
   const finalStatusIndex = analysisStatuses.length - 1;
-  const finalStatusStart = statusStart + finalStatusIndex * statusStep;
+  const completeStatusIndex = analysisStatuses.findIndex(
+    status => status.classList.contains('hotel-analysis__status--complete')
+  );
+  const completeStatusHold = 1.1;
+  const getStatusStart = index => statusStart + index * statusStep
+    + (index > completeStatusIndex ? completeStatusHold : 0);
+  const finalStatusStart = getStatusStart(finalStatusIndex);
+  const completeStatusStart = getStatusStart(completeStatusIndex);
+
+  analysisSequence.to(analysisAction, {
+    rotation:-4,
+    duration:completeStatusStart,
+    ease:'none'
+  }, 0);
+
+  analysisSequence.to(hotelUrlInput, {
+    backgroundColor:'#120be3',
+    '--hotel-fill-highlight':'rgba(255,255,255,.18)',
+    '--hotel-fill-glow':'rgba(54,78,255,.74)',
+    '--hotel-fill-depth':'rgba(0,0,92,.38)',
+    boxShadow:'inset 0 1px 0 rgba(255,255,255,.32), inset 0 -24px 48px rgba(0,0,82,.34), inset 22px 0 44px rgba(83,96,255,.16)',
+    duration:.48,
+    ease:'power2.inOut'
+  }, completeStatusStart - .48);
+
+  analysisSequence.to(analysisAction, {
+    y:getAnalysisActionCenterY,
+    duration:.72,
+    ease:'sine.inOut'
+  }, completeStatusStart - .72);
+
+  analysisSequence.fromTo(analysisCards,
+    {
+      autoAlpha:0,
+      x:index => getAnalysisCardFlights()[index].x * .58,
+      y:index => getAnalysisCardFlights()[index].y * .58,
+      z:index => getAnalysisCardFlights()[index].z * .58,
+      scale:.76,
+      rotation:index => getAnalysisCardFlights()[index].rotation * .58
+    },
+    {
+      autoAlpha:1,
+      x:index => getAnalysisCardFlights()[index].x,
+      y:index => getAnalysisCardFlights()[index].y,
+      z:index => getAnalysisCardFlights()[index].z,
+      scale:index => getAnalysisCardFlights()[index].scale,
+      rotation:index => getAnalysisCardFlights()[index].rotation,
+      duration:.3,
+      stagger:.018,
+      ease:'power3.out',
+      onStart:playAnalysisResultWave
+    },
+    completeStatusStart
+  );
+
+  analysisSequence.to(analysisCards, {
+    autoAlpha:0,
+    duration:.28,
+    stagger:{each:.012, from:'end'},
+    ease:'power2.in'
+  }, finalStatusStart - .38);
 
   analysisSequence.to(analysisForm, {
     autoAlpha:0,
@@ -349,17 +1050,24 @@ function runAnalysisSequence() {
     ease:'power2.out'
   }, finalStatusStart - .36);
 
+  analysisSequence.to(analysisAction, {
+    rotation:0,
+    duration:.34,
+    ease:'power2.inOut'
+  }, finalStatusStart - .36);
+
   analysisStatuses.forEach((status, index) => {
-    const at = statusStart + index * statusStep;
+    const at = getStatusStart(index);
     const isFinal = index === finalStatusIndex;
+    const isComplete = status.classList.contains('hotel-analysis__status--complete');
 
     analysisSequence.fromTo(status,
       {
         autoAlpha:0,
-        y:isFinal ? 0 : 34,
-        scale:isFinal ? 1 : .94,
+        y:isFinal ? 12 : 34,
+        scale:isFinal ? .985 : .94,
         rotationX:isFinal ? 0 : -10,
-        filter:'blur(12px)'
+        filter:isComplete ? 'blur(0px)' : `blur(${isFinal ? 6 : 12}px)`
       },
       {
         autoAlpha:1,
@@ -367,8 +1075,8 @@ function runAnalysisSequence() {
         scale:1,
         rotationX:0,
         filter:'blur(0px)',
-        duration:.34,
-        ease:'power2.out'
+        duration:isFinal ? .62 : .34,
+        ease:isFinal ? 'sine.out' : 'power2.out'
       },
       at
     );
@@ -379,14 +1087,19 @@ function runAnalysisSequence() {
         y:-34,
         scale:1.04,
         rotationX:10,
-        filter:'blur(12px)',
+        filter:isComplete ? 'blur(0px)' : 'blur(12px)',
         duration:.32,
         ease:'power2.in'
-      }, at + .70);
+      }, at + .70 + (isComplete ? completeStatusHold : 0));
     }
   });
 
   analysisSequence.to({}, {duration:.92});
+  analysisSequence.to(analysisAction, {
+    scale:1.7,
+    duration:analysisSequence.duration(),
+    ease:'none'
+  }, 0);
 }
 
 function startAnalysisFlow() {
@@ -1045,48 +1758,6 @@ if (footer) {
         .42
       );
   }
-}
-
-const cursorTrail = document.getElementById('heroCursorTrail');
-if (cursorTrail && !reduced && matchMedia('(hover:hover) and (pointer:fine)').matches) {
-  const trailItems = [...cursorTrail.querySelectorAll('i')].map((item, index) => {
-    gsap.set(item, {xPercent:-50, yPercent:-50});
-    return {
-      setCss:gsap.quickSetter(item, 'css'),
-      x:innerWidth * .5,
-      y:innerHeight * .5,
-      opacity:0,
-      alpha:[.70, .58, .45][index],
-      follow:[.18, .075, .028][index],
-      scale:[1, .92, .84][index]
-    };
-  });
-  let pointerX = innerWidth * .5;
-  let pointerY = innerHeight * .5;
-  let pointerSeen = false;
-
-  addEventListener('pointermove', event => {
-    pointerX = event.clientX;
-    pointerY = event.clientY;
-    pointerSeen = true;
-  }, {passive:true});
-
-  let lastDraw = -1;
-  gsap.ticker.add(time => {
-    if (time - lastDraw < 1 / 30) return;
-    lastDraw = time;
-    const active = pointerSeen && !document.hidden && scrollY < innerHeight;
-    cursorTrail.classList.toggle('is-active', active);
-    trailItems.forEach(item => {
-      if (active) {
-        item.x += (pointerX - item.x) * item.follow;
-        item.y += (pointerY - item.y) * item.follow;
-      }
-      const targetOpacity = active ? item.alpha : 0;
-      item.opacity += (targetOpacity - item.opacity) * .22;
-      item.setCss({x:item.x, y:item.y, opacity:item.opacity, scale:item.scale});
-    });
-  });
 }
 
 const menu = document.getElementById('siteMenu');
