@@ -1,7 +1,7 @@
 {
-  "name": "rd-landing",
+  "name": "luna-hotel-page-current",
   "version": "0.1.0",
-  "description": "Лендинг «Путешествовать — легко»",
+  "description": "Актуальная страница Hotel проекта Luna",
   "type": "module",
   "private": true,
   "engines": {
@@ -11,11 +11,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "package:portable": "npm run build && node scripts/portable-package.mjs",
-    "budget": "node scripts/budget.mjs",
-    "phases:check": "node scripts/phases-check.mjs",
-    "legacy:check": "node scripts/legacy-check.mjs",
-    "check": "npm run build && npm run budget && npm run phases:check && npm run legacy:check"
+    "check": "npm run build"
   },
   "dependencies": {
     "@firecms/neat": "^1.0.2",

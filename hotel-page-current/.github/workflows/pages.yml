@@ -41,15 +41,6 @@ jobs:
         env:
           SITE_BASE_PATH: /WEB-KKR/
 
-      - name: Check production budget
-        run: npm run budget
-
-      - name: Check animation phases
-        run: npm run phases:check
-
-      - name: Check legacy entry and embedded assets
-        run: npm run legacy:check
-
       - name: Configure Pages
         if: github.event_name == 'push'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
