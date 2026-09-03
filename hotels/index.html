@@ -10,6 +10,8 @@
   <link rel="preload" href="/assets/fonts/nunito-sans-medium-v2.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/src/styles/scene.css">
   <link rel="stylesheet" href="/src/hotels/hotels.css">
+  <link rel="stylesheet" href="/src/hotels/hero-dialogue-layout.css">
+  <link rel="stylesheet" href="/src/hotels/dialogue-avatar-flip.css">
 </head>
 <body class="hotel-page hero-rim-blue menu-on-dark">
 <div class="hotel-neat-gradient" id="hotelNeatGradient" data-neat-gradient-host aria-hidden="true"></div>
@@ -24,9 +26,8 @@
         <a class="site-header__audience-tab is-active font-nunito-medium" href="./" role="tab" aria-selected="true">Отелям</a>
       </div>
     </div>
-    <a class="site-header__download font-nunito-medium" id="headerDownload" href="#download" aria-hidden="true" tabindex="-1">
-      <img loading="lazy" src="/assets/ui/login_apple.svg" width="23" height="29" alt="" aria-hidden="true">
-      <span>Скачать</span>
+    <a class="site-header__download font-nunito-medium" id="headerDownload" href="#hotel-application" aria-hidden="true" tabindex="-1">
+      <span>Подключить</span>
     </a>
     <button class="site-header__menu hdr-item" id="menuTrigger" type="button" aria-label="Открыть меню" aria-controls="siteMenu" aria-expanded="false">
       <span></span><span></span>
@@ -81,10 +82,10 @@
 
     <div class="hero is-interactive">
       <h1 class="font-nunito-light-wide" id="heroH1">Подключите<br>свой отель<br>к&nbsp;будущему</h1>
-      <p class="font-nunito-medium" id="heroP">Одно приложение, которое соберёт путешествие вокруг ваших желаний и&nbsp;поможет в&nbsp;дороге.</p>
+      <p class="font-nunito-medium" id="heroP">Luna соберет все о&nbsp;вашем отеле в&nbsp;приложении гостя, вовремя предложит нужные услуги и&nbsp;поможет увеличить выручку</p>
       <div class="hero-download-zone">
         <a class="hero-download font-nunito-medium" href="#download">
-          <span class="hero-download__label"><span>Скачать</span><img class="hero-download__apple" loading="lazy" src="/assets/ui/login_apple.svg" width="23" height="29" alt="" aria-hidden="true"></span>
+          <span class="hero-download__label"><span>Подключить</span></span>
         </a>
         <button class="hero-scroll scroll-cue" type="button" aria-label="Листать дальше">
           <svg class="scroll-cue-arrows" viewBox="0 0 40 19" aria-hidden="true"><path class="scroll-chevron" pathLength="1" d="M3 3.5L20 16.5L37 3.5"/></svg>
@@ -92,28 +93,91 @@
       </div>
     </div>
 
-    <div class="hotels-device roll-layer" aria-hidden="true">
-      <div class="scroll-layer">
-        <div class="tilt-layer">
-          <div class="intro-layer">
-            <div class="idle-y"><div class="idle-r">
-              <div class="box device-iphone-14-pro">
-                <div class="rim"></div>
-                <div class="face front device-frame">
-                  <div class="screen device-screen">
-                    <img class="hero-shot" src="/assets/media/hero-screen.png" width="898" height="1782" decoding="async" fetchpriority="high" alt="">
-                  </div>
-                </div>
-              </div>
-            </div></div>
-          </div>
+    <div class="hotel-agent-chat" data-hotel-agent-chat aria-hidden="true">
+      <div class="hotel-energy-link" data-hotel-energy-link aria-hidden="true">
+        <svg viewBox="0 0 760 1200" preserveAspectRatio="none" focusable="false">
+          <defs>
+            <filter id="hotelEnergyDisplace" x="-24%" y="-12%" width="148%" height="124%" color-interpolation-filters="sRGB">
+              <feTurbulence type="fractalNoise" baseFrequency="0.004 0.011" numOctaves="2" seed="11" result="energyNoise">
+                <animate attributeName="baseFrequency" dur="16s" repeatCount="indefinite" values="0.004 0.011;0.006 0.014;0.004 0.011"/>
+              </feTurbulence>
+              <feDisplacementMap in="SourceGraphic" in2="energyNoise" scale="12" xChannelSelector="R" yChannelSelector="B" result="energyEdge"/>
+              <feGaussianBlur in="energyEdge" stdDeviation="18"/>
+            </filter>
+            <filter id="hotelEnergyGlow" x="-45%" y="-18%" width="190%" height="136%" color-interpolation-filters="sRGB">
+              <feGaussianBlur stdDeviation="54"/>
+            </filter>
+            <linearGradient id="hotelEnergyBody" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#3a00b8" stop-opacity="0"/>
+              <stop offset=".12" stop-color="#6335ec" stop-opacity=".56"/>
+              <stop offset=".34" stop-color="#8b68ff" stop-opacity=".9"/>
+              <stop offset=".54" stop-color="#bfeaff" stop-opacity=".98"/>
+              <stop offset=".71" stop-color="#68ccff" stop-opacity=".96"/>
+              <stop offset="1" stop-color="#173cff" stop-opacity=".88"/>
+            </linearGradient>
+            <radialGradient id="hotelEnergyCore" cx="52%" cy="50%" r="58%">
+              <stop offset="0" stop-color="#e7fbff" stop-opacity=".84"/>
+              <stop offset=".2" stop-color="#9de6ff" stop-opacity=".58"/>
+              <stop offset=".55" stop-color="#655fff" stop-opacity=".22"/>
+              <stop offset="1" stop-color="#2411b7" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="hotelEnergyPulse" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+              <stop offset=".43" stop-color="#e9faff" stop-opacity=".04"/>
+              <stop offset=".52" stop-color="#fff" stop-opacity=".34"/>
+              <stop offset=".62" stop-color="#8adfff" stop-opacity=".08"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+            <mask id="hotelEnergyMask" maskUnits="userSpaceOnUse" x="-80" y="-180" width="920" height="1560">
+              <path filter="url(#hotelEnergyDisplace)" fill="#fff" d="M124-180C96 42 96 222 138 350C159 414 170 506 172 600C170 694 159 786 138 850C96 978 96 1158 124 1380H840V-180Z"/>
+            </mask>
+          </defs>
+
+          <path class="hotel-energy-link__aura" filter="url(#hotelEnergyGlow)" fill="url(#hotelEnergyBody)" d="M124-180C96 42 96 222 138 350C159 414 170 506 172 600C170 694 159 786 138 850C96 978 96 1158 124 1380H840V-180Z"/>
+          <g class="hotel-energy-link__matter" mask="url(#hotelEnergyMask)">
+            <rect x="-80" y="-180" width="920" height="1560" fill="url(#hotelEnergyBody)"/>
+            <rect class="hotel-energy-link__core" x="42" y="-180" width="718" height="1560" fill="url(#hotelEnergyCore)"/>
+            <rect class="hotel-energy-link__flow" x="-80" y="-340" width="920" height="330" fill="url(#hotelEnergyPulse)">
+              <animate attributeName="y" from="-340" to="1250" dur="7.2s" repeatCount="indefinite"/>
+            </rect>
+          </g>
+        </svg>
+      </div>
+
+      <div class="hotel-energy-transit" aria-hidden="true">
+        <div class="hotel-energy-dots" data-hotel-energy-dots>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
         </div>
+        <article class="hotel-energy-packet hotel-energy-packet--request hotel-message hotel-message--user" data-hotel-energy-request>
+          <p class="font-nunito-light-wide">Ранний заезд и&nbsp;трансфер</p>
+        </article>
+        <article class="hotel-energy-packet hotel-energy-packet--reply hotel-message hotel-message--agent" data-hotel-energy-reply>
+          <p class="font-nunito-light-wide">Номер и&nbsp;трансфер подтверждены</p>
+        </article>
+      </div>
+
+      <div class="hotel-agent-chat__message hotel-agent-chat__message--agent hotel-message-row hotel-message-row--user">
+        <article class="hotel-message hotel-message--user">
+          <p class="font-nunito-light-wide">
+            <span data-hotel-agent-request>Прилетаем в&nbsp;8:30. Нужен ранний заезд и&nbsp;трансфер с&nbsp;детским креслом</span>
+          </p>
+        </article>
+        <span class="hotel-message-avatar hotel-message-avatar--user" aria-hidden="true"></span>
+      </div>
+
+      <div class="hotel-agent-chat__message hotel-agent-chat__message--hotel hotel-message-row hotel-message-row--agent">
+        <span class="hotel-message-avatar hotel-message-avatar--agent font-nunito-medium" aria-hidden="true">LU</span>
+        <article class="hotel-message hotel-message--agent">
+          <p class="font-nunito-light-wide" data-hotel-agent-reply>Готово. Номер будет готов к&nbsp;9:00, водитель встретит вас в&nbsp;аэропорту</p>
+        </article>
       </div>
     </div>
   </section>
 
   <section class="hotel-analysis" id="analysis" aria-labelledby="hotelPrompt">
     <div class="hotel-analysis__stage">
+      <span class="hotel-analysis__result-wave" data-hotel-result-wave aria-hidden="true"></span>
       <div class="hotel-analysis__content">
         <p class="hotel-analysis__prompt font-nunito-light-wide" id="hotelPrompt">Добавляете ссылку на&nbsp;отель</p>
         <div class="hotel-analysis__action">
@@ -128,21 +192,78 @@
 
           <div class="hotel-analysis__statuses font-nunito-light-wide" role="status" aria-live="polite" aria-atomic="true">
             <p class="hotel-analysis__status" data-status="0" aria-hidden="true">Думаю</p>
-            <p class="hotel-analysis__status" data-status="1" aria-hidden="true">Открываю сайт</p>
-            <p class="hotel-analysis__status" data-status="2" aria-hidden="true">Изучаю страницы</p>
-            <p class="hotel-analysis__status" data-status="3" aria-hidden="true">Собираю главное</p>
-            <p class="hotel-analysis__status hotel-analysis__status--result" data-status="4" aria-hidden="true">Собрал всю информацию<br>про отель у&nbsp;пользователя<br>в&nbsp;телефоне</p>
+          </div>
+
+          <div class="hotel-analysis__glass" aria-hidden="true">
+            <div class="hotel-analysis-card-anchor">
+              <article class="hotel-analysis__glass-piece hotel-analysis__glass-piece--toast hotel-analysis-card">
+                <div class="hotel-analysis-card__parallax">
+                  <img class="hotel-analysis-card__media" src="/assets/hotels/menu-toast-photo.webp" alt="" width="735" height="639" decoding="async">
+                  <div class="hotel-analysis-card__body">
+                    <span class="hotel-analysis-card__title">Французские тосты с&nbsp;ягодами</span>
+                    <span class="hotel-analysis-card__meta">290&nbsp;₽</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="hotel-analysis-card-anchor">
+              <article class="hotel-analysis__glass-piece hotel-analysis__glass-piece--pancakes hotel-analysis-card">
+                <div class="hotel-analysis-card__parallax">
+                  <img class="hotel-analysis-card__media" src="/assets/hotels/menu-pancakes-photo.webp" alt="" width="735" height="639" decoding="async">
+                  <div class="hotel-analysis-card__body">
+                    <span class="hotel-analysis-card__title">Панкейки с&nbsp;кленовым сиропом</span>
+                    <span class="hotel-analysis-card__meta">390&nbsp;₽</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="hotel-analysis-card-anchor">
+              <article class="hotel-analysis__glass-piece hotel-analysis__glass-piece--sauna hotel-analysis-card hotel-analysis-card--wide">
+                <div class="hotel-analysis-card__parallax">
+                  <img class="hotel-analysis-card__media" src="/assets/hotels/services-sauna-photo.jpg" alt="" width="1672" height="941" decoding="async">
+                  <div class="hotel-analysis-card__body">
+                    <span class="hotel-analysis-card__title">Баня на&nbsp;дровах</span>
+                    <span class="hotel-analysis-card__meta">10:00–22:00</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="hotel-analysis-card-anchor">
+              <article class="hotel-analysis__glass-piece hotel-analysis__glass-piece--checkout hotel-analysis-card hotel-analysis-card--wide">
+                <div class="hotel-analysis-card__parallax">
+                  <img class="hotel-analysis-card__media" src="/assets/hotels/rooms-bedroom.webp" alt="" width="1122" height="1402" decoding="async">
+                  <div class="hotel-analysis-card__body">
+                    <span class="hotel-analysis-card__title">Поздний выезд</span>
+                    <span class="hotel-analysis-card__meta">до&nbsp;15:00</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="hotel-analysis-card-anchor">
+              <article class="hotel-analysis__glass-piece hotel-analysis__glass-piece--spa hotel-analysis-card hotel-analysis-card--compact">
+                <div class="hotel-analysis-card__parallax">
+                  <img class="hotel-analysis-card__media" src="/assets/hotels/services-sauna-photo.jpg" alt="" width="1672" height="941" decoding="async">
+                  <div class="hotel-analysis-card__body">
+                    <span class="hotel-analysis-card__title">Спа и&nbsp;бассейн</span>
+                    <span class="hotel-analysis-card__meta">до&nbsp;23:00</span>
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="hotel-data" id="hotel-results" aria-labelledby="hotelResultsTitle">
+  <section class="hotel-data" id="hotel-results" aria-label="Информация отеля в телефоне">
     <div class="hotel-data__inner">
-      <h1 class="hotel-data__title font-nunito-light-wide sr-only" id="hotelResultsTitle">Собрал всю информацию про отель у&nbsp;пользователя в&nbsp;телефоне</h1>
-
       <div class="hotel-data__grid">
+        <div class="hotel-data__track">
         <article class="hotel-info-card hotel-info-card--rooms">
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Удобства номера<br>и&nbsp;правила<br>проживания</h2>
@@ -163,7 +284,14 @@
             <h2 class="font-nunito-light-wide">Дополнительные<br>услуги отеля</h2>
             <p class="font-nunito-medium">Описание, стоимость и&nbsp;онлайн-<br>бронирование доступных услуг</p>
           </div>
-          <img class="hotel-info-card__services-visual" src="/assets/hotels/services-sauna.webp" width="1280" height="816" alt="Баня на дровах" loading="lazy" decoding="async">
+          <figure class="hotel-info-card__service-offer" aria-label="Баня на дровах, ежедневно с 10:00 до 22:00">
+            <img class="hotel-info-card__service-photo" src="/assets/hotels/services-sauna-photo.jpg" width="1672" height="941" alt="" loading="lazy" decoding="async">
+            <figcaption class="hotel-info-card__service-glass">
+              <span class="hotel-info-card__service-title font-nunito-light-wide">Баня на дровах</span>
+              <span class="hotel-info-card__service-description font-nunito-light-wide">Приватная баня на&nbsp;территории<br>отеля с&nbsp;парной и&nbsp;зоной отдыха</span>
+              <span class="hotel-info-card__service-hours font-nunito-light-wide">10:00&nbsp;–&nbsp;22:00</span>
+            </figcaption>
+          </figure>
         </article>
 
         <article class="hotel-info-card hotel-info-card--menu">
@@ -171,11 +299,11 @@
             <h2 class="font-nunito-light-wide">Меню с&nbsp;сайта отеля</h2>
             <p class="font-nunito-medium">Блюда, категории, фотографии<br>и&nbsp;цены автоматически собираются<br>с&nbsp;сайта</p>
           </div>
-          <figure class="hotel-info-card__menu-dish hotel-info-card__menu-dish--pancakes" aria-label="Панкейки с кленовым сиропом, 290 рублей">
+          <figure class="hotel-info-card__menu-dish hotel-info-card__menu-dish--pancakes" aria-label="Панкейки с кленовым сиропом, 390 рублей">
             <img class="hotel-info-card__menu-photo" src="/assets/hotels/menu-pancakes-photo.webp" width="735" height="639" alt="" loading="lazy" decoding="async">
             <figcaption class="hotel-info-card__menu-caption">
               <span class="hotel-info-card__menu-name">Панкейки<br>с&nbsp;кленовым<br>сиропом</span>
-              <span class="hotel-info-card__menu-price">290&nbsp;₽</span>
+              <span class="hotel-info-card__menu-price">390&nbsp;₽</span>
             </figcaption>
           </figure>
           <figure class="hotel-info-card__menu-dish hotel-info-card__menu-dish--toast" aria-label="Французские тосты с ягодами, 290 рублей">
@@ -193,37 +321,62 @@
             <p class="font-nunito-medium">Места на&nbsp;карте и&nbsp;расписание<br>активностей</p>
           </div>
         </article>
+        </div>
+
+        <div class="hotel-story-heading" aria-labelledby="hotelStoryTitle">
+          <h1 class="hotel-story-heading__title font-nunito-light-wide" id="hotelStoryTitle">
+            <span class="hotel-story-heading__part hotel-story-heading__part--primary">Сначала вся информация про отель появляется у&nbsp;пользователя в&nbsp;телефоне.</span>
+            <span class="hotel-story-heading__part hotel-story-heading__part--secondary">Потом приложение понимает, что нужно гостю прямо сейчас, и&nbsp;вовремя предлагает подходящие услуги.</span>
+          </h1>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="hotel-dialogue" id="hotel-bonuses" aria-labelledby="hotelDialogueTitle" data-block="4">
+  <section class="hotel-dialogue" id="hotel-bonuses" aria-labelledby="hotelStoryTitle" data-block="4">
+    <div class="hotel-dialogue__avatar-rail" data-dialogue-avatar-rail aria-hidden="true">
+      <span class="hotel-message-avatar hotel-message-avatar--agent font-nunito-medium">LU</span>
+      <span class="hotel-message-avatar hotel-message-avatar--user"></span>
+    </div>
+
     <div class="hotel-dialogue__sticky">
       <div class="hotel-dialogue__glow hotel-dialogue__glow--primary" aria-hidden="true"></div>
       <div class="hotel-dialogue__glow hotel-dialogue__glow--blue" aria-hidden="true"></div>
 
-      <h1 class="hotel-dialogue__title font-nunito-light-wide" id="hotelDialogueTitle">
-        Приложение понимает, что нужно<br>
-        гостю прямо сейчас и&nbsp;вовремя<br>
-        предлагает подходящие услуги
-      </h1>
-
       <div class="hotel-dialogue__viewport" data-dialogue-viewport>
         <div class="hotel-dialogue__stream" data-dialogue-stream>
-          <article class="hotel-message hotel-message--user">
-            <p>Прилетаем <span class="hotel-message__signal">рано утром</span> <span class="hotel-message__signal">с&nbsp;ребёнком</span></p>
-          </article>
+          <div class="hotel-message-row hotel-message-row--user">
+            <article class="hotel-message hotel-message--user">
+              <p>Прилетаем <span class="hotel-message__signal">рано утром</span> <span class="hotel-message__signal">с&nbsp;ребенком</span></p>
+            </article>
+            <span class="hotel-message-avatar hotel-message-avatar--user" aria-hidden="true"></span>
+          </div>
 
-          <article class="hotel-message hotel-message--agent">
-            <p>Могу оформить ранний заезд с&nbsp;9:00 и&nbsp;трансфер с&nbsp;детским креслом до&nbsp;отеля</p>
-          </article>
-
-          <article class="hotel-message hotel-message--user">
-            <p>Оформи <span class="hotel-message__signal">ранний заезд</span> и&nbsp;<span class="hotel-message__signal">трансфер</span></p>
-          </article>
-
-          <div class="hotel-message-shell hotel-message-shell--agent" data-bonus-message>
+          <div class="hotel-message-row hotel-message-row--agent">
+            <span class="hotel-message-avatar hotel-message-avatar--agent font-nunito-medium" aria-hidden="true">LU</span>
             <article class="hotel-message hotel-message--agent">
+              <span class="hotel-message__agent-state" aria-hidden="true">
+                <span>Смотрю доступные услуги</span>
+                <span class="hotel-message__agent-state-dots"><i></i><i></i><i></i></span>
+              </span>
+              <p>Могу оформить ранний заезд с&nbsp;9:00 и&nbsp;трансфер с&nbsp;детским креслом до&nbsp;отеля</p>
+            </article>
+          </div>
+
+          <div class="hotel-message-row hotel-message-row--user">
+            <article class="hotel-message hotel-message--user">
+              <p>Оформи <span class="hotel-message__signal">ранний заезд</span> и&nbsp;<span class="hotel-message__signal">трансфер</span></p>
+            </article>
+            <span class="hotel-message-avatar hotel-message-avatar--user" aria-hidden="true"></span>
+          </div>
+
+          <div class="hotel-message-row hotel-message-row--agent hotel-message-shell hotel-message-shell--agent" data-bonus-message>
+            <span class="hotel-message-avatar hotel-message-avatar--agent font-nunito-medium" aria-hidden="true">LU</span>
+            <article class="hotel-message hotel-message--agent">
+              <span class="hotel-message__agent-state" aria-hidden="true">
+                <span>Бронирую</span>
+                <span class="hotel-message__agent-state-dots"><i></i><i></i><i></i></span>
+              </span>
               <p>Готово. Трансфер заказан, номер будет готов к&nbsp;9:00</p>
             </article>
             <div class="hotel-message__bonuses" aria-label="Начислены бонусы">
@@ -232,20 +385,38 @@
             </div>
           </div>
 
-          <article class="hotel-message hotel-message--user">
-            <p>Чем заняться <span class="hotel-message__signal">вечером</span>?</p>
-          </article>
+          <div class="hotel-message-row hotel-message-row--user">
+            <article class="hotel-message hotel-message--user">
+              <p>Чем заняться <span class="hotel-message__signal">вечером</span>?</p>
+            </article>
+            <span class="hotel-message-avatar hotel-message-avatar--user" aria-hidden="true"></span>
+          </div>
 
-          <article class="hotel-message hotel-message--agent">
-            <p>Сегодня в&nbsp;бане — мужское парение на&nbsp;натуральных травах. Начало в&nbsp;19:00</p>
-          </article>
-
-          <article class="hotel-message hotel-message--user">
-            <p>Добавь <span class="hotel-message__signal">баню</span> в&nbsp;мой план</p>
-          </article>
-
-          <div class="hotel-message-shell hotel-message-shell--agent" data-bonus-message>
+          <div class="hotel-message-row hotel-message-row--agent">
+            <span class="hotel-message-avatar hotel-message-avatar--agent font-nunito-medium" aria-hidden="true">LU</span>
             <article class="hotel-message hotel-message--agent">
+              <span class="hotel-message__agent-state" aria-hidden="true">
+                <span>Ищу варианты на вечер</span>
+                <span class="hotel-message__agent-state-dots"><i></i><i></i><i></i></span>
+              </span>
+              <p>Сегодня в&nbsp;бане — мужское парение на&nbsp;натуральных травах. Начало в&nbsp;19:00</p>
+            </article>
+          </div>
+
+          <div class="hotel-message-row hotel-message-row--user">
+            <article class="hotel-message hotel-message--user">
+              <p>Добавь <span class="hotel-message__signal">баню</span> в&nbsp;мой план</p>
+            </article>
+            <span class="hotel-message-avatar hotel-message-avatar--user" aria-hidden="true"></span>
+          </div>
+
+          <div class="hotel-message-row hotel-message-row--agent hotel-message-shell hotel-message-shell--agent" data-bonus-message>
+            <span class="hotel-message-avatar hotel-message-avatar--agent font-nunito-medium" aria-hidden="true">LU</span>
+            <article class="hotel-message hotel-message--agent">
+              <span class="hotel-message__agent-state" aria-hidden="true">
+                <span>Добавляю в план</span>
+                <span class="hotel-message__agent-state-dots"><i></i><i></i><i></i></span>
+              </span>
               <p>Готово. Парение добавлено в&nbsp;план на&nbsp;19:00</p>
             </article>
             <div class="hotel-message__bonuses" aria-label="Начислены бонусы">
@@ -268,7 +439,11 @@
         <div class="hotel-sales__stats" aria-label="Показатели продаж отеля">
           <article class="hotel-sales__stat" aria-label="Плюс 12 процентов к выручке с каждого гостя">
             <div class="hotel-sales__bar-stage" aria-hidden="true">
-              <span class="hotel-sales__bar hotel-sales__bar--revenue"></span>
+              <span class="hotel-sales__bar hotel-sales__bar--revenue">
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--top"></span>
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--bottom"></span>
+              </span>
+              <span class="hotel-sales__impact-wave"></span>
             </div>
             <strong class="hotel-sales__value font-nunito-light-wide" data-sales-counter data-value="12" data-prefix="+" data-suffix="%">+12%</strong>
             <p class="hotel-sales__label font-nunito-medium">К&nbsp;выручке с&nbsp;каждого гостя</p>
@@ -276,7 +451,11 @@
 
           <article class="hotel-sales__stat" aria-label="Плюс 18 процентов повторных бронирований">
             <div class="hotel-sales__bar-stage" aria-hidden="true">
-              <span class="hotel-sales__bar hotel-sales__bar--repeat"></span>
+              <span class="hotel-sales__bar hotel-sales__bar--repeat">
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--top"></span>
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--bottom"></span>
+              </span>
+              <span class="hotel-sales__impact-wave"></span>
             </div>
             <strong class="hotel-sales__value font-nunito-light-wide" data-sales-counter data-value="18" data-prefix="+" data-suffix="%">+18%</strong>
             <p class="hotel-sales__label font-nunito-medium">Повторные бронирования</p>
@@ -284,7 +463,11 @@
 
           <article class="hotel-sales__stat" aria-label="В два раза больше дополнительных покупок">
             <div class="hotel-sales__bar-stage" aria-hidden="true">
-              <span class="hotel-sales__bar hotel-sales__bar--extras"></span>
+              <span class="hotel-sales__bar hotel-sales__bar--extras">
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--top"></span>
+                <span class="hotel-sales__twister-panel hotel-sales__twister-panel--bottom"></span>
+              </span>
+              <span class="hotel-sales__impact-wave"></span>
             </div>
             <strong class="hotel-sales__value font-nunito-light-wide" data-sales-counter data-value="2" data-prefix="×">×2</strong>
             <p class="hotel-sales__label font-nunito-medium">Дополнительных покупок</p>
@@ -303,7 +486,7 @@
           <form class="hotel-application__form" id="hotelApplicationForm">
             <fieldset class="hotel-application__field">
               <legend class="font-nunito-medium" id="hotelApplicationNameLabel">Ваше имя</legend>
-              <input class="font-nunito-medium" name="name" type="text" placeholder="Артём" autocomplete="name" aria-labelledby="hotelApplicationNameLabel" required>
+              <input class="font-nunito-medium" name="name" type="text" placeholder="Артем" autocomplete="name" aria-labelledby="hotelApplicationNameLabel" required>
             </fieldset>
 
             <fieldset class="hotel-application__field">
@@ -349,6 +532,8 @@
   </footer>
 </main>
 
+<script src="/vendor/liquid-glass/liquid-glass.js"></script>
 <script type="module" src="/src/hotels/hotels.js"></script>
+<script type="module" src="/src/hotels/dialogue-avatar-flip.js"></script>
 </body>
 </html>

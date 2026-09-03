@@ -1,0 +1,116 @@
+@import './dialogue-tags.css';
+
+@media (min-width:901px) and (prefers-reduced-motion:no-preference){
+  .hotel-dialogue__avatar-rail{
+    perspective:620px;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar{
+    backface-visibility:hidden;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(12px) scale(.76);
+    transform-origin:50% 0;
+    transform-style:preserve-3d;
+    transition:
+      opacity .28s ease,
+      visibility 0s linear .28s,
+      transform .38s cubic-bezier(.22,.61,.36,1);
+  }
+
+  .hotel-dialogue__avatar-rail.is-visible .hotel-message-avatar{
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(12px) scale(.76);
+    transition-delay:0s,.28s,0s;
+  }
+
+  .hotel-dialogue__avatar-rail.is-visible .hotel-message-avatar.is-avatar-active{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0) scale(1);
+    transition-delay:0s;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--user{
+    isolation:isolate;
+    overflow:visible;
+    width:clamp(88px,7vw,112px);
+    height:clamp(44px,3.8vw,58px);
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--user::before,
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--user::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--user::before{
+    display:none;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--user::after{
+    content:'•••';
+    display:grid;
+    place-items:center;
+    padding:0 0 .2em .18em;
+    color:rgba(255,255,255,.96);
+    font:800 clamp(30px,3vw,44px)/1 var(--font-nunito-medium);
+    letter-spacing:.14em;
+    opacity:1;
+    transform:translateY(0) scale(1);
+    text-shadow:0 0 18px rgba(144,168,255,.42);
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--user.is-user-typing::after{
+    animation:hotelDialogueUserTyping 1.28s cubic-bezier(.22,.72,.2,1) both;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--agent{
+    isolation:isolate;
+    overflow:visible;
+    border:0;
+    color:transparent;
+    background:linear-gradient(145deg,
+      #8068ff 0%,
+      #392eff 28%,
+      #0800f4 58%,
+      #007fd5 82%,
+      #25d8ff 100%);
+    background-size:100% 100%;
+    box-shadow:
+      0 0 24px rgba(62,93,255,.46),
+      0 12px 30px rgba(0,0,0,.22);
+    filter:none;
+    font-size:0;
+    text-shadow:none;
+  }
+
+  .hotel-dialogue__avatar-rail.is-visible .hotel-message-avatar--agent.is-avatar-active{
+    filter:none;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--agent::before{
+    display:none;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--agent::after{
+    display:none;
+  }
+
+  .hotel-dialogue__avatar-rail .hotel-message-avatar--agent.is-agent-morphing{
+    animation:none;
+  }
+}
+
+@keyframes hotelDialogueUserTyping{
+  0%,100%{opacity:.48;transform:translateY(2px) scale(.94);letter-spacing:.11em}
+  35%{opacity:1;transform:translateY(-1px) scale(1.04);letter-spacing:.17em}
+  68%{opacity:.7;transform:translateY(1px) scale(.98);letter-spacing:.14em}
+}

@@ -9,7 +9,7 @@ const pageGradientConfig = {
     {color:'#2E0EC7',enabled:true},
     {color:'#27AEF2',enabled:true}
   ],
-  speed:6.5,
+  speed:4.8,
   horizontalPressure:3,
   verticalPressure:4,
   waveFrequencyX:2,
@@ -34,8 +34,8 @@ const pageGradientConfig = {
   grainSparsity:0,
   grainIntensity:0,
   grainSpeed:1,
-  resolution:1.1,
-  renderScale:1.3,
+  resolution:.42,
+  renderScale:.86,
   yOffset:100000,
   yOffsetWaveMultiplier:16.5,
   yOffsetColorMultiplier:0,
@@ -131,11 +131,24 @@ export function mountPageGradient(host, {reduced = false} = {}) {
   }
 
   let destroyed = false;
+  const pause = () => {
+    if (destroyed || gradient._isVisible === false) return;
+    gradient._isVisible = false;
+    cancelAnimationFrame(gradient.requestRef);
+  };
+  const resume = () => {
+    if (destroyed || gradient._isVisible !== false) return;
+    gradient._visibilityHandler?.();
+  };
 
-  return () => {
+  const destroy = () => {
     if (destroyed) return;
     destroyed = true;
     gradient.destroy();
     canvas.remove();
   };
+
+  destroy.pause = pause;
+  destroy.resume = resume;
+  return destroy;
 }
