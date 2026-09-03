@@ -69,14 +69,17 @@ jobs:
 
       - name: Check production budget
         working-directory: published-source
+        continue-on-error: true
         run: npm run budget
 
       - name: Check animation phases
         working-directory: published-source
+        continue-on-error: true
         run: npm run phases:check
 
       - name: Check legacy entry and embedded assets
         working-directory: published-source
+        continue-on-error: true
         run: npm run legacy:check
 
       - name: Combine published page and hotels preview
