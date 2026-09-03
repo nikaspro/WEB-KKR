@@ -17,7 +17,6 @@ const device = document.querySelector('.hotels-device');
 const scrollLayer = device.querySelector('.scroll-layer');
 const heroBand = document.getElementById('heroBand');
 const heroParticles = document.getElementById('heroParticles');
-const heroCursorTrail = document.getElementById('heroCursorTrail');
 document.body.classList.add('hotels-enhanced');
 
 try {
@@ -111,7 +110,7 @@ function buildHeroTransition() {
       duration:.28,
       overwrite:'auto'
     }, 0)
-    .to([heroBand, heroParticles, heroCursorTrail], {
+    .to([heroBand, heroParticles], {
       autoAlpha:0,
       y:-90,
       duration:.48,
@@ -1045,48 +1044,6 @@ if (footer) {
         .42
       );
   }
-}
-
-const cursorTrail = document.getElementById('heroCursorTrail');
-if (cursorTrail && !reduced && matchMedia('(hover:hover) and (pointer:fine)').matches) {
-  const trailItems = [...cursorTrail.querySelectorAll('i')].map((item, index) => {
-    gsap.set(item, {xPercent:-50, yPercent:-50});
-    return {
-      setCss:gsap.quickSetter(item, 'css'),
-      x:innerWidth * .5,
-      y:innerHeight * .5,
-      opacity:0,
-      alpha:[.70, .58, .45][index],
-      follow:[.18, .075, .028][index],
-      scale:[1, .92, .84][index]
-    };
-  });
-  let pointerX = innerWidth * .5;
-  let pointerY = innerHeight * .5;
-  let pointerSeen = false;
-
-  addEventListener('pointermove', event => {
-    pointerX = event.clientX;
-    pointerY = event.clientY;
-    pointerSeen = true;
-  }, {passive:true});
-
-  let lastDraw = -1;
-  gsap.ticker.add(time => {
-    if (time - lastDraw < 1 / 30) return;
-    lastDraw = time;
-    const active = pointerSeen && !document.hidden && scrollY < innerHeight;
-    cursorTrail.classList.toggle('is-active', active);
-    trailItems.forEach(item => {
-      if (active) {
-        item.x += (pointerX - item.x) * item.follow;
-        item.y += (pointerY - item.y) * item.follow;
-      }
-      const targetOpacity = active ? item.alpha : 0;
-      item.opacity += (targetOpacity - item.opacity) * .22;
-      item.setCss({x:item.x, y:item.y, opacity:item.opacity, scale:item.scale});
-    });
-  });
 }
 
 const menu = document.getElementById('siteMenu');
