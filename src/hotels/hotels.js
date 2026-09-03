@@ -40,6 +40,8 @@ document.body.classList.add('hotels-enhanced');
 heroBand?.classList.add('is-motion-paused');
 heroBackdrop?.classList.add('is-motion-paused');
 
+// Режим с тремя тегами сохранён; пока выводим только первый.
+const heroVisibleTagCount = 1;
 const heroTagMessages = [
   {
     request:'Приезжаю с ребенком рано утром',
@@ -54,7 +56,6 @@ const heroTagMessages = [
     response:'Заказал трансфер с детским креслом'
   }
 ];
-const heroVisibleTagCount = heroTagMessages.length;
 const heroFlyingTagTracks = heroTagMessages.map(({request}, index) => {
   const track = document.createElement('div');
   track.className = 'hotel-hero-flying-track';

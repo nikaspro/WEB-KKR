@@ -5,6 +5,7 @@ import { CustomEase } from 'gsap/CustomEase';
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 
 const currencyEase = CustomEase.create('salesCurrencyEase', '0.555,1.176,0.574,-0.347');
+const getCurrencyTilt = index => -34 + index * 17 % 69;
 
 function createOdometer(counter) {
   const target = Number(counter.dataset.value);
@@ -232,11 +233,11 @@ export function initHotelSalesSection(root = document) {
     .fromTo(currencySymbols, {
       xPercent:-50,
       y:0,
-      rotation:index => -16 + index % 7 * 5,
+      rotation:getCurrencyTilt,
       scale:index => .72 + index % 5 * .08
     }, {
       y:index => -window.innerHeight * (1.32 + index % 8 * .12),
-      rotation:index => 14 - index % 7 * 4,
+      rotation:index => getCurrencyTilt(index) + (index % 3 - 1) * 8,
       scale:index => .88 + index % 6 * .06,
       duration:index => 1.72 + index % 6 * .1,
       stagger:.004,
