@@ -90,7 +90,7 @@ jobs:
           cp -R published-source/dist/. site/
           cp -R hotels-source/hotel-page-current/dist/. site/hotels/
           while IFS= read -r -d '' file; do
-            sed -i 's#\(/assets/\)#/WEB-KKR/hotels/assets/#g' "$file"
+            sed -i 's#^/assets/#/WEB-KKR/hotels/assets/#g; s#\(["\x27(= ]\)/assets/#\1/WEB-KKR/hotels/assets/#g' "$file"
           done < <(find site/hotels -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -print0)
 
       - name: Configure Pages
