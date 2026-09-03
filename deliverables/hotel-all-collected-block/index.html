@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Блок «Все собрал»</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main>
+    <section class="collection" aria-label="Сбор информации об отеле">
+      <div class="collection__stage">
+        <span class="collection__result-wave" aria-hidden="true"></span>
+
+        <div class="collection__action">
+          <form class="collection-input" aria-busy="true">
+            <label class="sr-only" for="hotel-url">Ссылка на сайт отеля</label>
+            <div class="collection-input__shell">
+              <input id="hotel-url" value="my-hotel.ru" readonly>
+            </div>
+          </form>
+
+          <div class="collection__statuses" role="status" aria-live="polite" aria-atomic="true">
+            <p class="collection__status" aria-hidden="true">Думаю</p>
+          </div>
+
+          <div class="collection__cards" aria-hidden="true">
+            <div class="collection-card-anchor">
+              <article class="collection-card collection-card--toast">
+                <div class="collection-card__parallax">
+                  <img class="collection-card__media" src="./assets/menu-toast-photo.webp" alt="" width="735" height="639">
+                  <div class="collection-card__body">
+                    <span class="collection-card__title">Французские тосты с&nbsp;ягодами</span>
+                    <span class="collection-card__meta">290&nbsp;₽</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="collection-card-anchor">
+              <article class="collection-card collection-card--pancakes">
+                <div class="collection-card__parallax">
+                  <img class="collection-card__media" src="./assets/menu-pancakes-photo.webp" alt="" width="735" height="639">
+                  <div class="collection-card__body">
+                    <span class="collection-card__title">Панкейки с&nbsp;кленовым сиропом</span>
+                    <span class="collection-card__meta">390&nbsp;₽</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="collection-card-anchor">
+              <article class="collection-card collection-card--wide collection-card--sauna">
+                <div class="collection-card__parallax">
+                  <img class="collection-card__media" src="./assets/services-sauna-photo.jpg" alt="" width="1672" height="941">
+                  <div class="collection-card__body">
+                    <span class="collection-card__title">Баня на&nbsp;дровах</span>
+                    <span class="collection-card__meta">10:00–22:00</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="collection-card-anchor">
+              <article class="collection-card collection-card--wide collection-card--checkout">
+                <div class="collection-card__parallax">
+                  <img class="collection-card__media" src="./assets/rooms-bedroom.webp" alt="" width="1122" height="1402">
+                  <div class="collection-card__body">
+                    <span class="collection-card__title">Поздний выезд</span>
+                    <span class="collection-card__meta">до&nbsp;15:00</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="collection-card-anchor">
+              <article class="collection-card collection-card--compact collection-card--spa">
+                <div class="collection-card__parallax">
+                  <img class="collection-card__media" src="./assets/services-sauna-photo.jpg" alt="" width="1672" height="941">
+                  <div class="collection-card__body">
+                    <span class="collection-card__title">Спа и&nbsp;бассейн</span>
+                    <span class="collection-card__meta">до&nbsp;23:00</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./vendor/gsap.min.js"></script>
+  <script src="./vendor/ScrollTrigger.min.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
