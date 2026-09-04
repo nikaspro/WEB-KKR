@@ -1619,7 +1619,7 @@ if (hotelHorizontalEnabled && hotelData && hotelDataInner && hotelDataTrack && a
   const horizontalTimeline = gsap.timeline({
     scrollTrigger:{
       trigger:hotelData,
-      start:'top 40%',
+      start:'top 90%',
       end:() => `+=${Math.round(innerWidth + hotelDataTrack.scrollWidth - getExitReveal())}`,
       pin:hotelDataInner,
       scrub:1.25,
@@ -1651,9 +1651,24 @@ if (hotelHorizontalEnabled && hotelData && hotelDataInner && hotelDataTrack && a
     }, 0)
     .to(hotelDataTrack, {
       opacity:0,
-      duration:.035,
-      ease:'none'
-    }, .465);
+      duration:.065,
+      ease:'power1.inOut'
+    }, .435)
+    .fromTo(analysisFinalStatus,
+      {opacity:1, y:0, scale:1},
+      {
+        opacity:0,
+        y:-18,
+        scale:.99,
+        duration:.065,
+        ease:'sine.inOut',
+        immediateRender:false,
+        onStart:() => analysisFinalStatus.classList.remove('is-horizontal-past'),
+        onComplete:() => analysisFinalStatus.classList.add('is-horizontal-past'),
+        onReverseComplete:() => analysisFinalStatus.classList.remove('is-horizontal-past')
+      },
+      .435
+    );
 
   ScrollTrigger.create({
     trigger:hotelData,
@@ -1666,7 +1681,6 @@ if (hotelHorizontalEnabled && hotelData && hotelDataInner && hotelDataTrack && a
     },
     onLeave:() => {
       setResultPinned(false);
-      analysisFinalStatus.classList.add('is-horizontal-past');
     },
     onEnterBack:() => {
       analysisFinalStatus.classList.remove('is-horizontal-past');
