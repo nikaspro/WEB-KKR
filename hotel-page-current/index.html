@@ -81,7 +81,7 @@
       <h1 class="font-nunito-light-wide" id="heroH1">Подключите<br>свой отель<br>к&nbsp;будущему</h1>
       <p class="font-nunito-medium" id="heroP">Luna соберет все о&nbsp;вашем отеле в&nbsp;приложении гостя, вовремя предложит нужные услуги и&nbsp;поможет увеличить выручку</p>
       <div class="hero-download-zone">
-        <a class="hero-download font-nunito-medium" href="#hotel-application">
+        <a class="hero-download font-nunito-medium" href="#download">
           <span class="hero-download__label"><span>Подключить</span></span>
         </a>
         <button class="hero-scroll scroll-cue" type="button" aria-label="Листать дальше">
@@ -363,7 +363,7 @@
     </div>
   </section>
 
-  <section class="hotel-application" id="hotel-application" aria-labelledby="hotelApplicationTitle">
+  <section class="hotel-application" id="hotel-application" aria-labelledby="hotelApplicationTitle" hidden>
     <div class="hotel-application__sticky">
       <div class="hotel-application__panel">
         <div class="hotel-application__content">
@@ -390,10 +390,33 @@
     </div>
   </section>
 
-  <footer class="foot" id="footer">
-    <img class="foot-edge" loading="lazy" src="/assets/ui/footer-top.svg" alt="" width="1500" height="32">
+  <section class="go-band" id="download" aria-labelledby="downloadTitle">
+    <h2 class="go-title font-nunito-light-wide" id="downloadTitle">Осталось только отправиться<br>в путь</h2>
+    <form class="go-form" id="hotelCtaForm">
+      <div class="go-form__fields">
+        <fieldset class="hotel-application__field">
+          <legend class="font-nunito-medium" id="hotelCtaNameLabel">Ваше имя</legend>
+          <input class="font-nunito-medium" id="hotelCtaName" name="name" type="text" placeholder="Артём" autocomplete="name" aria-labelledby="hotelCtaNameLabel" required>
+        </fieldset>
+
+        <fieldset class="hotel-application__field">
+          <legend class="font-nunito-medium" id="hotelCtaPhoneLabel">Номер телефона</legend>
+          <input class="font-nunito-medium" id="hotelCtaPhone" name="phone" type="tel" placeholder="+7 (987) 736-47-48" autocomplete="tel" inputmode="tel" maxlength="18" pattern="\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}" title="Введите номер в формате +7 (987) 736-47-48" aria-labelledby="hotelCtaPhoneLabel" required>
+        </fieldset>
+      </div>
+
+      <button class="go-btn go-form__submit font-nunito-medium" type="submit" hidden>
+        <span class="go-t">Отправить</span>
+      </button>
+
+      <p class="go-form__legal font-nunito-medium" hidden>Нажимая кнопку «Отправить», вы соглашаетесь<br>с&nbsp;<a href="#" data-placeholder-link>политикой конфиденциальности</a></p>
+      <p class="sr-only" id="hotelCtaStatus" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <footer class="foot font-nunito-medium" id="footer">
     <div class="foot-top">
-      <div class="foot-download" id="download">
+      <div class="foot-download">
         <img class="foot-qr" loading="lazy" src="/assets/ui/footer-qr.webp" alt="" width="240" height="240">
         <p>Scan this QR code<br>to download LU</p>
       </div>
@@ -403,12 +426,12 @@
       </nav>
       <nav class="foot-col" aria-label="Связаться">
         <a href="mailto:hello@luna.travel">hello@luna.travel</a>
-        <a class="foot-link-label" href="#" data-placeholder-link>Telegram</a>
-        <a class="foot-link-label" href="#" data-placeholder-link>MAX</a>
+        <span class="foot-link-label">Telegram</span>
+        <span class="foot-link-label">MAX</span>
       </nav>
       <nav class="foot-col foot-legal" aria-label="Правовая информация">
-        <a class="foot-link-label" href="#" data-placeholder-link>Конфиденциальность</a>
-        <a class="foot-link-label" href="#" data-placeholder-link>Условия использования</a>
+        <span class="foot-link-label">Конфиденциальность</span>
+        <span class="foot-link-label">Условия использования</span>
       </nav>
     </div>
     <div class="foot-wordmark" role="img" aria-label="LU">

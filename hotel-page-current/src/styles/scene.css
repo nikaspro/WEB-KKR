@@ -2527,42 +2527,112 @@
     .trip-hub__item:is(:hover,.is-active) .trip-hub__label::before{opacity:.88;transform:scale(1)}
   }
 
-  /* Финальный белый кадр остаётся закреплённым вместе с телефоном, пока
-     следующий за ним подвал естественно поднимается поверх него снизу. */
+  /* CTA из traveler-страницы идёт обычным потоком перед подвалом. */
   .go-band{
-    position:sticky;
+    position:relative;
     z-index:7;
     top:0;
     display:flex;
-    align-items:flex-end;
-    min-height:100svh;
-    background:transparent;
+    flex-direction:column;
+    justify-content:center;
+    min-height:90vh;
+    min-height:90svh;
+    background:#050505;
     margin-top:0;
-    padding:7vh 4vw 18svh;
+    padding:clamp(140px,16vh,180px) var(--pad) clamp(96px,14vh,160px);
+    box-sizing:border-box;
+    color:#fff;
+    text-align:center;
+  }
+  .go-title{
+    max-width:16em;
+    margin:0 auto;
+    color:rgba(255,255,255,.6);
+    font-size:clamp(76px,7.5vw,126px);
+    line-height:.92;
+    font-weight:300;
+    font-stretch:105%;
+    font-synthesis:none;
+    text-align:center;
+  }
+  .go-form{
+    width:min(1760px,100%);
+    margin:clamp(40px,6vh,72px) auto 0;
   }
   .go-btn{
-    display:block;
-    width:100%;
+    position:relative;
+    top:auto;
+    z-index:1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:min(1760px,100%);
+    height:clamp(320px,42vh,480px);
     padding:0;
     border:0;
     cursor:pointer;
-    border-radius:1000px;
-    height:min(34vh,300px);
-    background:var(--ink);
+    border-radius:999px;
+    background:#0400FA;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.32),
+      inset 0 0 28px rgba(125,205,255,.28),
+      0 20px 62px rgba(4,0,250,.48),
+      0 0 30px rgba(54,73,255,.24);
     color:#fff;
-    font-family:var(--display);
-    font-weight:900;
-    font-size:clamp(64px,9vw,170px);
-    text-transform:lowercase;
-    letter-spacing:-.01em;
+    font-family:var(--font-nunito-medium);
+    font-size:clamp(72px,9vw,112px);
+    font-weight:500;
+    font-stretch:100%;
+    font-synthesis:none;
     line-height:1;
     transform-origin:50% 50%;
+    text-decoration:none;
+    transition:
+      opacity .65s cubic-bezier(.22,.61,.36,1),
+      transform .65s cubic-bezier(.22,.61,.36,1),
+      height .65s cubic-bezier(.22,.61,.36,1),
+      margin-top .65s cubic-bezier(.22,.61,.36,1),
+      box-shadow .85s cubic-bezier(.22,.61,.36,1),
+      background .3s;
+    margin:clamp(40px,6vh,72px) auto 0;
   }
-  /* у Geologica боковых отбивок меньше, чем у Climate Crisis: зазор шире */
+  .go-form__submit[hidden]{
+    display:block;
+    height:0;
+    min-height:0;
+    margin-top:0;
+    overflow:hidden;
+    visibility:hidden;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(18px) scale(.97);
+  }
   .go-t{display:inline-flex; align-items:center; gap:.42em}
-  .go-apple{width:.58em; height:auto; flex:0 0 auto; margin-top:-.08em}
-  /* Кнопка — неподвижная часть финального кадра: без hover-сдвигов,
-     покачивания и плавного появления. */
+  .go-apple{
+    display:block;
+    width:auto;
+    height:1em;
+    flex:0 0 auto;
+    filter:brightness(0) invert(1);
+    transition:filter .5s ease;
+  }
+  .go-t{transition:text-shadow .5s ease}
+  .go-btn:hover{animation:blueButtonInnerPulse 2.5s ease-in-out infinite}
+  .go-btn:hover{
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.56),
+      inset 0 0 44px rgba(154,221,255,.48),
+      0 28px 78px rgba(4,0,250,.60),
+      0 0 64px rgba(255,0,184,.40),
+      0 0 120px rgba(255,0,184,.24);
+  }
+  .go-btn:hover .go-t{
+    text-shadow:0 0 8px rgba(255,255,255,.95),0 0 20px rgba(128,218,255,.78);
+  }
+  .go-btn:hover .go-apple{
+    filter:brightness(0) invert(1) drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 15px rgba(128,218,255,.7));
+  }
+  .go-btn:focus-visible{outline:3px solid #fff;outline-offset:5px}
 
   /* --- подвал --- */
   .foot{
@@ -2917,8 +2987,14 @@
     .site-header__menu{display:block}
     .site-header__download{display:none}
     .site-menu,.site-menu.is-open{padding-top:88px}
-    .go-band{padding:6svh 16px calc(6svh + 82px + env(safe-area-inset-bottom,0px))}
-    .go-btn{height:min(26svh,190px);font-size:clamp(52px,17vw,82px)}
+    .go-band{padding:96px 16px calc(72px + env(safe-area-inset-bottom,0px))}
+    .go-title{font-size:clamp(52px,14vw,82px)}
+    .go-form{margin-top:40px}
+    .go-btn{
+      top:auto;
+      height:min(26svh,190px);
+      font-size:clamp(52px,17vw,82px);
+    }
   }
   @media (max-width:900px),(hover:none),(pointer:coarse){
     body{overflow-x:clip}

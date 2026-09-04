@@ -1688,14 +1688,22 @@ if (hotelCardPointerEnabled) {
   });
 }
 
-const application = document.getElementById('hotel-application');
+const application = document.querySelector('#hotel-application:not([hidden])');
 const applicationSticky = application?.querySelector('.hotel-application__sticky');
 const applicationPanel = application?.querySelector('.hotel-application__panel');
 const applicationContent = application?.querySelector('.hotel-application__content');
-const applicationForm = document.getElementById('hotelApplicationForm');
-const applicationStatus = document.getElementById('hotelApplicationStatus');
+const applicationForm = application?.querySelector('#hotelApplicationForm');
+const applicationStatus = application?.querySelector('#hotelApplicationStatus');
 const applicationPhone = applicationForm?.elements.phone;
+const goBand = document.getElementById('download');
 const footer = document.getElementById('footer');
+const ctaForm = document.getElementById('hotelCtaForm');
+const ctaName = document.getElementById('hotelCtaName');
+const ctaPhone = document.getElementById('hotelCtaPhone');
+const ctaSubmit = ctaForm?.querySelector('.go-form__submit');
+const ctaLegal = ctaForm?.querySelector('.go-form__legal');
+const ctaStatus = document.getElementById('hotelCtaStatus');
+let ctaButtonMotion = null;
 
 const RUSSIAN_PHONE_PATTERN = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
 
@@ -1720,6 +1728,50 @@ function formatRussianPhone(rawValue) {
   if (national.length > 8) formatted += `-${national.slice(8, 10)}`;
   return formatted;
 }
+
+function syncCtaFormState() {
+  if (!ctaName || !ctaPhone || !ctaSubmit || !ctaLegal) return false;
+  const ready = Boolean(ctaName.value.trim()) && RUSSIAN_PHONE_PATTERN.test(ctaPhone.value);
+  ctaSubmit.hidden = !ready;
+  ctaSubmit.tabIndex = ready ? 0 : -1;
+  ctaLegal.hidden = !ready;
+  if (ready && !ctaButtonMotion) {
+    ctaButtonMotion = mountHotelMagneticButton(
+      ctaSubmit,
+      ctaSubmit,
+      ctaSubmit.querySelector('.go-t'),
+      {wobble:.65}
+    );
+  }
+  return ready;
+}
+
+ctaForm?.addEventListener('input', event => {
+  if (event.target === ctaPhone) {
+    ctaPhone.value = formatRussianPhone(ctaPhone.value);
+  }
+  syncCtaFormState();
+});
+
+ctaPhone?.addEventListener('focus', () => {
+  if (!ctaPhone.value) ctaPhone.value = '+7';
+  ctaPhone.setSelectionRange(ctaPhone.value.length, ctaPhone.value.length);
+});
+
+ctaPhone?.addEventListener('blur', () => {
+  if (ctaPhone.value === '+7') ctaPhone.value = '';
+  syncCtaFormState();
+});
+
+ctaForm?.addEventListener('submit', event => {
+  event.preventDefault();
+  if (!syncCtaFormState()) return;
+  ctaSubmit.querySelector('.go-t').textContent = 'Заявка принята';
+  ctaSubmit.disabled = true;
+  ctaSubmit.tabIndex = -1;
+  ctaButtonMotion?.disable();
+  ctaStatus.textContent = 'Заявка принята. Мы свяжемся с вами.';
+});
 
 function syncPhoneValidity(showError = false) {
   if (!applicationPhone) return false;
@@ -1810,7 +1862,7 @@ function mountHotelMagneticButton(zone, button, label, options = {}) {
   };
 }
 
-const applicationSubmit = applicationForm?.querySelector('.hotel-application__submit');
+const applicationSubmit = application?.querySelector('.hotel-application__submit');
 mountHotelMagneticButton(heroDownload, heroDownload, heroDownload?.querySelector('.hero-download__label'));
 mountHotelMagneticButton(scrollCue, scrollCue, scrollCue?.querySelector('.scroll-cue-arrows'), {wobble:.65});
 const headerDownload = document.getElementById('headerDownload');
@@ -1834,7 +1886,7 @@ if (application && applicationPanel) {
       ScrollTrigger.create({
         trigger:application,
         start:'top top',
-        endTrigger:footer,
+        endTrigger:goBand || footer,
         end:'top top',
         pin:applicationSticky,
         pinSpacing:false,
