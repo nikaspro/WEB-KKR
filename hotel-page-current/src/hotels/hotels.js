@@ -40,20 +40,24 @@ document.body.classList.add('hotels-enhanced');
 heroBand?.classList.add('is-motion-paused');
 heroBackdrop?.classList.add('is-motion-paused');
 
-// Режим с тремя тегами сохранён; пока выводим только первый.
+// Один тег последовательно показывает разные пары просьба/ответ.
 const heroVisibleTagCount = 1;
 const heroTagMessages = [
-  {
-    request:'Приезжаю с ребенком рано утром',
-    response:'Подготовил номер к раннему приезду'
-  },
   {
     request:'Нужен ранний заезд к 9:00',
     response:'Оформил ранний заезд'
   },
   {
-    request:'Закажи трансфер с детским креслом',
-    response:'Заказал трансфер с детским креслом'
+    request:'Закажи еду в номер',
+    response:'Еда будет в номере через 20 минут'
+  },
+  {
+    request:'Закажи трансфер до аэропорта',
+    response:'Трансфер забронирован на 7:30'
+  },
+  {
+    request:'Где можно погулять рядом с отелем?',
+    response:'Подсказываю маршрут для прогулки'
   }
 ];
 const heroFlyingTagTracks = heroTagMessages.map(({request}, index) => {
@@ -103,6 +107,131 @@ if (heroParticles) {
   }
 
   heroParticles.appendChild(stars);
+}
+
+const heroCursorParticles = [];
+if (heroParticles && !reduced && matchMedia('(hover:hover) and (pointer:fine)').matches) {
+  const cursorParticleFragment = document.createDocumentFragment();
+  const cursorParticlePoolSize = 56;
+  for (let index = 0; index < cursorParticlePoolSize; index += 1) {
+    const particle = document.createElement('i');
+    particle.className = 'hotel-hero-cursor-particle';
+    particle.setAttribute('aria-hidden', 'true');
+    cursorParticleFragment.appendChild(particle);
+    gsap.set(particle, {xPercent:-50, yPercent:-50, opacity:0});
+    heroCursorParticles.push(particle);
+  }
+  heroParticles.appendChild(cursorParticleFragment);
+
+  let cursorParticleIndex = 0;
+  let cursorTrailX = 0;
+  let cursorTrailY = 0;
+  let cursorTrailDistance = 0;
+  let cursorTrailHasPoint = false;
+
+  const spawnCursorParticle = (
+    x,
+    y,
+    angle = Math.random() * Math.PI * 2,
+    burstRadius = 30 + Math.random() * 66
+  ) => {
+    const particle = heroCursorParticles[cursorParticleIndex];
+    cursorParticleIndex = (cursorParticleIndex + 1) % heroCursorParticles.length;
+    const startRadius = Math.random() * 7;
+    const startX = x + Math.cos(angle) * startRadius;
+    const startY = y + Math.sin(angle) * startRadius;
+    const settleX = x + Math.cos(angle) * burstRadius;
+    const settleY = y + Math.sin(angle) * burstRadius;
+    const riseX = settleX + (Math.random() - .5) * 36;
+    const riseY = settleY - (64 + Math.random() * 82);
+    const duration = 1.18 + Math.random() * .5;
+    const peakOpacity = .42 + Math.random() * .2;
+
+    gsap.killTweensOf(particle);
+    gsap.set(particle, {
+      x:startX,
+      y:startY,
+      scale:.06 + Math.random() * .12,
+      opacity:0
+    });
+    gsap.to(particle, {
+      keyframes:[
+        {
+          x:settleX,
+          y:settleY,
+          scale:1,
+          opacity:peakOpacity,
+          duration:.34,
+          ease:'sine.out'
+        },
+        {
+          x:riseX,
+          y:riseY,
+          scale:.16,
+          opacity:0,
+          duration,
+          ease:'power2.out'
+        }
+      ],
+      overwrite:true
+    });
+  };
+
+  addEventListener('pointermove', event => {
+    if (heroParticles.classList.contains('is-paused') || heroIsScrollingOut) {
+      cursorTrailHasPoint = false;
+      cursorTrailDistance = 0;
+      return;
+    }
+
+    const bounds = heroParticles.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    if (!cursorTrailHasPoint) {
+      cursorTrailX = x;
+      cursorTrailY = y;
+      cursorTrailHasPoint = true;
+      return;
+    }
+
+    const deltaX = x - cursorTrailX;
+    const deltaY = y - cursorTrailY;
+    const distance = Math.hypot(deltaX, deltaY);
+    cursorTrailDistance += distance;
+    const spawnDistance = 24;
+    const spawnCount = Math.min(8, Math.floor(cursorTrailDistance / spawnDistance));
+    if (spawnCount) {
+      cursorTrailDistance %= spawnDistance;
+      for (let index = 1; index <= spawnCount; index += 1) {
+        const progress = index / spawnCount;
+        spawnCursorParticle(
+          cursorTrailX + deltaX * progress,
+          cursorTrailY + deltaY * progress
+        );
+      }
+    }
+    cursorTrailX = x;
+    cursorTrailY = y;
+  }, {passive:true});
+
+  addEventListener('click', event => {
+    if (heroParticles.classList.contains('is-paused') || heroIsScrollingOut) return;
+    if (event.target.closest(
+      'a,button,input,textarea,select,[role="button"],h1,p,.hotel-hero-axis-label,.site-header'
+    )) return;
+
+    const bounds = heroParticles.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    if (x < 0 || x > bounds.width || y < 0 || y > bounds.height) return;
+
+    const burstCount = 20;
+    const angleStep = (Math.PI * 2) / burstCount;
+    for (let index = 0; index < burstCount; index += 1) {
+      const angle = index * angleStep + (Math.random() - .5) * .22;
+      spawnCursorParticle(x, y, angle, 42 + Math.random() * 72);
+    }
+  });
 }
 
 try {
@@ -183,7 +312,7 @@ if (!reduced) {
 
   if (heroBand) {
     const initialYFactors = [-.31, -.02, .28];
-    const initialSpeeds = [156, 138, 148];
+    const initialSpeeds = [172, 152, 163];
     const floatAmplitudeX = 18;
     const floatAmplitudeY = 11;
     const floatTilt = 13;
@@ -202,14 +331,26 @@ if (!reduced) {
     let flyingTagActive = false;
     let rewardRainTimeline = null;
 
-    const playHeroRewardRain = () => {
+    const playHeroRewardRain = (messageIndex = 0) => {
       if (!heroRewardTags.length) return;
       rewardRainTimeline?.kill();
+      gsap.killTweensOf(heroRewardTags);
+      gsap.set(heroRewardTags, {autoAlpha:0});
+
+      const rewardProfiles = [
+        [heroRewardTags[0]],
+        [heroRewardTags[2]],
+        [heroRewardTags[1]],
+        []
+      ];
+      const visibleTags = rewardProfiles[messageIndex % rewardProfiles.length]
+        .filter(Boolean);
+      if (!visibleTags.length) return;
 
       const spread = Math.min(innerWidth * .085, 124);
       const drop = Math.min(innerHeight * .38, 360);
-      const middle = (heroRewardTags.length - 1) * .5;
-      const poses = heroRewardTags.map((_, index) => {
+      const middle = (visibleTags.length - 1) * .5;
+      const poses = visibleTags.map((_, index) => {
         const slot = index - middle;
         const startX = slot * spread;
         return {
@@ -220,7 +361,7 @@ if (!reduced) {
         };
       });
 
-      gsap.set(heroRewardTags, {
+      gsap.set(visibleTags, {
         autoAlpha:0,
         x:index => poses[index].startX,
         y:index => -28 - Math.abs(index - middle) * 12,
@@ -233,7 +374,7 @@ if (!reduced) {
       rewardRainTimeline = gsap.timeline({
         onComplete:() => { rewardRainTimeline = null; }
       })
-        .to(heroRewardTags, {
+        .to(visibleTags, {
           autoAlpha:.86,
           y:index => 24 + Math.abs(index - middle) * 10,
           scale:1,
@@ -242,7 +383,7 @@ if (!reduced) {
           ease:'power2.out',
           overwrite:true
         })
-        .to(heroRewardTags, {
+        .to(visibleTags, {
           autoAlpha:0,
           x:index => poses[index].endX,
           y:index => poses[index].endY,
@@ -260,6 +401,7 @@ if (!reduced) {
       const copy = heroTagMessages[index];
       const direction = initialDirections[index];
       const isResponse = direction < 0;
+      const speed = initialSpeeds[index] + (Math.random() - .5) * 12;
       tag.textContent = isResponse ? copy.response : copy.request;
       tag.classList.toggle('is-response', isResponse);
 
@@ -267,6 +409,7 @@ if (!reduced) {
         track,
         tag,
         copy,
+        messageIndex:index % heroTagMessages.length,
         direction,
         isResponse,
         axisWaveArmed:direction < 0 ? 'bottom' : 'top',
@@ -275,10 +418,15 @@ if (!reduced) {
         x:0,
         vx:0,
         vy:0,
-        flowVelocityY:0,
-        speed:initialSpeeds[index] + (Math.random() - .5) * 12,
+        flowVelocityY:direction * speed,
+        speed,
         phase:index * 2.15,
         spin:0,
+        renderX:null,
+        renderY:null,
+        renderScale:null,
+        renderRotation:null,
+        renderOpacity:null,
         width:0,
         height:0,
         suctionOffset:0,
@@ -303,7 +451,12 @@ if (!reduced) {
           innerHeight * .16,
           innerHeight * .5 - state.height * 2.25
         ) * .5;
-        state.exitOffset = innerHeight * .5 + state.height * .7;
+        // Разворачиваем плашку до того, как она успевает уйти в полную
+        // прозрачность: так смена направления выглядит как отскок.
+        state.exitOffset = Math.max(
+          innerHeight * .2,
+          innerHeight * (.5 - flightFadeEnd) + state.height * .5
+        );
 
         if (preservePosition && previousExit) {
           state.y = state.y / previousExit * state.exitOffset;
@@ -319,8 +472,10 @@ if (!reduced) {
       measureFrame = requestAnimationFrame(() => measureFlyingTags(true));
     };
 
-    const setFlyingTagResponseState = (state, isResponse) => {
-      if (state.isResponse === isResponse) return;
+    const setFlyingTagState = (state, messageIndex, isResponse) => {
+      if (state.messageIndex === messageIndex && state.isResponse === isResponse) return;
+      state.messageIndex = messageIndex;
+      state.copy = heroTagMessages[messageIndex];
       state.isResponse = isResponse;
       state.tag.textContent = isResponse ? state.copy.response : state.copy.request;
       state.tag.classList.toggle('is-response', isResponse);
@@ -353,7 +508,7 @@ if (!reduced) {
       return opacity * opacity * (3 - 2 * opacity);
     };
 
-    const renderFlyingTag = (state, time) => {
+    const renderFlyingTag = (state, time, delta = 1) => {
       const suction = getFlyingTagSuction(state);
       const origin = state.y < 0 ? '50% 0%' : '50% 100%';
 
@@ -362,13 +517,34 @@ if (!reduced) {
         state.track.style.transformOrigin = origin;
       }
 
-      state.setX(state.x + Math.sin(time * .82 + state.phase) * floatAmplitudeX);
-      state.setY(state.y + Math.cos(time * 1.04 + state.phase) * floatAmplitudeY);
-      state.setScale(1 - suction * suctionScaleLoss);
-      state.setRotation(
-        (state.spin + Math.sin(time * .58 + state.phase) * floatTilt) * (1 - suction)
-      );
-      state.setOpacity(getFlyingTagLaneOpacity(state));
+      const targetX = state.x + Math.sin(time * .82 + state.phase) * floatAmplitudeX;
+      const targetY = state.y + Math.cos(time * 1.04 + state.phase) * floatAmplitudeY;
+      const targetScale = 1 - suction * suctionScaleLoss;
+      const targetRotation = (
+        state.spin + Math.sin(time * .58 + state.phase) * floatTilt
+      ) * (1 - suction);
+      const targetOpacity = getFlyingTagLaneOpacity(state);
+      const smoothing = 1 - Math.exp(-Math.min(delta, .05) / .1);
+
+      if (state.renderX === null) {
+        state.renderX = targetX;
+        state.renderY = targetY;
+        state.renderScale = targetScale;
+        state.renderRotation = targetRotation;
+        state.renderOpacity = targetOpacity;
+      } else {
+        state.renderX += (targetX - state.renderX) * smoothing;
+        state.renderY += (targetY - state.renderY) * smoothing;
+        state.renderScale += (targetScale - state.renderScale) * smoothing;
+        state.renderRotation += (targetRotation - state.renderRotation) * smoothing;
+        state.renderOpacity += (targetOpacity - state.renderOpacity) * smoothing;
+      }
+
+      state.setX(state.renderX);
+      state.setY(state.renderY);
+      state.setScale(state.renderScale);
+      state.setRotation(state.renderRotation);
+      state.setOpacity(state.renderOpacity);
     };
 
     const clampCollisionVelocity = state => {
@@ -502,7 +678,9 @@ if (!reduced) {
 
       flyingTagStates.forEach(state => {
         const suctionAcceleration = 1 + getFlyingTagSuction(state) * 3.2;
-        state.flowVelocityY = state.direction * state.speed * suctionAcceleration;
+        const targetFlowVelocityY = state.direction * state.speed * suctionAcceleration;
+        const flowSmoothing = 1 - Math.exp(-delta / .12);
+        state.flowVelocityY += (targetFlowVelocityY - state.flowVelocityY) * flowSmoothing;
         state.y += (state.flowVelocityY + state.vy) * delta;
         state.x += state.vx * delta;
         state.vx *= Math.pow(.18, delta);
@@ -519,15 +697,21 @@ if (!reduced) {
           state.direction = -1;
           state.rewardDropArmed = true;
           state.x = (Math.random() - .5) * 28;
+          state.flowVelocityY = 0;
           state.vy = 0;
-          setFlyingTagResponseState(state, true);
+          setFlyingTagState(state, state.messageIndex, true);
           state.axisWaveArmed = 'bottom';
         } else if (state.direction < 0 && state.y < -state.exitOffset) {
           state.y = -state.exitOffset;
           state.direction = 1;
           state.x = (Math.random() - .5) * 28;
+          state.flowVelocityY = 0;
           state.vy = 0;
-          setFlyingTagResponseState(state, false);
+          setFlyingTagState(
+            state,
+            (state.messageIndex + 1) % heroTagMessages.length,
+            false
+          );
           state.axisWaveArmed = 'top';
         }
 
@@ -549,12 +733,12 @@ if (!reduced) {
           && state.rewardDropArmed
           && state.y <= innerHeight * .08) {
           state.rewardDropArmed = false;
-          playHeroRewardRain();
+          playHeroRewardRain(state.messageIndex);
         }
       });
 
       resolveFlyingTagCollisions(delta, time);
-      flyingTagStates.forEach(state => renderFlyingTag(state, time));
+      flyingTagStates.forEach(state => renderFlyingTag(state, time, delta));
     };
 
     measureFlyingTags(false);
@@ -621,17 +805,16 @@ function buildHeroTransition() {
     scrollTrigger:{
       trigger:'.hotels-hero',
       start:'top top',
-      end:'+=110%',
-      // Фон обязан точно следовать скроллу: сглаженный scrub оставлял
-      // предыдущую сцену поверх уже появившейся следующей и создавал шов.
+      end:'+=80%',
+      // Фон точно следует скроллу, чтобы не оставаться поверх следующей сцены.
       scrub:true,
       pin:true,
       pinSpacing:true,
       anticipatePin:1,
       invalidateOnRefresh:true,
       onUpdate:self => {
-        setHeroScrollFading(self.progress > .34);
-        setPageGradientVisible(self.progress > .54);
+        // Не останавливаем плашку, пока она ещё видима в переходе.
+        setHeroScrollFading(self.progress > .96);
       }
     }
   });
@@ -640,7 +823,8 @@ function buildHeroTransition() {
     .to(hero, {
       autoAlpha:0,
       y:-32,
-      duration:.24,
+      duration:.52,
+      ease:'power1.inOut',
       overwrite:'auto'
     }, 0)
     .to([
@@ -650,14 +834,17 @@ function buildHeroTransition() {
       heroParticles
     ], {
       autoAlpha:0,
-      duration:.28,
+      y:-16,
+      duration:.68,
+      ease:'power1.inOut',
       overwrite:'auto'
-    }, 0)
+    }, .08)
     .to(heroBackdrop, {
       autoAlpha:0,
-      duration:.38,
+      duration:.64,
+      ease:'sine.inOut',
       overwrite:'auto'
-    }, .16);
+    }, .28);
 }
 
 buildHeroTransition();

@@ -971,7 +971,7 @@
 
   /* --- первый экран: тёмная сцена с цветным свечением --- */
   .hero-band{
-    background:#0A1722 url('/assets/media/hero-background.webp') center / cover no-repeat;
+    background:#0A1722;
     overflow:hidden;
   }
   .hero-band::before,
