@@ -1,6 +1,5 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { initAgentMessageGradients } from './agent-message-gradients.js';
 import { initHotelSalesSection } from './sections/sales-section.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -10,7 +9,26 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let pageIsLeaving = false;
 let pageGradientLatched = false;
 let pageGradientShouldBeVisible = false;
-const destroyAgentMessageGradients = initAgentMessageGradients(document, {reduced});
+const agentMessageVideos = [...document.querySelectorAll('.hotel-message__video')];
+const agentMessageVideoObserver = reduced || !agentMessageVideos.length
+  ? null
+  : new IntersectionObserver(entries => {
+      entries.forEach(({target:video, isIntersecting}) => {
+        if (!isIntersecting) {
+          video.pause();
+          return;
+        }
+
+        const source = video.querySelector('source[data-src]');
+        if (source) {
+          source.src = source.dataset.src;
+          delete source.dataset.src;
+          video.load();
+        }
+        void video.play().catch(() => {});
+      });
+    }, {rootMargin:'240px 0px'});
+agentMessageVideos.forEach(video => agentMessageVideoObserver?.observe(video));
 const heroScene = document.querySelector('.hotels-hero');
 const hero = document.querySelector('.hotels-hero .hero');
 const heroTitle = document.getElementById('heroH1');
@@ -1044,10 +1062,14 @@ function runAnalysisSequence() {
         );
         const activeStatus = analysisStatuses[activeIndex];
         if (activeStatus) showStatus(activeStatus);
+        if (activeIndex === analysisStatuses.length - 1) {
+          gsap.set(analysisForm, {autoAlpha:0});
+        }
         setAnalysisRimSpeed(activeIndex);
         analysisForm.setAttribute('aria-busy', String(self.progress < .985));
       },
-      onLeaveBack:() => {
+      onLeaveBack:self => {
+        self.getTween()?.progress(1);
         restoreAnalysisFirstState();
       }
     }
@@ -1074,8 +1096,11 @@ function runAnalysisSequence() {
   const completeStatusHold = 1.1;
   const getStatusStart = index => statusStart + index * statusStep
     + (index > completeStatusIndex ? completeStatusHold : 0);
-  const finalStatusStart = getStatusStart(finalStatusIndex);
+  const finalStatusBase = getStatusStart(finalStatusIndex);
+  const finalStatusDelay = .42;
+  const finalStatusStart = finalStatusBase + finalStatusDelay;
   const completeStatusStart = getStatusStart(completeStatusIndex);
+  const completeStatusExit = completeStatusStart + .70 + statusReadHold + completeStatusHold;
 
   const actionTiltStep = completeStatusStart / 3;
   analysisSequence
@@ -1133,24 +1158,24 @@ function runAnalysisSequence() {
     duration:.28,
     stagger:{each:.012, from:'end'},
     ease:'power2.in'
-  }, finalStatusStart - .38);
+  }, finalStatusBase - .38);
 
   analysisSequence.to(analysisForm, {
     autoAlpha:0,
     scale:.985,
-    duration:.34,
-    ease:'power2.out'
-  }, finalStatusStart - .36);
+    duration:.32,
+    ease:'power2.in'
+  }, completeStatusExit);
 
   analysisSequence.to(analysisAction, {
     rotation:0,
     duration:.34,
     ease:'power2.inOut'
-  }, finalStatusStart - .36);
+  }, finalStatusBase - .36);
 
   analysisStatuses.forEach((status, index) => {
-    const at = getStatusStart(index);
     const isFinal = index === finalStatusIndex;
+    const at = isFinal ? finalStatusStart : getStatusStart(index);
     const isComplete = status.classList.contains('hotel-analysis__status--complete');
     const text = analysisStatusText[index];
 
@@ -1280,7 +1305,8 @@ function destroyPageGradient() {
 
 function destroyHotelGradients() {
   destroyPageGradient();
-  destroyAgentMessageGradients();
+  agentMessageVideoObserver?.disconnect();
+  agentMessageVideos.forEach(video => video.pause());
 }
 
 addEventListener('pagehide', event => {
@@ -1313,7 +1339,7 @@ hotelUrlInput?.addEventListener('keydown', event => {
 const dialogue = document.querySelector('[data-block="4"]');
 const dialogueTitle = document.getElementById('hotelDialogueTitle');
 const dialogueMessages = dialogue ? [...dialogue.querySelectorAll('.hotel-message')] : [];
-const dialogueSignalColor = 'rgba(255,255,255,.52)';
+const dialogueSignalColor = '#fff';
 
 dialogueMessages.forEach(message => {
   if (message.querySelector('.hotel-message__signal')) {
@@ -1532,10 +1558,29 @@ if (!reduced && dialogue) {
 }
 
 const hotelInfoCards = [...document.querySelectorAll('.hotel-info-card')];
+const hotelData = document.querySelector('.hotel-data');
+const hotelDataInner = hotelData?.querySelector('.hotel-data__inner');
+const hotelDataTrack = hotelData?.querySelector('.hotel-data__grid');
+const hotelCardImages = hotelData ? [...hotelData.querySelectorAll('.hotel-info-card__photo')] : [];
+const analysisFinalStatus = document.querySelector('.hotel-analysis__status--result');
+const hotelHorizontalEnabled = !reduced
+  && matchMedia('(min-width:761px)').matches;
 const hotelCardPointerEnabled = !reduced
   && matchMedia('(hover:hover) and (pointer:fine)').matches;
 
-if (!reduced) {
+if (hotelData && hotelCardImages.length) {
+  const hotelCardImageObserver = new IntersectionObserver((entries, observer) => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    hotelCardImages.forEach(image => {
+      image.loading = 'eager';
+      void image.decode().catch(() => {});
+    });
+    observer.disconnect();
+  }, {rootMargin:'80% 0px'});
+  hotelCardImageObserver.observe(hotelData);
+}
+
+if (!reduced && !hotelHorizontalEnabled) {
   hotelInfoCards.forEach((card, index) => {
     const isRightColumn = index % 2 === 1;
 
@@ -1562,11 +1607,117 @@ if (!reduced) {
   gsap.set(hotelInfoCards, {autoAlpha:1, '--card-shift-y':'0px'});
 }
 
+if (hotelHorizontalEnabled && hotelData && hotelDataInner && hotelDataTrack && analysisFinalStatus) {
+  const getExitReveal = () => Math.min(hotelInfoCards.at(-1)?.offsetWidth * .45 || 0, 220);
+  const setResultPinned = active => {
+    analysisStage?.classList.toggle('is-result-pinned', active);
+    analysisFinalStatus.classList.toggle('is-horizontal-pinned', active);
+  };
+
+  hotelData.classList.add('is-horizontal');
+
+  const horizontalTimeline = gsap.timeline({
+    scrollTrigger:{
+      trigger:hotelData,
+      start:'top 40%',
+      end:() => `+=${Math.round(innerWidth + hotelDataTrack.scrollWidth - getExitReveal())}`,
+      pin:hotelDataInner,
+      scrub:1.25,
+      anticipatePin:1,
+      invalidateOnRefresh:true,
+      onEnter:() => gsap.set(hotelDataTrack, {visibility:'visible'}),
+      onLeave:() => gsap.set(hotelDataTrack, {visibility:'hidden'}),
+      onEnterBack:() => gsap.set(hotelDataTrack, {visibility:'visible'}),
+      onLeaveBack:() => gsap.set(hotelDataTrack, {visibility:'hidden'})
+    }
+  });
+
+  gsap.set(hotelDataTrack, {autoAlpha:0});
+
+  horizontalTimeline
+    .fromTo(hotelDataTrack,
+      {x:() => innerWidth + 2},
+      {
+        x:() => -(hotelDataTrack.scrollWidth - getExitReveal()),
+        ease:'none',
+        snap:{x:1}
+      },
+      0
+    )
+    .to(hotelDataTrack, {
+      opacity:1,
+      duration:.008,
+      ease:'none'
+    }, 0)
+    .to(hotelDataTrack, {
+      opacity:0,
+      duration:.035,
+      ease:'none'
+    }, .465);
+
+  ScrollTrigger.create({
+    trigger:hotelData,
+    start:'top 64%',
+    end:() => horizontalTimeline.scrollTrigger.end,
+    invalidateOnRefresh:true,
+    onEnter:() => {
+      analysisFinalStatus.classList.remove('is-horizontal-past');
+      setResultPinned(true);
+    },
+    onLeave:() => {
+      setResultPinned(false);
+      analysisFinalStatus.classList.add('is-horizontal-past');
+    },
+    onEnterBack:() => {
+      analysisFinalStatus.classList.remove('is-horizontal-past');
+      setResultPinned(true);
+    },
+    onLeaveBack:() => setResultPinned(false)
+  });
+}
+
 if (hotelCardPointerEnabled) {
   hotelInfoCards.forEach(card => {
+    const cardShell = card.closest('.hotel-info-card-shell');
+    if (!cardShell) return;
+    const siblingCards = hotelInfoCards
+      .filter(item => item !== card)
+      .map(item => item.closest('.hotel-info-card-shell'));
+    const tagDepths = [14, 22, 30];
+    const tagTilts = [3.5, 5, 6.5];
+    const tagDurations = [.26, .44, .66];
+    const tagControllers = [...cardShell.querySelectorAll('.hotel-info-card__details > span')]
+      .map((tag, index) => {
+        gsap.set(tag, {
+          z:18 + index * 18,
+          transformPerspective:800,
+          transformOrigin:'50% 50%'
+        });
+
+        return {
+          depth:tagDepths[index],
+          tilt:tagTilts[index],
+          x:gsap.quickTo(tag, 'x', {duration:tagDurations[index], ease:'power3.out'}),
+          y:gsap.quickTo(tag, 'y', {duration:tagDurations[index] + .08, ease:'power3.out'}),
+          rotationX:gsap.quickTo(tag, 'rotationX', {duration:tagDurations[index] + .1, ease:'power3.out'}),
+          rotationY:gsap.quickTo(tag, 'rotationY', {duration:tagDurations[index] + .1, ease:'power3.out'})
+        };
+      });
     const resetCard = () => {
-      card.classList.remove('is-pointer-active');
-      gsap.to(card, {
+      cardShell?.classList.remove('is-pointer-active');
+      tagControllers.forEach(controller => {
+        controller.x(0);
+        controller.y(0);
+        controller.rotationX(0);
+        controller.rotationY(0);
+      });
+      gsap.to(siblingCards, {
+        opacity:1,
+        duration:.38,
+        ease:'power2.out',
+        overwrite:'auto'
+      });
+      gsap.to(cardShell, {
         '--card-lift':'0px',
         '--card-rx':'0deg',
         '--card-ry':'0deg',
@@ -1577,39 +1728,53 @@ if (hotelCardPointerEnabled) {
       });
     };
 
-    card.addEventListener('pointerenter', () => {
-      card.classList.add('is-pointer-active');
-      gsap.to(card, {
-        '--card-lift':'-12px',
-        '--card-scale':1.035,
+    cardShell.addEventListener('pointerenter', () => {
+      cardShell?.classList.add('is-pointer-active');
+      gsap.to(siblingCards, {
+        opacity:.54,
+        duration:.38,
+        ease:'power2.out',
+        overwrite:'auto'
+      });
+      gsap.to(cardShell, {
+        '--card-lift':hotelHorizontalEnabled ? '0px' : '-12px',
+        '--card-scale':hotelHorizontalEnabled ? 1 : 1.035,
         duration:.5,
         ease:'power3.out',
         overwrite:'auto'
       });
     });
 
-    card.addEventListener('pointermove', event => {
+    cardShell.addEventListener('pointermove', event => {
       const rect = card.getBoundingClientRect();
       const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
       const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
       const rotateX = (0.5 - y) * 7;
       const rotateY = (x - 0.5) * 9;
+      const pointerX = (x - .5) * 2;
+      const pointerY = (y - .5) * 2;
       const lightAngle = Math.atan2(y - .5, x - .5) * 180 / Math.PI + 90;
 
-      card.style.setProperty('--card-mx', `${(x * 100).toFixed(1)}%`);
-      card.style.setProperty('--card-my', `${(y * 100).toFixed(1)}%`);
-      card.style.setProperty('--card-light-angle', `${lightAngle.toFixed(1)}deg`);
-      gsap.to(card, {
+      cardShell?.style.setProperty('--card-mx', `${(x * 100).toFixed(1)}%`);
+      cardShell?.style.setProperty('--card-my', `${(y * 100).toFixed(1)}%`);
+      cardShell?.style.setProperty('--card-light-angle', `${lightAngle.toFixed(1)}deg`);
+      gsap.to(cardShell, {
         '--card-rx':`${rotateX.toFixed(2)}deg`,
         '--card-ry':`${rotateY.toFixed(2)}deg`,
         duration:.32,
         ease:'power2.out',
         overwrite:'auto'
       });
+      tagControllers.forEach(controller => {
+        controller.x(pointerX * controller.depth);
+        controller.y(pointerY * controller.depth * .52);
+        controller.rotationX(-pointerY * controller.tilt);
+        controller.rotationY(pointerX * controller.tilt);
+      });
     });
 
-    card.addEventListener('pointerleave', resetCard);
-    card.addEventListener('pointercancel', resetCard);
+    cardShell.addEventListener('pointerleave', resetCard);
+    cardShell.addEventListener('pointercancel', resetCard);
   });
 }
 

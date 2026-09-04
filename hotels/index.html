@@ -118,10 +118,11 @@
             <p class="hotel-analysis__status" data-status="2" aria-hidden="true">Изучаю страницы</p>
             <p class="hotel-analysis__status hotel-analysis__status--flow" data-status="3" aria-hidden="true">Собираю главное</p>
             <p class="hotel-analysis__status hotel-analysis__status--complete" data-status="4" aria-hidden="true">Всё собрал</p>
-            <p class="hotel-analysis__status hotel-analysis__status--result" data-status="5" aria-hidden="true">Собрал всю информацию<br>про отель у&nbsp;пользователя<br>в&nbsp;телефоне</p>
           </div>
         </div>
       </div>
+
+      <p class="hotel-analysis__status hotel-analysis__status--result font-nunito-light-wide" id="hotelResultsTitle" data-status="5" aria-hidden="true">Собрал всю информацию<br>про отель у&nbsp;пользователя<br>в&nbsp;телефоне</p>
 
       <div class="hotel-analysis__cards font-nunito-light-wide" aria-hidden="true">
         <div class="hotel-analysis-card-anchor">
@@ -189,55 +190,70 @@
 
   <section class="hotel-data" id="hotel-results" aria-labelledby="hotelResultsTitle">
     <div class="hotel-data__inner">
-      <h1 class="hotel-data__title font-nunito-light-wide sr-only" id="hotelResultsTitle">Собрал всю информацию про отель у&nbsp;пользователя в&nbsp;телефоне</h1>
-
       <div class="hotel-data__grid">
+        <div class="hotel-info-card-shell hotel-info-card-shell--rooms">
         <article class="hotel-info-card hotel-info-card--rooms">
+          <div class="hotel-info-card__media">
+            <img class="hotel-info-card__photo" src="/assets/hotels/card-rooms.webp" width="1311" height="1800" alt="Номер отеля с подготовленной кроватью" loading="lazy" decoding="async">
+          </div>
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Удобства номера<br>и&nbsp;правила<br>проживания</h2>
           </div>
-          <div class="hotel-info-card__rooms-visual">
-            <div class="hotel-info-card__room-photo">
-              <img src="/assets/hotels/rooms-bedroom.webp" width="1122" height="1402" alt="Интерьер номера отеля" loading="lazy" decoding="async">
-            </div>
-            <span class="hotel-info-card__room-tag hotel-info-card__room-tag--amenities font-nunito-medium">Удобства в номере</span>
-            <span class="hotel-info-card__room-tag hotel-info-card__room-tag--food font-nunito-medium">Питание</span>
-            <span class="hotel-info-card__room-tag hotel-info-card__room-tag--reception font-nunito-medium">Ресепшн</span>
-          </div>
         </article>
+          <div class="hotel-info-card__details font-nunito-medium">
+            <span><em>Всё нужное уже в&nbsp;номере</em></span>
+            <span><em>Как проходит заезд и&nbsp;выезд</em></span>
+            <span><em>Можно ли с&nbsp;детьми и&nbsp;питомцами</em></span>
+          </div>
+        </div>
 
+        <div class="hotel-info-card-shell hotel-info-card-shell--services">
         <article class="hotel-info-card hotel-info-card--services">
+          <div class="hotel-info-card__media">
+            <img class="hotel-info-card__photo" src="/assets/hotels/card-services.webp" width="1311" height="1800" alt="Гость отеля с горячим напитком" loading="lazy" decoding="async">
+          </div>
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Дополнительные<br>услуги отеля</h2>
           </div>
-          <img class="hotel-info-card__services-visual" src="/assets/hotels/services-sauna.webp" width="1280" height="816" alt="Баня на дровах" loading="lazy" decoding="async">
         </article>
+          <div class="hotel-info-card__details font-nunito-medium">
+            <span><em>Трансфер прямо до&nbsp;отеля</em></span>
+            <span><em>Отдых в&nbsp;SPA и&nbsp;массаж</em></span>
+            <span><em>Заказ в&nbsp;номер и&nbsp;прачечная</em></span>
+          </div>
+        </div>
 
+        <div class="hotel-info-card-shell hotel-info-card-shell--menu">
         <article class="hotel-info-card hotel-info-card--menu">
+          <div class="hotel-info-card__media">
+            <img class="hotel-info-card__photo hotel-info-card__photo--menu" src="/assets/hotels/card-menu.webp" width="1311" height="1800" alt="Завтрак в ресторане отеля" loading="lazy" decoding="async">
+          </div>
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Меню с&nbsp;сайта отеля</h2>
           </div>
-          <figure class="hotel-info-card__menu-dish hotel-info-card__menu-dish--pancakes" aria-label="Панкейки с кленовым сиропом, 290 рублей">
-            <img class="hotel-info-card__menu-photo" src="/assets/hotels/menu-pancakes-photo.webp" width="735" height="639" alt="" loading="lazy" decoding="async">
-            <figcaption class="hotel-info-card__menu-caption">
-              <span class="hotel-info-card__menu-name">Панкейки<br>с&nbsp;кленовым<br>сиропом</span>
-              <span class="hotel-info-card__menu-price">290&nbsp;₽</span>
-            </figcaption>
-          </figure>
-          <figure class="hotel-info-card__menu-dish hotel-info-card__menu-dish--toast" aria-label="Французские тосты с ягодами, 290 рублей">
-            <img class="hotel-info-card__menu-photo" src="/assets/hotels/menu-toast-photo.webp" width="735" height="639" alt="" loading="lazy" decoding="async">
-            <figcaption class="hotel-info-card__menu-caption">
-              <span class="hotel-info-card__menu-name">Французские тосты<br>с&nbsp;ягодами</span>
-              <span class="hotel-info-card__menu-price">290&nbsp;₽</span>
-            </figcaption>
-          </figure>
         </article>
+          <div class="hotel-info-card__details font-nunito-medium">
+            <span><em>Что подают на&nbsp;завтрак</em></span>
+            <span><em>Напитки и&nbsp;десерты</em></span>
+            <span><em>Что входит в&nbsp;каждое блюдо</em></span>
+          </div>
+        </div>
 
+        <div class="hotel-info-card-shell hotel-info-card-shell--places">
         <article class="hotel-info-card hotel-info-card--places">
+          <div class="hotel-info-card__media">
+            <img class="hotel-info-card__photo" src="/assets/hotels/card-places.webp" width="1311" height="1800" alt="Бар на территории отеля" loading="lazy" decoding="async">
+          </div>
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Куда сходить<br>на&nbsp;территории отеля</h2>
           </div>
         </article>
+          <div class="hotel-info-card__details font-nunito-medium">
+            <span><em>Поужинать в&nbsp;ресторане</em></span>
+            <span><em>Отдохнуть в&nbsp;SPA и&nbsp;бассейне</em></span>
+            <span><em>Куда сходить всей семьёй</em></span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -260,6 +276,9 @@
           </article>
 
           <article class="hotel-message hotel-message--agent">
+            <video class="hotel-message__video" muted loop playsinline preload="none" poster="/assets/hotels/agent-message-bg-poster.webp" aria-hidden="true" tabindex="-1">
+              <source data-src="/assets/hotels/agent-message-bg.mp4" type="video/mp4">
+            </video>
             <p>Могу оформить ранний заезд с&nbsp;9:00 и&nbsp;трансфер с&nbsp;детским креслом до&nbsp;отеля</p>
           </article>
 
@@ -269,6 +288,9 @@
 
           <div class="hotel-message-shell hotel-message-shell--agent" data-bonus-message>
             <article class="hotel-message hotel-message--agent">
+              <video class="hotel-message__video" muted loop playsinline preload="none" poster="/assets/hotels/agent-message-bg-poster.webp" aria-hidden="true" tabindex="-1">
+                <source data-src="/assets/hotels/agent-message-bg.mp4" type="video/mp4">
+              </video>
               <p>Готово. Трансфер заказан, номер будет готов к&nbsp;9:00</p>
             </article>
             <div class="hotel-message__bonuses" aria-label="Начислены бонусы">
@@ -282,6 +304,9 @@
           </article>
 
           <article class="hotel-message hotel-message--agent">
+            <video class="hotel-message__video" muted loop playsinline preload="none" poster="/assets/hotels/agent-message-bg-poster.webp" aria-hidden="true" tabindex="-1">
+              <source data-src="/assets/hotels/agent-message-bg.mp4" type="video/mp4">
+            </video>
             <p>Сегодня в&nbsp;бане — мужское парение на&nbsp;натуральных травах. Начало в&nbsp;19:00</p>
           </article>
 
@@ -291,6 +316,9 @@
 
           <div class="hotel-message-shell hotel-message-shell--agent" data-bonus-message>
             <article class="hotel-message hotel-message--agent">
+              <video class="hotel-message__video" muted loop playsinline preload="none" poster="/assets/hotels/agent-message-bg-poster.webp" aria-hidden="true" tabindex="-1">
+                <source data-src="/assets/hotels/agent-message-bg.mp4" type="video/mp4">
+              </video>
               <p>Готово. Парение добавлено в&nbsp;план на&nbsp;19:00</p>
             </article>
             <div class="hotel-message__bonuses" aria-label="Начислены бонусы">
