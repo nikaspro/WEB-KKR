@@ -32,9 +32,8 @@
         <a class="site-header__audience-tab is-active font-nunito-medium" href="./" role="tab" aria-selected="true">Отелям</a>
       </div>
     </div>
-    <a class="site-header__download font-nunito-medium" id="headerDownload" href="#download" aria-hidden="true" tabindex="-1">
-      <img loading="lazy" src="/assets/ui/login_apple.svg" width="23" height="29" alt="" aria-hidden="true">
-      <span>Скачать</span>
+    <a class="site-header__download font-nunito-medium" id="headerDownload" href="#hotel-application" aria-hidden="true" tabindex="-1" aria-label="Подключить отель">
+      <span>Подключить</span>
     </a>
     <button class="site-header__menu hdr-item" id="menuTrigger" type="button" aria-label="Открыть меню" aria-controls="siteMenu" aria-expanded="false">
       <span></span><span></span>
@@ -101,7 +100,6 @@
 
   <section class="hotel-analysis" id="analysis" aria-labelledby="hotelPrompt">
     <div class="hotel-analysis__stage">
-      <span class="hotel-analysis__result-wave" aria-hidden="true"></span>
       <div class="hotel-analysis__content">
         <p class="hotel-analysis__prompt font-nunito-light-wide" id="hotelPrompt">Добавляете ссылку на&nbsp;отель</p>
         <div class="hotel-analysis__action">
@@ -118,7 +116,7 @@
             <p class="hotel-analysis__status" data-status="0" aria-hidden="true">Думаю</p>
             <p class="hotel-analysis__status" data-status="1" aria-hidden="true">Открываю сайт</p>
             <p class="hotel-analysis__status" data-status="2" aria-hidden="true">Изучаю страницы</p>
-            <p class="hotel-analysis__status" data-status="3" aria-hidden="true">Собираю главное</p>
+            <p class="hotel-analysis__status hotel-analysis__status--flow" data-status="3" aria-hidden="true">Собираю главное</p>
             <p class="hotel-analysis__status hotel-analysis__status--complete" data-status="4" aria-hidden="true">Всё собрал</p>
             <p class="hotel-analysis__status hotel-analysis__status--result" data-status="5" aria-hidden="true">Собрал всю информацию<br>про отель у&nbsp;пользователя<br>в&nbsp;телефоне</p>
           </div>
@@ -197,7 +195,6 @@
         <article class="hotel-info-card hotel-info-card--rooms">
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Удобства номера<br>и&nbsp;правила<br>проживания</h2>
-            <p class="font-nunito-medium">Фото номера, дополнительные услуги,<br>инструкции и&nbsp;контакты ресепшена</p>
           </div>
           <div class="hotel-info-card__rooms-visual">
             <div class="hotel-info-card__room-photo">
@@ -212,7 +209,6 @@
         <article class="hotel-info-card hotel-info-card--services">
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Дополнительные<br>услуги отеля</h2>
-            <p class="font-nunito-medium">Описание, стоимость и&nbsp;онлайн-<br>бронирование доступных услуг</p>
           </div>
           <img class="hotel-info-card__services-visual" src="/assets/hotels/services-sauna.webp" width="1280" height="816" alt="Баня на дровах" loading="lazy" decoding="async">
         </article>
@@ -220,7 +216,6 @@
         <article class="hotel-info-card hotel-info-card--menu">
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Меню с&nbsp;сайта отеля</h2>
-            <p class="font-nunito-medium">Блюда, категории, фотографии<br>и&nbsp;цены автоматически собираются<br>с&nbsp;сайта</p>
           </div>
           <figure class="hotel-info-card__menu-dish hotel-info-card__menu-dish--pancakes" aria-label="Панкейки с кленовым сиропом, 290 рублей">
             <img class="hotel-info-card__menu-photo" src="/assets/hotels/menu-pancakes-photo.webp" width="735" height="639" alt="" loading="lazy" decoding="async">
@@ -241,7 +236,6 @@
         <article class="hotel-info-card hotel-info-card--places">
           <div class="hotel-info-card__copy">
             <h2 class="font-nunito-light-wide">Куда сходить<br>на&nbsp;территории отеля</h2>
-            <p class="font-nunito-medium">Места на&nbsp;карте и&nbsp;расписание<br>активностей</p>
           </div>
         </article>
       </div>

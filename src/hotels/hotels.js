@@ -16,6 +16,7 @@ const hero = document.querySelector('.hotels-hero .hero');
 const heroTitle = document.getElementById('heroH1');
 const heroCopy = document.getElementById('heroP');
 const heroDownload = document.querySelector('.hero-download');
+const headerDownload = document.getElementById('headerDownload');
 const scrollCue = document.querySelector('.hero-scroll');
 const heroBand = document.getElementById('heroBand');
 const heroBackdrop = document.getElementById('heroBackdrop');
@@ -26,8 +27,16 @@ const heroAxisLabels = {
   bottom:document.querySelector('.hotel-hero-axis-label--bottom')
 };
 let heroIsScrollingOut = false;
+let headerDownloadVisible = false;
 let stopHeroMotion = () => {};
 let startHeroMotion = () => {};
+const setHeaderDownloadVisible = visible => {
+  if (visible === headerDownloadVisible || !headerDownload) return;
+  headerDownloadVisible = visible;
+  headerDownload.classList.toggle('is-visible', visible);
+  headerDownload.setAttribute('aria-hidden', String(!visible));
+  headerDownload.tabIndex = visible ? 0 : -1;
+};
 const setHeroScrollFading = active => {
   if (heroIsScrollingOut === active) return;
   heroIsScrollingOut = active;
@@ -632,7 +641,10 @@ function buildHeroTransition() {
       onUpdate:self => {
         setHeroScrollFading(self.progress > .34);
         setPageGradientVisible(self.progress > .54);
-      }
+      },
+      onLeave:() => setHeaderDownloadVisible(true),
+      onEnterBack:() => setHeaderDownloadVisible(false),
+      onLeaveBack:() => setHeaderDownloadVisible(false)
     }
   });
 
@@ -673,15 +685,18 @@ const pageGradientHost = document.querySelector('[data-neat-gradient-host]');
 const analysisPrompt = document.querySelector('.hotel-analysis__prompt');
 const analysisAction = document.querySelector('.hotel-analysis__action');
 const analysisForm = document.getElementById('hotelForm');
+const analysisShell = analysisForm?.querySelector('.hotel-url__shell');
 const hotelUrlInput = document.getElementById('hotelUrl');
 const analysisRipple = document.querySelector('[data-hotel-url-ripple]');
-const analysisResultWave = document.querySelector('.hotel-analysis__result-wave');
 const analysisStatusesRegion = document.querySelector('.hotel-analysis__statuses');
 const analysisStatuses = gsap.utils.toArray('.hotel-analysis__status');
 const analysisCards = gsap.utils.toArray('.hotel-analysis-card');
 const analysisCardAnchors = gsap.utils.toArray('.hotel-analysis-card-anchor');
 const hotelUrlPreset = hotelUrlInput?.value || 'my-hotel.ru';
 const hotelUrlTyping = {characters:0};
+const analysisStatusText = analysisStatuses.map(status => Array.from(status.childNodes)
+  .map(node => node.nodeName === 'BR' ? '\n' : node.textContent)
+  .join(''));
 let unmountPageGradient = null;
 let pageGradientActivation = null;
 let pageGradientModule = null;
@@ -690,29 +705,65 @@ let analysisReveal = null;
 let analysisGradientTimer = 0;
 let analysisExperience = null;
 let analysisFlowStarted = false;
-let analysisResultWaveTimeline = null;
-let analysisRimAnimations = [];
-let analysisTextFlowAnimations = [];
-let analysisMotionAnimationsReady = false;
+let analysisRimStatusIndex = -1;
+let analysisRimMotion = null;
+const analysisRimRotation = {value:0};
+const analysisRimRate = {value:1};
+const analysisRimTimeScales = [1, 1.54, 2.44, 4, 6.67];
 
-function syncAnalysisMotionSpeed(progress) {
-  if (!analysisMotionAnimationsReady) {
-    const animations = analysisAction?.getAnimations?.({subtree:true}) || [];
-    analysisRimAnimations = animations.filter(animation => animation.animationName === 'hotelRimRun');
-    analysisTextFlowAnimations = animations.filter(animation => animation.animationName === 'hotelStatusTextFlow');
-    analysisMotionAnimationsReady = true;
+function renderAnalysisStatus(status, text, characters) {
+  const visibleText = text.slice(0, Math.max(0, Math.round(characters)));
+  status.innerHTML = visibleText.replace(/\n/g, '<br>');
+}
+
+function startAnalysisRimMotion() {
+  if (!analysisShell) return;
+
+  analysisRimMotion?.kill();
+  gsap.killTweensOf(analysisRimRate);
+  analysisRimRotation.value = 0;
+  analysisRimRate.value = 1;
+  analysisShell.style.setProperty('--hotel-rim-spin', '0deg');
+  analysisRimMotion = gsap.to(analysisRimRotation, {
+    value:360,
+    duration:2,
+    ease:'none',
+    repeat:-1,
+    onUpdate:() => {
+      analysisShell.style.setProperty('--hotel-rim-spin', `${analysisRimRotation.value % 360}deg`);
+    }
+  });
+}
+
+function stopAnalysisRimMotion() {
+  analysisRimMotion?.kill();
+  analysisRimMotion = null;
+  gsap.killTweensOf(analysisRimRate);
+  analysisRimRate.value = 1;
+  analysisShell?.style.setProperty('--hotel-rim-spin', '0deg');
+}
+
+function setAnalysisRimSpeed(statusIndex, immediate = false) {
+  if (!analysisShell) return;
+
+  const nextIndex = Math.max(0, Math.min(analysisRimTimeScales.length - 1, statusIndex));
+  if (nextIndex === analysisRimStatusIndex && !immediate) return;
+
+  analysisRimStatusIndex = nextIndex;
+  const nextRate = analysisRimTimeScales[nextIndex];
+  gsap.killTweensOf(analysisRimRate);
+  if (immediate || !analysisRimMotion) {
+    analysisRimRate.value = nextRate;
+    analysisRimMotion?.timeScale(nextRate);
+    return;
   }
 
-  const rimRate = gsap.utils.interpolate(2, 8.4, progress);
-  const textFlowRate = gsap.utils.interpolate(1, 3.4, progress);
-
-  analysisRimAnimations.forEach(animation => {
-    if (typeof animation.updatePlaybackRate === 'function') animation.updatePlaybackRate(rimRate);
-    else animation.playbackRate = rimRate;
-  });
-  analysisTextFlowAnimations.forEach(animation => {
-    if (typeof animation.updatePlaybackRate === 'function') animation.updatePlaybackRate(textFlowRate);
-    else animation.playbackRate = textFlowRate;
+  gsap.to(analysisRimRate, {
+    value:nextRate,
+    duration:immediate ? 0 : .24,
+    ease:'power2.out',
+    overwrite:'auto',
+    onUpdate:() => analysisRimMotion?.timeScale(analysisRimRate.value)
   });
 }
 
@@ -767,30 +818,6 @@ function enableAnalysisCardParallax() {
   }, {passive:true});
 }
 
-function playAnalysisResultWave() {
-  if (!analysisResultWave) return;
-  analysisResultWaveTimeline?.kill();
-  gsap.set(analysisResultWave, {autoAlpha:0, scale:.92});
-  analysisResultWaveTimeline = gsap.timeline({
-    onComplete:() => {
-      analysisResultWaveTimeline = null;
-    }
-  })
-    .to(analysisResultWave, {
-      autoAlpha:.86,
-      scale:1.03,
-      duration:.35,
-      ease:'sine.inOut'
-    })
-    .to({}, {duration:.85})
-    .to(analysisResultWave, {
-      autoAlpha:0,
-      scale:1.12,
-      duration:.8,
-      ease:'sine.inOut'
-    });
-}
-
 if (!reduced && analysis) {
   enableAnalysisCardParallax();
   hotelUrlInput.value = '';
@@ -799,6 +826,10 @@ if (!reduced && analysis) {
     textShadow:'none'
   });
   gsap.set(analysisForm, {pointerEvents:'none'});
+  gsap.set(analysisAction, {
+    y:getAnalysisActionCenterY(),
+    transformOrigin:'50% 50%'
+  });
 
   analysisReveal = gsap.timeline({
     defaults:{ease:'none'},
@@ -807,14 +838,40 @@ if (!reduced && analysis) {
       start:'top top',
       end:() => `+=${Math.round(innerHeight * .60)}`,
       scrub:.58,
-      invalidateOnRefresh:true
+      invalidateOnRefresh:true,
+      onEnter:() => {
+        if (!analysisRimMotion) startAnalysisRimMotion();
+      },
+      onLeaveBack:() => {
+        gsap.set(analysisPrompt, {
+          autoAlpha:0,
+          y:0,
+          scale:1,
+          rotation:0,
+          filter:'blur(0px)'
+        });
+        if (!analysisFlowStarted) stopAnalysisRimMotion();
+      }
     }
   });
 
   analysisReveal
     .fromTo(analysisPrompt,
-      {autoAlpha:0},
-      {autoAlpha:1, duration:.3},
+      {
+        autoAlpha:0,
+        y:0,
+        scale:1,
+        rotation:0,
+        filter:'blur(0px)'
+      },
+      {
+        autoAlpha:1,
+        y:0,
+        scale:1,
+        rotation:0,
+        filter:'blur(0px)',
+        duration:.3
+      },
       0
     )
     .fromTo(analysisForm,
@@ -884,10 +941,23 @@ async function activatePageGradient() {
   return pageGradientActivation;
 }
 
+function restoreAnalysisFirstState() {
+  hotelUrlInput.readOnly = false;
+  hotelUrlInput.tabIndex = 0;
+  analysisForm.removeAttribute('data-submitting');
+  analysisForm.setAttribute('aria-busy', 'false');
+  analysis?.classList.remove('is-submitted', 'is-prompt-hidden');
+  analysisStatuses.forEach((status, index) => {
+    status.setAttribute('aria-hidden', 'true');
+    gsap.set(status, {autoAlpha:0});
+    renderAnalysisStatus(status, analysisStatusText[index], analysisStatusText[index].length);
+  });
+  stopAnalysisRimMotion();
+  analysisRimStatusIndex = -1;
+  gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
+}
+
 function runAnalysisSequence() {
-  analysisReveal?.scrollTrigger?.kill();
-  analysisReveal?.kill();
-  analysisReveal = null;
   gsap.killTweensOf([analysisForm, hotelUrlInput, analysisPrompt]);
   gsap.set(hotelUrlInput, {color:'#fff', textShadow:'none'});
 
@@ -900,13 +970,6 @@ function runAnalysisSequence() {
   if (reduced) {
     gsap.set(analysisPrompt, {autoAlpha:0});
     analysis?.classList.add('is-prompt-hidden');
-  } else {
-    gsap.to(analysisPrompt, {
-      autoAlpha:0,
-      duration:.28,
-      ease:'power2.out',
-      onComplete:() => analysis?.classList.add('is-prompt-hidden')
-    });
   }
 
   const showStatus = status => {
@@ -942,9 +1005,14 @@ function runAnalysisSequence() {
     rotation:0,
     transformOrigin:'50% 50%'
   });
-  gsap.set(analysisResultWave, {autoAlpha:0, scale:.92, transformOrigin:'50% 50%'});
-  gsap.set(analysisAction, {scale:1, rotation:0, y:0, transformOrigin:'50% 50%'});
-  syncAnalysisMotionSpeed(0);
+  gsap.set(analysisAction, {
+    scale:1,
+    rotation:0,
+    y:getAnalysisActionCenterY(),
+    transformOrigin:'50% 50%'
+  });
+  startAnalysisRimMotion();
+  setAnalysisRimSpeed(0, true);
   gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
   analysisSequence = gsap.timeline({
     defaults:{ease:'none'},
@@ -954,6 +1022,20 @@ function runAnalysisSequence() {
       end:'bottom bottom',
       scrub:.82,
       invalidateOnRefresh:true,
+      onEnter:() => {
+        gsap.set(analysisPrompt, {
+          autoAlpha:0,
+          y:0,
+          scale:1,
+          rotation:0,
+          filter:'blur(0px)'
+        });
+        gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
+        if (!analysisRimMotion) {
+          startAnalysisRimMotion();
+          setAnalysisRimSpeed(0, true);
+        }
+      },
       onUpdate:self => {
         const statusProgress = gsap.utils.clamp(0, .999, (self.progress - .06) / .94);
         const activeIndex = Math.min(
@@ -962,8 +1044,11 @@ function runAnalysisSequence() {
         );
         const activeStatus = analysisStatuses[activeIndex];
         if (activeStatus) showStatus(activeStatus);
-        syncAnalysisMotionSpeed(self.progress);
+        setAnalysisRimSpeed(activeIndex);
         analysisForm.setAttribute('aria-busy', String(self.progress < .985));
+      },
+      onLeaveBack:() => {
+        restoreAnalysisFirstState();
       }
     }
   })
@@ -972,15 +1057,16 @@ function runAnalysisSequence() {
       caretColor:'transparent',
       duration:.38,
       ease:'power2.out'
-    }, 0)
+    }, .58)
     .to(analysisForm, {
       scale:.985,
       duration:.38,
       ease:'power2.out'
     }, 0);
 
-  const statusStart = .32;
-  const statusStep = 1.02;
+  const statusStart = .98;
+  const statusReadHold = .28;
+  const statusStep = 1.30;
   const finalStatusIndex = analysisStatuses.length - 1;
   const completeStatusIndex = analysisStatuses.findIndex(
     status => status.classList.contains('hotel-analysis__status--complete')
@@ -991,11 +1077,23 @@ function runAnalysisSequence() {
   const finalStatusStart = getStatusStart(finalStatusIndex);
   const completeStatusStart = getStatusStart(completeStatusIndex);
 
-  analysisSequence.to(analysisAction, {
-    rotation:-4,
-    duration:completeStatusStart,
-    ease:'none'
-  }, 0);
+  const actionTiltStep = completeStatusStart / 3;
+  analysisSequence
+    .to(analysisAction, {
+      rotation:-4,
+      duration:actionTiltStep,
+      ease:'none'
+    }, 0)
+    .to(analysisAction, {
+      rotation:4,
+      duration:actionTiltStep,
+      ease:'none'
+    })
+    .to(analysisAction, {
+      rotation:-4,
+      duration:completeStatusStart - actionTiltStep * 2,
+      ease:'none'
+    });
 
   analysisSequence.to(hotelUrlInput, {
     backgroundColor:'#120be3',
@@ -1006,12 +1104,6 @@ function runAnalysisSequence() {
     duration:.48,
     ease:'power2.inOut'
   }, completeStatusStart - .48);
-
-  analysisSequence.to(analysisAction, {
-    y:getAnalysisActionCenterY,
-    duration:.72,
-    ease:'sine.inOut'
-  }, completeStatusStart - .72);
 
   analysisSequence.fromTo(analysisCards,
     {
@@ -1032,7 +1124,6 @@ function runAnalysisSequence() {
       duration:.3,
       stagger:.018,
       ease:'power3.out',
-      onStart:playAnalysisResultWave
     },
     completeStatusStart
   );
@@ -1061,26 +1152,47 @@ function runAnalysisSequence() {
     const at = getStatusStart(index);
     const isFinal = index === finalStatusIndex;
     const isComplete = status.classList.contains('hotel-analysis__status--complete');
+    const text = analysisStatusText[index];
 
-    analysisSequence.fromTo(status,
-      {
-        autoAlpha:0,
-        y:isFinal ? 12 : 34,
-        scale:isFinal ? .985 : .94,
-        rotationX:isFinal ? 0 : -10,
-        filter:isComplete ? 'blur(0px)' : `blur(${isFinal ? 6 : 12}px)`
-      },
-      {
+    if (isFinal) {
+      analysisSequence.fromTo(status,
+        {
+          autoAlpha:0,
+          y:12,
+          scale:.985,
+          rotationX:0,
+          filter:'blur(6px)'
+        },
+        {
+          autoAlpha:1,
+          y:0,
+          scale:1,
+          rotationX:0,
+          filter:'blur(0px)',
+          duration:.62,
+          ease:'sine.out'
+        },
+        at
+      );
+    } else {
+      const typing = {characters:0};
+      analysisSequence.set(status, {
         autoAlpha:1,
         y:0,
         scale:1,
         rotationX:0,
-        filter:'blur(0px)',
-        duration:isFinal ? .62 : .34,
-        ease:isFinal ? 'sine.out' : 'power2.out'
-      },
-      at
-    );
+        filter:'blur(0px)'
+      }, at);
+      analysisSequence.to(typing, {
+        characters:text.length,
+        duration:.34,
+        ease:`steps(${text.length})`,
+        onStart:() => renderAnalysisStatus(status, text, 0),
+        onUpdate:() => renderAnalysisStatus(status, text, typing.characters),
+        onComplete:() => renderAnalysisStatus(status, text, text.length),
+        onReverseComplete:() => renderAnalysisStatus(status, text, 0)
+      }, at);
+    }
 
     if (index < analysisStatuses.length - 1) {
       analysisSequence.to(status, {
@@ -1091,13 +1203,13 @@ function runAnalysisSequence() {
         filter:isComplete ? 'blur(0px)' : 'blur(12px)',
         duration:.32,
         ease:'power2.in'
-      }, at + .70 + (isComplete ? completeStatusHold : 0));
+      }, at + .70 + statusReadHold + (isComplete ? completeStatusHold : 0));
     }
   });
 
   analysisSequence.to({}, {duration:.92});
   analysisSequence.to(analysisAction, {
-    scale:1.7,
+    scale:2.2,
     duration:analysisSequence.duration(),
     ease:'none'
   }, 0);
@@ -1626,7 +1738,6 @@ function mountHotelMagneticButton(zone, button, label, options = {}) {
 const applicationSubmit = applicationForm?.querySelector('.hotel-application__submit');
 mountHotelMagneticButton(heroDownload, heroDownload, heroDownload?.querySelector('.hero-download__label'));
 mountHotelMagneticButton(scrollCue, scrollCue, scrollCue?.querySelector('.scroll-cue-arrows'), {wobble:.65});
-const headerDownload = document.getElementById('headerDownload');
 mountHotelMagneticButton(headerDownload, headerDownload, headerDownload?.querySelector('span'), {wobble:0});
 const applicationButtonMotion = mountHotelMagneticButton(
   applicationSubmit,

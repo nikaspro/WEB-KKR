@@ -6,7 +6,7 @@ html{
 
 @property --hotel-rim-spin{
   syntax:'<angle>';
-  inherits:false;
+  inherits:true;
   initial-value:0deg;
 }
 
@@ -18,7 +18,6 @@ html{
   --hotel-blue:#0400FA;
   --hotel-blue-mid:#3439FF;
   --hotel-blue-soft:#AEBEFF;
-  --hotel-rim-gradient:conic-gradient(from var(--hotel-rim-spin),rgba(4,0,250,.18) 0deg,#0400fa 58deg,#fff 83deg,#aebeff 96deg,#3439ff 110deg,rgba(52,57,255,.12) 175deg,rgba(4,0,250,.12) 252deg,#0400fa 318deg,rgba(4,0,250,.18) 360deg);
   --hotel-link:#829BFF;
   --hotel-link-hover:#C8D3FF;
   --hotel-application-surface:#28282a;
@@ -515,19 +514,6 @@ html{
   background:transparent;
 }
 
-.hotel-analysis__result-wave{
-  position:absolute;
-  z-index:0;
-  inset:0;
-  opacity:0;
-  background:
-    radial-gradient(ellipse at 50% 52%,rgba(31,45,255,.92) 0%,rgba(4,0,250,.68) 38%,rgba(0,157,255,.30) 69%,transparent 90%),
-    linear-gradient(115deg,rgba(4,0,250,.38),rgba(0,184,255,.18));
-  transform:scale(.92);
-  transform-origin:50% 50%;
-  pointer-events:none;
-}
-
 .hotel-page.hotel-neat-gradient-active .hotel-analysis,
 .hotel-page.hotel-neat-gradient-active .hotel-analysis__stage{
   background:transparent;
@@ -570,6 +556,7 @@ html{
   place-items:center;
   width:100%;
   height:clamp(126px,13.1vw,190px);
+  transform-origin:50% 50%;
 }
 
 .hotel-url{
@@ -600,8 +587,17 @@ html{
   position:absolute;
   inset:0;
   border-radius:inherit;
-  background:var(--hotel-rim-gradient);
-  animation:hotelRimRun 4.6s linear infinite;
+  background:conic-gradient(from var(--hotel-rim-spin),
+    rgba(4,0,250,.18) 0deg,
+    #0400fa 58deg,
+    #fff 83deg,
+    #aebeff 96deg,
+    #3439ff 110deg,
+    rgba(52,57,255,.12) 175deg,
+    rgba(4,0,250,.12) 252deg,
+    #0400fa 318deg,
+    rgba(4,0,250,.18) 360deg);
+  animation:none;
   pointer-events:none;
 }
 
@@ -714,7 +710,7 @@ html{
 }
 
 .hotel-analysis__status:not(.hotel-analysis__status--result){
-  padding-top:.42em;
+  padding:0;
   background:linear-gradient(105deg,
     rgba(255,255,255,.38) 0%,
     rgba(255,255,255,.38) 38%,
@@ -729,6 +725,10 @@ html{
   background-clip:text;
   color:transparent;
   -webkit-text-fill-color:transparent;
+  animation:hotelStatusTextFlow 2s linear infinite;
+}
+
+.hotel-analysis__status--flow[aria-hidden='false']{
   animation:hotelStatusTextFlow 2s linear infinite;
 }
 
@@ -915,8 +915,6 @@ html{
   white-space:nowrap!important;
   border:0!important;
 }
-
-@keyframes hotelRimRun{to{--hotel-rim-spin:360deg}}
 
 @keyframes hotelStatusTextFlow{
   to{background-position:-140% 50%}
