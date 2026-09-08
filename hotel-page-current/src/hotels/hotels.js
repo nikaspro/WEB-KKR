@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { initAgentMessageGradients } from './agent-message-gradients.js';
 import { initHotelSalesSection } from './sections/sales-section.js';
+import { mountHeroColorFlow } from './hero-color-flow.js';
 
 gsap.registerPlugin(ScrollTrigger);
 initHotelSalesSection();
@@ -10,15 +10,37 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let pageIsLeaving = false;
 let pageGradientLatched = false;
 let pageGradientShouldBeVisible = false;
-const destroyAgentMessageGradients = initAgentMessageGradients(document, {reduced});
+const agentMessageVideos = [...document.querySelectorAll('.hotel-message__video')];
+const agentMessageVideoObserver = reduced || !agentMessageVideos.length
+  ? null
+  : new IntersectionObserver(entries => {
+      entries.forEach(({target:video, isIntersecting}) => {
+        if (!isIntersecting) {
+          video.pause();
+          return;
+        }
+
+        const source = video.querySelector('source[data-src]');
+        if (source) {
+          source.src = source.dataset.src;
+          delete source.dataset.src;
+          video.load();
+        }
+        void video.play().catch(() => {});
+      });
+    }, {rootMargin:'240px 0px'});
+agentMessageVideos.forEach(video => agentMessageVideoObserver?.observe(video));
 const heroScene = document.querySelector('.hotels-hero');
 const hero = document.querySelector('.hotels-hero .hero');
 const heroTitle = document.getElementById('heroH1');
 const heroCopy = document.getElementById('heroP');
 const heroDownload = document.querySelector('.hero-download');
+const headerDownload = document.getElementById('headerDownload');
 const scrollCue = document.querySelector('.hero-scroll');
 const heroBand = document.getElementById('heroBand');
 const heroBackdrop = document.getElementById('heroBackdrop');
+const heroColorFlow = document.getElementById('heroColorFlow');
+const heroColorFlowMotion = mountHeroColorFlow(heroColorFlow, {reduced});
 const heroFlightMask = heroBand?.querySelector('.hotel-hero-flight-mask');
 const heroParticles = document.getElementById('heroParticles');
 const heroAxisLabels = {
@@ -26,8 +48,16 @@ const heroAxisLabels = {
   bottom:document.querySelector('.hotel-hero-axis-label--bottom')
 };
 let heroIsScrollingOut = false;
+let headerDownloadVisible = false;
 let stopHeroMotion = () => {};
 let startHeroMotion = () => {};
+const setHeaderDownloadVisible = visible => {
+  if (visible === headerDownloadVisible || !headerDownload) return;
+  headerDownloadVisible = visible;
+  headerDownload.classList.toggle('is-visible', visible);
+  headerDownload.setAttribute('aria-hidden', String(!visible));
+  headerDownload.tabIndex = visible ? 0 : -1;
+};
 const setHeroScrollFading = active => {
   if (heroIsScrollingOut === active) return;
   heroIsScrollingOut = active;
@@ -39,25 +69,22 @@ const setHeroScrollFading = active => {
 document.body.classList.add('hotels-enhanced');
 heroBand?.classList.add('is-motion-paused');
 heroBackdrop?.classList.add('is-motion-paused');
+heroColorFlowMotion?.pause();
 
-// Один тег последовательно показывает разные пары просьба/ответ.
-const heroVisibleTagCount = 1;
+// Текстовый обмен в hero временно скрыт: оставляем только цветовой поток.
+const heroVisibleTagCount = 0;
 const heroTagMessages = [
+  {
+    request:'Приезжаю с ребенком рано утром',
+    response:'Подготовил номер к раннему приезду'
+  },
   {
     request:'Нужен ранний заезд к 9:00',
     response:'Оформил ранний заезд'
   },
   {
-    request:'Закажи еду в номер',
-    response:'Еда будет в номере через 20 минут'
-  },
-  {
-    request:'Закажи трансфер до аэропорта',
-    response:'Трансфер забронирован на 7:30'
-  },
-  {
-    request:'Где можно погулять рядом с отелем?',
-    response:'Подсказываю маршрут для прогулки'
+    request:'Закажи трансфер с детским креслом',
+    response:'Заказал трансфер с детским креслом'
   }
 ];
 const heroFlyingTagTracks = heroTagMessages.map(({request}, index) => {
@@ -78,17 +105,19 @@ const activeHeroFlyingTagTracks = heroFlyingTagTracks.slice(0, heroVisibleTagCou
 const heroRewardRain = document.createElement('div');
 heroRewardRain.className = 'hotel-hero-reward-rain';
 heroRewardRain.setAttribute('aria-hidden', 'true');
-const heroRewardTags = [...document.querySelectorAll('.hotel-dialogue [data-message-bonus]')]
-  .map(source => {
-    const tag = source.cloneNode(true);
-    tag.classList.add('hotel-hero-reward-tag');
-    tag.removeAttribute('data-message-bonus');
-    heroRewardRain.appendChild(tag);
-    return tag;
-  });
+const heroRewardTags = heroVisibleTagCount
+  ? [...document.querySelectorAll('.hotel-dialogue [data-message-bonus]')]
+    .map(source => {
+      const tag = source.cloneNode(true);
+      tag.classList.add('hotel-hero-reward-tag');
+      tag.removeAttribute('data-message-bonus');
+      heroRewardRain.appendChild(tag);
+      return tag;
+    })
+  : [];
 if (heroRewardTags.length) heroBand?.appendChild(heroRewardRain);
 
-if (heroParticles) {
+if (heroParticles && heroVisibleTagCount) {
   const stars = document.createDocumentFragment();
   heroParticles.classList.add('is-paused');
 
@@ -109,131 +138,6 @@ if (heroParticles) {
   heroParticles.appendChild(stars);
 }
 
-const heroCursorParticles = [];
-if (heroParticles && !reduced && matchMedia('(hover:hover) and (pointer:fine)').matches) {
-  const cursorParticleFragment = document.createDocumentFragment();
-  const cursorParticlePoolSize = 56;
-  for (let index = 0; index < cursorParticlePoolSize; index += 1) {
-    const particle = document.createElement('i');
-    particle.className = 'hotel-hero-cursor-particle';
-    particle.setAttribute('aria-hidden', 'true');
-    cursorParticleFragment.appendChild(particle);
-    gsap.set(particle, {xPercent:-50, yPercent:-50, opacity:0});
-    heroCursorParticles.push(particle);
-  }
-  heroParticles.appendChild(cursorParticleFragment);
-
-  let cursorParticleIndex = 0;
-  let cursorTrailX = 0;
-  let cursorTrailY = 0;
-  let cursorTrailDistance = 0;
-  let cursorTrailHasPoint = false;
-
-  const spawnCursorParticle = (
-    x,
-    y,
-    angle = Math.random() * Math.PI * 2,
-    burstRadius = 30 + Math.random() * 66
-  ) => {
-    const particle = heroCursorParticles[cursorParticleIndex];
-    cursorParticleIndex = (cursorParticleIndex + 1) % heroCursorParticles.length;
-    const startRadius = Math.random() * 7;
-    const startX = x + Math.cos(angle) * startRadius;
-    const startY = y + Math.sin(angle) * startRadius;
-    const settleX = x + Math.cos(angle) * burstRadius;
-    const settleY = y + Math.sin(angle) * burstRadius;
-    const riseX = settleX + (Math.random() - .5) * 36;
-    const riseY = settleY - (64 + Math.random() * 82);
-    const duration = 1.18 + Math.random() * .5;
-    const peakOpacity = .42 + Math.random() * .2;
-
-    gsap.killTweensOf(particle);
-    gsap.set(particle, {
-      x:startX,
-      y:startY,
-      scale:.06 + Math.random() * .12,
-      opacity:0
-    });
-    gsap.to(particle, {
-      keyframes:[
-        {
-          x:settleX,
-          y:settleY,
-          scale:1,
-          opacity:peakOpacity,
-          duration:.34,
-          ease:'sine.out'
-        },
-        {
-          x:riseX,
-          y:riseY,
-          scale:.16,
-          opacity:0,
-          duration,
-          ease:'power2.out'
-        }
-      ],
-      overwrite:true
-    });
-  };
-
-  addEventListener('pointermove', event => {
-    if (heroParticles.classList.contains('is-paused') || heroIsScrollingOut) {
-      cursorTrailHasPoint = false;
-      cursorTrailDistance = 0;
-      return;
-    }
-
-    const bounds = heroParticles.getBoundingClientRect();
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-    if (!cursorTrailHasPoint) {
-      cursorTrailX = x;
-      cursorTrailY = y;
-      cursorTrailHasPoint = true;
-      return;
-    }
-
-    const deltaX = x - cursorTrailX;
-    const deltaY = y - cursorTrailY;
-    const distance = Math.hypot(deltaX, deltaY);
-    cursorTrailDistance += distance;
-    const spawnDistance = 24;
-    const spawnCount = Math.min(8, Math.floor(cursorTrailDistance / spawnDistance));
-    if (spawnCount) {
-      cursorTrailDistance %= spawnDistance;
-      for (let index = 1; index <= spawnCount; index += 1) {
-        const progress = index / spawnCount;
-        spawnCursorParticle(
-          cursorTrailX + deltaX * progress,
-          cursorTrailY + deltaY * progress
-        );
-      }
-    }
-    cursorTrailX = x;
-    cursorTrailY = y;
-  }, {passive:true});
-
-  addEventListener('click', event => {
-    if (heroParticles.classList.contains('is-paused') || heroIsScrollingOut) return;
-    if (event.target.closest(
-      'a,button,input,textarea,select,[role="button"],h1,p,.hotel-hero-axis-label,.site-header'
-    )) return;
-
-    const bounds = heroParticles.getBoundingClientRect();
-    const x = event.clientX - bounds.left;
-    const y = event.clientY - bounds.top;
-    if (x < 0 || x > bounds.width || y < 0 || y > bounds.height) return;
-
-    const burstCount = 20;
-    const angleStep = (Math.PI * 2) / burstCount;
-    for (let index = 0; index < burstCount; index += 1) {
-      const angle = index * angleStep + (Math.random() - .5) * .22;
-      spawnCursorParticle(x, y, angle, 42 + Math.random() * 72);
-    }
-  });
-}
-
 try {
   sessionStorage.setItem('luna:intro-seen', '1');
 } catch (err) {
@@ -243,7 +147,7 @@ try {
 if (!reduced) {
   const heroAxisLetters = Object.fromEntries(
     Object.entries(heroAxisLabels).map(([position, label]) => {
-      if (!label) return [position, []];
+      if (!label || !heroVisibleTagCount) return [position, []];
       const fragment = document.createDocumentFragment();
       const letters = [...label.textContent].map(character => {
         const letter = document.createElement('span');
@@ -312,7 +216,7 @@ if (!reduced) {
 
   if (heroBand) {
     const initialYFactors = [-.31, -.02, .28];
-    const initialSpeeds = [172, 152, 163];
+    const initialSpeeds = [156, 138, 148];
     const floatAmplitudeX = 18;
     const floatAmplitudeY = 11;
     const floatTilt = 13;
@@ -324,33 +228,22 @@ if (!reduced) {
     );
     if (initialDirections.length === 1) {
       initialDirections[0] = 1;
-    } else if (initialDirections.every(direction => direction === initialDirections[0])) {
+    } else if (initialDirections.length > 1
+      && initialDirections.every(direction => direction === initialDirections[0])) {
       initialDirections[1] *= -1;
     }
     const collisionCooldowns = new Map();
     let flyingTagActive = false;
     let rewardRainTimeline = null;
 
-    const playHeroRewardRain = (messageIndex = 0) => {
+    const playHeroRewardRain = () => {
       if (!heroRewardTags.length) return;
       rewardRainTimeline?.kill();
-      gsap.killTweensOf(heroRewardTags);
-      gsap.set(heroRewardTags, {autoAlpha:0});
-
-      const rewardProfiles = [
-        [heroRewardTags[0]],
-        [heroRewardTags[2]],
-        [heroRewardTags[1]],
-        []
-      ];
-      const visibleTags = rewardProfiles[messageIndex % rewardProfiles.length]
-        .filter(Boolean);
-      if (!visibleTags.length) return;
 
       const spread = Math.min(innerWidth * .085, 124);
       const drop = Math.min(innerHeight * .38, 360);
-      const middle = (visibleTags.length - 1) * .5;
-      const poses = visibleTags.map((_, index) => {
+      const middle = (heroRewardTags.length - 1) * .5;
+      const poses = heroRewardTags.map((_, index) => {
         const slot = index - middle;
         const startX = slot * spread;
         return {
@@ -361,7 +254,7 @@ if (!reduced) {
         };
       });
 
-      gsap.set(visibleTags, {
+      gsap.set(heroRewardTags, {
         autoAlpha:0,
         x:index => poses[index].startX,
         y:index => -28 - Math.abs(index - middle) * 12,
@@ -374,7 +267,7 @@ if (!reduced) {
       rewardRainTimeline = gsap.timeline({
         onComplete:() => { rewardRainTimeline = null; }
       })
-        .to(visibleTags, {
+        .to(heroRewardTags, {
           autoAlpha:.86,
           y:index => 24 + Math.abs(index - middle) * 10,
           scale:1,
@@ -383,7 +276,7 @@ if (!reduced) {
           ease:'power2.out',
           overwrite:true
         })
-        .to(visibleTags, {
+        .to(heroRewardTags, {
           autoAlpha:0,
           x:index => poses[index].endX,
           y:index => poses[index].endY,
@@ -401,7 +294,6 @@ if (!reduced) {
       const copy = heroTagMessages[index];
       const direction = initialDirections[index];
       const isResponse = direction < 0;
-      const speed = initialSpeeds[index] + (Math.random() - .5) * 12;
       tag.textContent = isResponse ? copy.response : copy.request;
       tag.classList.toggle('is-response', isResponse);
 
@@ -409,7 +301,6 @@ if (!reduced) {
         track,
         tag,
         copy,
-        messageIndex:index % heroTagMessages.length,
         direction,
         isResponse,
         axisWaveArmed:direction < 0 ? 'bottom' : 'top',
@@ -418,15 +309,10 @@ if (!reduced) {
         x:0,
         vx:0,
         vy:0,
-        flowVelocityY:direction * speed,
-        speed,
+        flowVelocityY:0,
+        speed:initialSpeeds[index] + (Math.random() - .5) * 12,
         phase:index * 2.15,
         spin:0,
-        renderX:null,
-        renderY:null,
-        renderScale:null,
-        renderRotation:null,
-        renderOpacity:null,
         width:0,
         height:0,
         suctionOffset:0,
@@ -440,7 +326,9 @@ if (!reduced) {
       };
     });
 
-    gsap.set(activeHeroFlyingTagTracks, {yPercent:-50});
+    if (activeHeroFlyingTagTracks.length) {
+      gsap.set(activeHeroFlyingTagTracks, {yPercent:-50});
+    }
 
     const measureFlyingTags = preservePosition => {
       flyingTagStates.forEach((state, index) => {
@@ -451,12 +339,7 @@ if (!reduced) {
           innerHeight * .16,
           innerHeight * .5 - state.height * 2.25
         ) * .5;
-        // Разворачиваем плашку до того, как она успевает уйти в полную
-        // прозрачность: так смена направления выглядит как отскок.
-        state.exitOffset = Math.max(
-          innerHeight * .2,
-          innerHeight * (.5 - flightFadeEnd) + state.height * .5
-        );
+        state.exitOffset = innerHeight * .5 + state.height * .7;
 
         if (preservePosition && previousExit) {
           state.y = state.y / previousExit * state.exitOffset;
@@ -472,10 +355,8 @@ if (!reduced) {
       measureFrame = requestAnimationFrame(() => measureFlyingTags(true));
     };
 
-    const setFlyingTagState = (state, messageIndex, isResponse) => {
-      if (state.messageIndex === messageIndex && state.isResponse === isResponse) return;
-      state.messageIndex = messageIndex;
-      state.copy = heroTagMessages[messageIndex];
+    const setFlyingTagResponseState = (state, isResponse) => {
+      if (state.isResponse === isResponse) return;
       state.isResponse = isResponse;
       state.tag.textContent = isResponse ? state.copy.response : state.copy.request;
       state.tag.classList.toggle('is-response', isResponse);
@@ -508,7 +389,7 @@ if (!reduced) {
       return opacity * opacity * (3 - 2 * opacity);
     };
 
-    const renderFlyingTag = (state, time, delta = 1) => {
+    const renderFlyingTag = (state, time) => {
       const suction = getFlyingTagSuction(state);
       const origin = state.y < 0 ? '50% 0%' : '50% 100%';
 
@@ -517,34 +398,13 @@ if (!reduced) {
         state.track.style.transformOrigin = origin;
       }
 
-      const targetX = state.x + Math.sin(time * .82 + state.phase) * floatAmplitudeX;
-      const targetY = state.y + Math.cos(time * 1.04 + state.phase) * floatAmplitudeY;
-      const targetScale = 1 - suction * suctionScaleLoss;
-      const targetRotation = (
-        state.spin + Math.sin(time * .58 + state.phase) * floatTilt
-      ) * (1 - suction);
-      const targetOpacity = getFlyingTagLaneOpacity(state);
-      const smoothing = 1 - Math.exp(-Math.min(delta, .05) / .1);
-
-      if (state.renderX === null) {
-        state.renderX = targetX;
-        state.renderY = targetY;
-        state.renderScale = targetScale;
-        state.renderRotation = targetRotation;
-        state.renderOpacity = targetOpacity;
-      } else {
-        state.renderX += (targetX - state.renderX) * smoothing;
-        state.renderY += (targetY - state.renderY) * smoothing;
-        state.renderScale += (targetScale - state.renderScale) * smoothing;
-        state.renderRotation += (targetRotation - state.renderRotation) * smoothing;
-        state.renderOpacity += (targetOpacity - state.renderOpacity) * smoothing;
-      }
-
-      state.setX(state.renderX);
-      state.setY(state.renderY);
-      state.setScale(state.renderScale);
-      state.setRotation(state.renderRotation);
-      state.setOpacity(state.renderOpacity);
+      state.setX(state.x + Math.sin(time * .82 + state.phase) * floatAmplitudeX);
+      state.setY(state.y + Math.cos(time * 1.04 + state.phase) * floatAmplitudeY);
+      state.setScale(1 - suction * suctionScaleLoss);
+      state.setRotation(
+        (state.spin + Math.sin(time * .58 + state.phase) * floatTilt) * (1 - suction)
+      );
+      state.setOpacity(getFlyingTagLaneOpacity(state));
     };
 
     const clampCollisionVelocity = state => {
@@ -678,9 +538,7 @@ if (!reduced) {
 
       flyingTagStates.forEach(state => {
         const suctionAcceleration = 1 + getFlyingTagSuction(state) * 3.2;
-        const targetFlowVelocityY = state.direction * state.speed * suctionAcceleration;
-        const flowSmoothing = 1 - Math.exp(-delta / .12);
-        state.flowVelocityY += (targetFlowVelocityY - state.flowVelocityY) * flowSmoothing;
+        state.flowVelocityY = state.direction * state.speed * suctionAcceleration;
         state.y += (state.flowVelocityY + state.vy) * delta;
         state.x += state.vx * delta;
         state.vx *= Math.pow(.18, delta);
@@ -697,21 +555,15 @@ if (!reduced) {
           state.direction = -1;
           state.rewardDropArmed = true;
           state.x = (Math.random() - .5) * 28;
-          state.flowVelocityY = 0;
           state.vy = 0;
-          setFlyingTagState(state, state.messageIndex, true);
+          setFlyingTagResponseState(state, true);
           state.axisWaveArmed = 'bottom';
         } else if (state.direction < 0 && state.y < -state.exitOffset) {
           state.y = -state.exitOffset;
           state.direction = 1;
           state.x = (Math.random() - .5) * 28;
-          state.flowVelocityY = 0;
           state.vy = 0;
-          setFlyingTagState(
-            state,
-            (state.messageIndex + 1) % heroTagMessages.length,
-            false
-          );
+          setFlyingTagResponseState(state, false);
           state.axisWaveArmed = 'top';
         }
 
@@ -733,20 +585,24 @@ if (!reduced) {
           && state.rewardDropArmed
           && state.y <= innerHeight * .08) {
           state.rewardDropArmed = false;
-          playHeroRewardRain(state.messageIndex);
+          playHeroRewardRain();
         }
       });
 
       resolveFlyingTagCollisions(delta, time);
-      flyingTagStates.forEach(state => renderFlyingTag(state, time, delta));
+      flyingTagStates.forEach(state => renderFlyingTag(state, time));
     };
 
     measureFlyingTags(false);
     flyingTagStates.forEach(state => renderFlyingTag(state, 0));
-    addEventListener('resize', scheduleFlyingTagMeasure, {passive:true});
+    if (flyingTagStates.length) {
+      addEventListener('resize', scheduleFlyingTagMeasure, {passive:true});
+    }
 
     const setFlyingTagActive = active => {
       flyingTagActive = active;
+      if (active) heroColorFlowMotion?.resume();
+      else heroColorFlowMotion?.pause();
       heroParticles?.classList.toggle('is-paused', !flyingTagActive);
       heroBand.classList.toggle('is-motion-active', flyingTagActive);
       heroBand.classList.toggle('is-motion-paused', !flyingTagActive);
@@ -758,7 +614,7 @@ if (!reduced) {
     startHeroMotion = () => {
       if (heroIsScrollingOut) return;
       setFlyingTagActive(true);
-      if (heroTickerRunning) return;
+      if (heroTickerRunning || !flyingTagStates.length) return;
       gsap.ticker.add(updateFlyingTags);
       heroTickerRunning = true;
     };
@@ -770,8 +626,9 @@ if (!reduced) {
       }
       rewardRainTimeline?.kill();
       Object.values(heroAxisWaves).forEach(timeline => timeline.pause());
-      gsap.set(Object.values(heroAxisLetters).flat(), {y:0, scaleY:1});
-      gsap.set(heroRewardTags, {autoAlpha:0});
+      const axisLetters = Object.values(heroAxisLetters).flat();
+      if (axisLetters.length) gsap.set(axisLetters, {y:0, scaleY:1});
+      if (heroRewardTags.length) gsap.set(heroRewardTags, {autoAlpha:0});
     };
 
     const flyingTagActivity = ScrollTrigger.create({
@@ -805,17 +662,21 @@ function buildHeroTransition() {
     scrollTrigger:{
       trigger:'.hotels-hero',
       start:'top top',
-      end:'+=80%',
-      // Фон точно следует скроллу, чтобы не оставаться поверх следующей сцены.
+      end:'+=110%',
+      // Фон обязан точно следовать скроллу: сглаженный scrub оставлял
+      // предыдущую сцену поверх уже появившейся следующей и создавал шов.
       scrub:true,
       pin:true,
       pinSpacing:true,
       anticipatePin:1,
       invalidateOnRefresh:true,
       onUpdate:self => {
-        // Не останавливаем плашку, пока она ещё видима в переходе.
-        setHeroScrollFading(self.progress > .96);
-      }
+        setHeroScrollFading(self.progress > .34);
+        setPageGradientVisible(self.progress > .54);
+      },
+      onLeave:() => setHeaderDownloadVisible(true),
+      onEnterBack:() => setHeaderDownloadVisible(false),
+      onLeaveBack:() => setHeaderDownloadVisible(false)
     }
   });
 
@@ -823,28 +684,25 @@ function buildHeroTransition() {
     .to(hero, {
       autoAlpha:0,
       y:-32,
-      duration:.52,
-      ease:'power1.inOut',
+      duration:.24,
       overwrite:'auto'
     }, 0)
     .to([
       heroFlightMask,
+      heroColorFlow,
       ...Object.values(heroAxisLabels),
       heroRewardRain,
       heroParticles
     ], {
       autoAlpha:0,
-      y:-16,
-      duration:.68,
-      ease:'power1.inOut',
+      duration:.28,
       overwrite:'auto'
-    }, .08)
+    }, 0)
     .to(heroBackdrop, {
       autoAlpha:0,
-      duration:.64,
-      ease:'sine.inOut',
+      duration:.38,
       overwrite:'auto'
-    }, .28);
+    }, .16);
 }
 
 buildHeroTransition();
@@ -860,16 +718,19 @@ const pageGradientHost = document.querySelector('[data-neat-gradient-host]');
 const analysisPrompt = document.querySelector('.hotel-analysis__prompt');
 const analysisAction = document.querySelector('.hotel-analysis__action');
 const analysisForm = document.getElementById('hotelForm');
+const analysisShell = analysisForm?.querySelector('.hotel-url__shell');
 const hotelUrlInput = document.getElementById('hotelUrl');
 const analysisRipple = document.querySelector('[data-hotel-url-ripple]');
-const analysisResultWave = document.querySelector('.hotel-analysis__result-wave');
 const analysisStatusesRegion = document.querySelector('.hotel-analysis__statuses');
 const analysisStatuses = gsap.utils.toArray('.hotel-analysis__status');
 const analysisCards = gsap.utils.toArray('.hotel-analysis-card');
 const analysisCardAnchors = gsap.utils.toArray('.hotel-analysis-card-anchor');
 const hotelUrlPreset = hotelUrlInput?.value || 'my-hotel.ru';
 const hotelUrlTyping = {characters:0};
-let unmountPageGradient = null;
+const analysisStatusText = analysisStatuses.map(status => Array.from(status.childNodes)
+  .map(node => node.nodeName === 'BR' ? '\n' : node.textContent)
+  .join(''));
+let pageGradientController = null;
 let pageGradientActivation = null;
 let pageGradientModule = null;
 let analysisSequence = null;
@@ -877,29 +738,65 @@ let analysisReveal = null;
 let analysisGradientTimer = 0;
 let analysisExperience = null;
 let analysisFlowStarted = false;
-let analysisResultWaveTimeline = null;
-let analysisRimAnimations = [];
-let analysisTextFlowAnimations = [];
-let analysisMotionAnimationsReady = false;
+let analysisRimStatusIndex = -1;
+let analysisRimMotion = null;
+const analysisRimRotation = {value:0};
+const analysisRimRate = {value:1};
+const analysisRimTimeScales = [1, 1.54, 2.44, 4, 6.67];
 
-function syncAnalysisMotionSpeed(progress) {
-  if (!analysisMotionAnimationsReady) {
-    const animations = analysisAction?.getAnimations?.({subtree:true}) || [];
-    analysisRimAnimations = animations.filter(animation => animation.animationName === 'hotelRimRun');
-    analysisTextFlowAnimations = animations.filter(animation => animation.animationName === 'hotelStatusTextFlow');
-    analysisMotionAnimationsReady = true;
+function renderAnalysisStatus(status, text, characters) {
+  const visibleText = text.slice(0, Math.max(0, Math.round(characters)));
+  status.innerHTML = visibleText.replace(/\n/g, '<br>');
+}
+
+function startAnalysisRimMotion() {
+  if (!analysisShell) return;
+
+  analysisRimMotion?.kill();
+  gsap.killTweensOf(analysisRimRate);
+  analysisRimRotation.value = 0;
+  analysisRimRate.value = 1;
+  analysisShell.style.setProperty('--hotel-rim-spin', '0deg');
+  analysisRimMotion = gsap.to(analysisRimRotation, {
+    value:360,
+    duration:2,
+    ease:'none',
+    repeat:-1,
+    onUpdate:() => {
+      analysisShell.style.setProperty('--hotel-rim-spin', `${analysisRimRotation.value % 360}deg`);
+    }
+  });
+}
+
+function stopAnalysisRimMotion() {
+  analysisRimMotion?.kill();
+  analysisRimMotion = null;
+  gsap.killTweensOf(analysisRimRate);
+  analysisRimRate.value = 1;
+  analysisShell?.style.setProperty('--hotel-rim-spin', '0deg');
+}
+
+function setAnalysisRimSpeed(statusIndex, immediate = false) {
+  if (!analysisShell) return;
+
+  const nextIndex = Math.max(0, Math.min(analysisRimTimeScales.length - 1, statusIndex));
+  if (nextIndex === analysisRimStatusIndex && !immediate) return;
+
+  analysisRimStatusIndex = nextIndex;
+  const nextRate = analysisRimTimeScales[nextIndex];
+  gsap.killTweensOf(analysisRimRate);
+  if (immediate || !analysisRimMotion) {
+    analysisRimRate.value = nextRate;
+    analysisRimMotion?.timeScale(nextRate);
+    return;
   }
 
-  const rimRate = gsap.utils.interpolate(2, 8.4, progress);
-  const textFlowRate = gsap.utils.interpolate(1, 3.4, progress);
-
-  analysisRimAnimations.forEach(animation => {
-    if (typeof animation.updatePlaybackRate === 'function') animation.updatePlaybackRate(rimRate);
-    else animation.playbackRate = rimRate;
-  });
-  analysisTextFlowAnimations.forEach(animation => {
-    if (typeof animation.updatePlaybackRate === 'function') animation.updatePlaybackRate(textFlowRate);
-    else animation.playbackRate = textFlowRate;
+  gsap.to(analysisRimRate, {
+    value:nextRate,
+    duration:immediate ? 0 : .24,
+    ease:'power2.out',
+    overwrite:'auto',
+    onUpdate:() => analysisRimMotion?.timeScale(analysisRimRate.value)
   });
 }
 
@@ -954,30 +851,6 @@ function enableAnalysisCardParallax() {
   }, {passive:true});
 }
 
-function playAnalysisResultWave() {
-  if (!analysisResultWave) return;
-  analysisResultWaveTimeline?.kill();
-  gsap.set(analysisResultWave, {autoAlpha:0, scale:.92});
-  analysisResultWaveTimeline = gsap.timeline({
-    onComplete:() => {
-      analysisResultWaveTimeline = null;
-    }
-  })
-    .to(analysisResultWave, {
-      autoAlpha:.86,
-      scale:1.03,
-      duration:.35,
-      ease:'sine.inOut'
-    })
-    .to({}, {duration:.85})
-    .to(analysisResultWave, {
-      autoAlpha:0,
-      scale:1.12,
-      duration:.8,
-      ease:'sine.inOut'
-    });
-}
-
 if (!reduced && analysis) {
   enableAnalysisCardParallax();
   hotelUrlInput.value = '';
@@ -986,6 +859,10 @@ if (!reduced && analysis) {
     textShadow:'none'
   });
   gsap.set(analysisForm, {pointerEvents:'none'});
+  gsap.set(analysisAction, {
+    y:getAnalysisActionCenterY(),
+    transformOrigin:'50% 50%'
+  });
 
   analysisReveal = gsap.timeline({
     defaults:{ease:'none'},
@@ -994,14 +871,40 @@ if (!reduced && analysis) {
       start:'top top',
       end:() => `+=${Math.round(innerHeight * .60)}`,
       scrub:.58,
-      invalidateOnRefresh:true
+      invalidateOnRefresh:true,
+      onEnter:() => {
+        if (!analysisRimMotion) startAnalysisRimMotion();
+      },
+      onLeaveBack:() => {
+        gsap.set(analysisPrompt, {
+          autoAlpha:0,
+          y:0,
+          scale:1,
+          rotation:0,
+          filter:'blur(0px)'
+        });
+        if (!analysisFlowStarted) stopAnalysisRimMotion();
+      }
     }
   });
 
   analysisReveal
     .fromTo(analysisPrompt,
-      {autoAlpha:0},
-      {autoAlpha:1, duration:.3},
+      {
+        autoAlpha:0,
+        y:0,
+        scale:1,
+        rotation:0,
+        filter:'blur(0px)'
+      },
+      {
+        autoAlpha:1,
+        y:0,
+        scale:1,
+        rotation:0,
+        filter:'blur(0px)',
+        duration:.3
+      },
       0
     )
     .fromTo(analysisForm,
@@ -1053,8 +956,9 @@ async function activatePageGradient() {
   pageGradientActivation = pageGradientModule
     .then(({ mountPageGradient }) => {
       if (pageIsLeaving) return;
-      unmountPageGradient = mountPageGradient(pageGradientHost, { reduced });
-      if (!unmountPageGradient) return false;
+      pageGradientController = mountPageGradient(pageGradientHost, { reduced });
+      if (!pageGradientController) return false;
+      pageGradientController.setHotelDataPalette(hotelDataPalette.progress);
       pageGradientLatched = true;
       pageGradientHost.dataset.neatReady = 'true';
       return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -1071,10 +975,23 @@ async function activatePageGradient() {
   return pageGradientActivation;
 }
 
+function restoreAnalysisFirstState() {
+  hotelUrlInput.readOnly = false;
+  hotelUrlInput.tabIndex = 0;
+  analysisForm.removeAttribute('data-submitting');
+  analysisForm.setAttribute('aria-busy', 'false');
+  analysis?.classList.remove('is-submitted', 'is-prompt-hidden');
+  analysisStatuses.forEach((status, index) => {
+    status.setAttribute('aria-hidden', 'true');
+    gsap.set(status, {autoAlpha:0});
+    renderAnalysisStatus(status, analysisStatusText[index], analysisStatusText[index].length);
+  });
+  stopAnalysisRimMotion();
+  analysisRimStatusIndex = -1;
+  gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
+}
+
 function runAnalysisSequence() {
-  analysisReveal?.scrollTrigger?.kill();
-  analysisReveal?.kill();
-  analysisReveal = null;
   gsap.killTweensOf([analysisForm, hotelUrlInput, analysisPrompt]);
   gsap.set(hotelUrlInput, {color:'#fff', textShadow:'none'});
 
@@ -1087,13 +1004,6 @@ function runAnalysisSequence() {
   if (reduced) {
     gsap.set(analysisPrompt, {autoAlpha:0});
     analysis?.classList.add('is-prompt-hidden');
-  } else {
-    gsap.to(analysisPrompt, {
-      autoAlpha:0,
-      duration:.28,
-      ease:'power2.out',
-      onComplete:() => analysis?.classList.add('is-prompt-hidden')
-    });
   }
 
   const showStatus = status => {
@@ -1129,9 +1039,14 @@ function runAnalysisSequence() {
     rotation:0,
     transformOrigin:'50% 50%'
   });
-  gsap.set(analysisResultWave, {autoAlpha:0, scale:.92, transformOrigin:'50% 50%'});
-  gsap.set(analysisAction, {scale:1, rotation:0, y:0, transformOrigin:'50% 50%'});
-  syncAnalysisMotionSpeed(0);
+  gsap.set(analysisAction, {
+    scale:1,
+    rotation:0,
+    y:getAnalysisActionCenterY(),
+    transformOrigin:'50% 50%'
+  });
+  startAnalysisRimMotion();
+  setAnalysisRimSpeed(0, true);
   gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
   analysisSequence = gsap.timeline({
     defaults:{ease:'none'},
@@ -1141,6 +1056,20 @@ function runAnalysisSequence() {
       end:'bottom bottom',
       scrub:.82,
       invalidateOnRefresh:true,
+      onEnter:() => {
+        gsap.set(analysisPrompt, {
+          autoAlpha:0,
+          y:0,
+          scale:1,
+          rotation:0,
+          filter:'blur(0px)'
+        });
+        gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
+        if (!analysisRimMotion) {
+          startAnalysisRimMotion();
+          setAnalysisRimSpeed(0, true);
+        }
+      },
       onUpdate:self => {
         const statusProgress = gsap.utils.clamp(0, .999, (self.progress - .06) / .94);
         const activeIndex = Math.min(
@@ -1149,8 +1078,15 @@ function runAnalysisSequence() {
         );
         const activeStatus = analysisStatuses[activeIndex];
         if (activeStatus) showStatus(activeStatus);
-        syncAnalysisMotionSpeed(self.progress);
+        if (activeIndex === analysisStatuses.length - 1) {
+          gsap.set(analysisForm, {autoAlpha:0});
+        }
+        setAnalysisRimSpeed(activeIndex);
         analysisForm.setAttribute('aria-busy', String(self.progress < .985));
+      },
+      onLeaveBack:self => {
+        self.getTween()?.progress(1);
+        restoreAnalysisFirstState();
       }
     }
   })
@@ -1159,15 +1095,16 @@ function runAnalysisSequence() {
       caretColor:'transparent',
       duration:.38,
       ease:'power2.out'
-    }, 0)
+    }, .58)
     .to(analysisForm, {
       scale:.985,
       duration:.38,
       ease:'power2.out'
     }, 0);
 
-  const statusStart = .32;
-  const statusStep = 1.02;
+  const statusStart = .98;
+  const statusReadHold = .28;
+  const statusStep = 1.30;
   const finalStatusIndex = analysisStatuses.length - 1;
   const completeStatusIndex = analysisStatuses.findIndex(
     status => status.classList.contains('hotel-analysis__status--complete')
@@ -1175,14 +1112,29 @@ function runAnalysisSequence() {
   const completeStatusHold = 1.1;
   const getStatusStart = index => statusStart + index * statusStep
     + (index > completeStatusIndex ? completeStatusHold : 0);
-  const finalStatusStart = getStatusStart(finalStatusIndex);
+  const finalStatusBase = getStatusStart(finalStatusIndex);
+  const finalStatusDelay = .42;
+  const finalStatusStart = finalStatusBase + finalStatusDelay;
   const completeStatusStart = getStatusStart(completeStatusIndex);
+  const completeStatusExit = completeStatusStart + .70 + statusReadHold + completeStatusHold;
 
-  analysisSequence.to(analysisAction, {
-    rotation:-4,
-    duration:completeStatusStart,
-    ease:'none'
-  }, 0);
+  const actionTiltStep = completeStatusStart / 3;
+  analysisSequence
+    .to(analysisAction, {
+      rotation:-4,
+      duration:actionTiltStep,
+      ease:'none'
+    }, 0)
+    .to(analysisAction, {
+      rotation:4,
+      duration:actionTiltStep,
+      ease:'none'
+    })
+    .to(analysisAction, {
+      rotation:-4,
+      duration:completeStatusStart - actionTiltStep * 2,
+      ease:'none'
+    });
 
   analysisSequence.to(hotelUrlInput, {
     backgroundColor:'#120be3',
@@ -1193,12 +1145,6 @@ function runAnalysisSequence() {
     duration:.48,
     ease:'power2.inOut'
   }, completeStatusStart - .48);
-
-  analysisSequence.to(analysisAction, {
-    y:getAnalysisActionCenterY,
-    duration:.72,
-    ease:'sine.inOut'
-  }, completeStatusStart - .72);
 
   analysisSequence.fromTo(analysisCards,
     {
@@ -1219,7 +1165,6 @@ function runAnalysisSequence() {
       duration:.3,
       stagger:.018,
       ease:'power3.out',
-      onStart:playAnalysisResultWave
     },
     completeStatusStart
   );
@@ -1229,45 +1174,66 @@ function runAnalysisSequence() {
     duration:.28,
     stagger:{each:.012, from:'end'},
     ease:'power2.in'
-  }, finalStatusStart - .38);
+  }, finalStatusBase - .38);
 
   analysisSequence.to(analysisForm, {
     autoAlpha:0,
     scale:.985,
-    duration:.34,
-    ease:'power2.out'
-  }, finalStatusStart - .36);
+    duration:.32,
+    ease:'power2.in'
+  }, completeStatusExit);
 
   analysisSequence.to(analysisAction, {
     rotation:0,
     duration:.34,
     ease:'power2.inOut'
-  }, finalStatusStart - .36);
+  }, finalStatusBase - .36);
 
   analysisStatuses.forEach((status, index) => {
-    const at = getStatusStart(index);
     const isFinal = index === finalStatusIndex;
+    const at = isFinal ? finalStatusStart : getStatusStart(index);
     const isComplete = status.classList.contains('hotel-analysis__status--complete');
+    const text = analysisStatusText[index];
 
-    analysisSequence.fromTo(status,
-      {
-        autoAlpha:0,
-        y:isFinal ? 12 : 34,
-        scale:isFinal ? .985 : .94,
-        rotationX:isFinal ? 0 : -10,
-        filter:isComplete ? 'blur(0px)' : `blur(${isFinal ? 6 : 12}px)`
-      },
-      {
+    if (isFinal) {
+      analysisSequence.fromTo(status,
+        {
+          autoAlpha:0,
+          y:12,
+          scale:.985,
+          rotationX:0,
+          filter:'blur(6px)'
+        },
+        {
+          autoAlpha:1,
+          y:0,
+          scale:1,
+          rotationX:0,
+          filter:'blur(0px)',
+          duration:.62,
+          ease:'sine.out'
+        },
+        at
+      );
+    } else {
+      const typing = {characters:0};
+      analysisSequence.set(status, {
         autoAlpha:1,
         y:0,
         scale:1,
         rotationX:0,
-        filter:'blur(0px)',
-        duration:isFinal ? .62 : .34,
-        ease:isFinal ? 'sine.out' : 'power2.out'
-      },
-      at
-    );
+        filter:'blur(0px)'
+      }, at);
+      analysisSequence.to(typing, {
+        characters:text.length,
+        duration:.34,
+        ease:`steps(${text.length})`,
+        onStart:() => renderAnalysisStatus(status, text, 0),
+        onUpdate:() => renderAnalysisStatus(status, text, typing.characters),
+        onComplete:() => renderAnalysisStatus(status, text, text.length),
+        onReverseComplete:() => renderAnalysisStatus(status, text, 0)
+      }, at);
+    }
 
     if (index < analysisStatuses.length - 1) {
       analysisSequence.to(status, {
@@ -1278,13 +1244,13 @@ function runAnalysisSequence() {
         filter:isComplete ? 'blur(0px)' : 'blur(12px)',
         duration:.32,
         ease:'power2.in'
-      }, at + .70 + (isComplete ? completeStatusHold : 0));
+      }, at + .70 + statusReadHold + (isComplete ? completeStatusHold : 0));
     }
   });
 
   analysisSequence.to({}, {duration:.92});
   analysisSequence.to(analysisAction, {
-    scale:1.7,
+    scale:2.2,
     duration:analysisSequence.duration(),
     ease:'none'
   }, 0);
@@ -1348,14 +1314,15 @@ function destroyPageGradient() {
   document.body.classList.remove('hotel-neat-gradient-active');
   document.body.classList.remove('hotel-neat-gradient-hidden');
   if (!pageGradientLatched) return;
-  unmountPageGradient?.();
-  unmountPageGradient = null;
+  pageGradientController?.destroy();
+  pageGradientController = null;
   pageGradientLatched = false;
 }
 
 function destroyHotelGradients() {
   destroyPageGradient();
-  destroyAgentMessageGradients();
+  agentMessageVideoObserver?.disconnect();
+  agentMessageVideos.forEach(video => video.pause());
 }
 
 addEventListener('pagehide', event => {
@@ -1388,7 +1355,7 @@ hotelUrlInput?.addEventListener('keydown', event => {
 const dialogue = document.querySelector('[data-block="4"]');
 const dialogueTitle = document.getElementById('hotelDialogueTitle');
 const dialogueMessages = dialogue ? [...dialogue.querySelectorAll('.hotel-message')] : [];
-const dialogueSignalColor = 'rgba(255,255,255,.52)';
+const dialogueSignalColor = '#fff';
 
 dialogueMessages.forEach(message => {
   if (message.querySelector('.hotel-message__signal')) {
@@ -1607,10 +1574,40 @@ if (!reduced && dialogue) {
 }
 
 const hotelInfoCards = [...document.querySelectorAll('.hotel-info-card')];
+const hotelData = document.querySelector('.hotel-data');
+const hotelDataInner = hotelData?.querySelector('.hotel-data__inner');
+const hotelDataTrack = hotelData?.querySelector('.hotel-data__grid');
+const hotelCardImages = hotelData ? [...hotelData.querySelectorAll('.hotel-info-card__photo')] : [];
+const analysisFinalStatus = document.querySelector('.hotel-analysis__status--result');
+const hotelHorizontalEnabled = !reduced
+  && matchMedia('(min-width:761px)').matches;
 const hotelCardPointerEnabled = !reduced
   && matchMedia('(hover:hover) and (pointer:fine)').matches;
+const hotelDataPalette = {progress:0};
 
-if (!reduced) {
+function setHotelDataPalette(active) {
+  gsap.to(hotelDataPalette, {
+    progress:active ? 1 : 0,
+    duration:reduced ? 0 : 1.05,
+    ease:'sine.inOut',
+    overwrite:true,
+    onUpdate:() => pageGradientController?.setHotelDataPalette(hotelDataPalette.progress)
+  });
+}
+
+if (hotelData && hotelCardImages.length) {
+  const hotelCardImageObserver = new IntersectionObserver((entries, observer) => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    hotelCardImages.forEach(image => {
+      image.loading = 'eager';
+      void image.decode().catch(() => {});
+    });
+    observer.disconnect();
+  }, {rootMargin:'80% 0px'});
+  hotelCardImageObserver.observe(hotelData);
+}
+
+if (!reduced && !hotelHorizontalEnabled) {
   hotelInfoCards.forEach((card, index) => {
     const isRightColumn = index % 2 === 1;
 
@@ -1637,11 +1634,154 @@ if (!reduced) {
   gsap.set(hotelInfoCards, {autoAlpha:1, '--card-shift-y':'0px'});
 }
 
+if (hotelHorizontalEnabled && hotelData && hotelDataInner && hotelDataTrack && analysisFinalStatus) {
+  const getExitReveal = () => Math.min(hotelInfoCards.at(-1)?.offsetWidth * .45 || 0, 220);
+  const setResultPinned = active => {
+    analysisStage?.classList.toggle('is-result-pinned', active);
+    analysisFinalStatus.classList.toggle('is-horizontal-pinned', active);
+  };
+
+  hotelData.classList.add('is-horizontal');
+
+  const horizontalTimeline = gsap.timeline({
+    scrollTrigger:{
+      trigger:hotelData,
+      start:'top 90%',
+      end:() => `+=${Math.round(innerWidth + hotelDataTrack.scrollWidth - getExitReveal())}`,
+      pin:hotelDataInner,
+      scrub:1.25,
+      anticipatePin:1,
+      invalidateOnRefresh:true,
+      onEnter:() => {
+        gsap.set(hotelDataTrack, {visibility:'visible'});
+        setHotelDataPalette(true);
+      },
+      onLeave:() => {
+        gsap.set(hotelDataTrack, {visibility:'hidden'});
+      },
+      onEnterBack:() => {
+        gsap.set(hotelDataTrack, {visibility:'visible'});
+        setHotelDataPalette(true);
+      },
+      onLeaveBack:() => {
+        gsap.set(hotelDataTrack, {visibility:'hidden'});
+        setHotelDataPalette(false);
+      }
+    }
+  });
+
+  gsap.set(hotelDataTrack, {autoAlpha:0});
+
+  horizontalTimeline
+    .fromTo(hotelDataTrack,
+      {x:() => innerWidth + 2},
+      {
+        x:() => -(hotelDataTrack.scrollWidth - getExitReveal()),
+        ease:'none',
+        snap:{x:1}
+      },
+      0
+    )
+    .to(hotelDataTrack, {
+      opacity:1,
+      duration:.008,
+      ease:'none'
+    }, 0)
+    .to(hotelDataTrack, {
+      opacity:0,
+      duration:.065,
+      ease:'power1.inOut'
+    }, .435)
+    .fromTo(analysisFinalStatus,
+      {opacity:1, y:0, scale:1},
+      {
+        opacity:0,
+        y:-18,
+        scale:.99,
+        duration:.065,
+        ease:'sine.inOut',
+        immediateRender:false,
+        onStart:() => analysisFinalStatus.classList.remove('is-horizontal-past'),
+        onComplete:() => analysisFinalStatus.classList.add('is-horizontal-past'),
+        onReverseComplete:() => analysisFinalStatus.classList.remove('is-horizontal-past')
+      },
+      .435
+    );
+
+  ScrollTrigger.create({
+    trigger:hotelData,
+    start:'top 64%',
+    end:() => horizontalTimeline.scrollTrigger.end,
+    invalidateOnRefresh:true,
+    onEnter:() => {
+      analysisFinalStatus.classList.remove('is-horizontal-past');
+      setResultPinned(true);
+    },
+    onLeave:() => {
+      setResultPinned(false);
+    },
+    onEnterBack:() => {
+      analysisFinalStatus.classList.remove('is-horizontal-past');
+      setResultPinned(true);
+    },
+    onLeaveBack:() => setResultPinned(false)
+  });
+}
+
+if (!hotelHorizontalEnabled && hotelData) {
+  ScrollTrigger.create({
+    trigger:hotelData,
+    start:'top 90%',
+    end:'bottom 10%',
+    invalidateOnRefresh:true,
+    onEnter:() => setHotelDataPalette(true),
+    onEnterBack:() => setHotelDataPalette(true),
+    onLeaveBack:() => setHotelDataPalette(false)
+  });
+}
+
 if (hotelCardPointerEnabled) {
   hotelInfoCards.forEach(card => {
+    const cardShell = card.closest('.hotel-info-card-shell');
+    if (!cardShell) return;
+    const siblingCards = hotelInfoCards
+      .filter(item => item !== card)
+      .map(item => item.closest('.hotel-info-card-shell'));
+    const tagDepthRatios = [14 / 560, 22 / 560, 30 / 560];
+    const tagTilts = [3.5, 5, 6.5];
+    const tagDurations = [.26, .44, .66];
+    const tagControllers = [...cardShell.querySelectorAll('.hotel-info-card__details > span')]
+      .map((tag, index) => {
+        gsap.set(tag, {
+          z:18 + index * 18,
+          transformPerspective:800,
+          transformOrigin:'50% 50%'
+        });
+
+        return {
+          depthRatio:tagDepthRatios[index],
+          tilt:tagTilts[index],
+          x:gsap.quickTo(tag, 'x', {duration:tagDurations[index], ease:'power3.out'}),
+          y:gsap.quickTo(tag, 'y', {duration:tagDurations[index] + .08, ease:'power3.out'}),
+          rotationX:gsap.quickTo(tag, 'rotationX', {duration:tagDurations[index] + .1, ease:'power3.out'}),
+          rotationY:gsap.quickTo(tag, 'rotationY', {duration:tagDurations[index] + .1, ease:'power3.out'})
+        };
+      });
     const resetCard = () => {
-      card.classList.remove('is-pointer-active');
-      gsap.to(card, {
+      cardShell?.classList.remove('is-pointer-active');
+      tagControllers.forEach(controller => {
+        controller.x(0);
+        controller.y(0);
+        controller.rotationX(0);
+        controller.rotationY(0);
+      });
+      gsap.to(siblingCards, {
+        opacity:1,
+        duration:.38,
+        ease:'power2.out',
+        overwrite:'auto'
+      });
+      gsap.to(cardShell, {
         '--card-lift':'0px',
         '--card-rx':'0deg',
         '--card-ry':'0deg',
@@ -1652,58 +1792,65 @@ if (hotelCardPointerEnabled) {
       });
     };
 
-    card.addEventListener('pointerenter', () => {
-      card.classList.add('is-pointer-active');
-      gsap.to(card, {
-        '--card-lift':'-12px',
-        '--card-scale':1.035,
+    cardShell.addEventListener('pointerenter', () => {
+      cardShell?.classList.add('is-pointer-active');
+      gsap.to(siblingCards, {
+        opacity:.54,
+        duration:.38,
+        ease:'power2.out',
+        overwrite:'auto'
+      });
+      gsap.to(cardShell, {
+        '--card-lift':hotelHorizontalEnabled ? '0px' : '-12px',
+        '--card-scale':hotelHorizontalEnabled ? 1 : 1.035,
         duration:.5,
         ease:'power3.out',
         overwrite:'auto'
       });
     });
 
-    card.addEventListener('pointermove', event => {
+    cardShell.addEventListener('pointermove', event => {
       const rect = card.getBoundingClientRect();
       const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
       const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
       const rotateX = (0.5 - y) * 7;
       const rotateY = (x - 0.5) * 9;
+      const pointerX = (x - .5) * 2;
+      const pointerY = (y - .5) * 2;
       const lightAngle = Math.atan2(y - .5, x - .5) * 180 / Math.PI + 90;
 
-      card.style.setProperty('--card-mx', `${(x * 100).toFixed(1)}%`);
-      card.style.setProperty('--card-my', `${(y * 100).toFixed(1)}%`);
-      card.style.setProperty('--card-light-angle', `${lightAngle.toFixed(1)}deg`);
-      gsap.to(card, {
+      cardShell?.style.setProperty('--card-mx', `${(x * 100).toFixed(1)}%`);
+      cardShell?.style.setProperty('--card-my', `${(y * 100).toFixed(1)}%`);
+      cardShell?.style.setProperty('--card-light-angle', `${lightAngle.toFixed(1)}deg`);
+      gsap.to(cardShell, {
         '--card-rx':`${rotateX.toFixed(2)}deg`,
         '--card-ry':`${rotateY.toFixed(2)}deg`,
         duration:.32,
         ease:'power2.out',
         overwrite:'auto'
       });
+      tagControllers.forEach(controller => {
+        const depth = rect.width * controller.depthRatio;
+        controller.x(pointerX * depth);
+        controller.y(pointerY * depth * .52);
+        controller.rotationX(-pointerY * controller.tilt);
+        controller.rotationY(pointerX * controller.tilt);
+      });
     });
 
-    card.addEventListener('pointerleave', resetCard);
-    card.addEventListener('pointercancel', resetCard);
+    cardShell.addEventListener('pointerleave', resetCard);
+    cardShell.addEventListener('pointercancel', resetCard);
   });
 }
 
-const application = document.querySelector('#hotel-application:not([hidden])');
+const application = document.getElementById('hotel-application');
 const applicationSticky = application?.querySelector('.hotel-application__sticky');
 const applicationPanel = application?.querySelector('.hotel-application__panel');
 const applicationContent = application?.querySelector('.hotel-application__content');
-const applicationForm = application?.querySelector('#hotelApplicationForm');
-const applicationStatus = application?.querySelector('#hotelApplicationStatus');
+const applicationForm = document.getElementById('hotelApplicationForm');
+const applicationStatus = document.getElementById('hotelApplicationStatus');
 const applicationPhone = applicationForm?.elements.phone;
-const goBand = document.getElementById('download');
 const footer = document.getElementById('footer');
-const ctaForm = document.getElementById('hotelCtaForm');
-const ctaName = document.getElementById('hotelCtaName');
-const ctaPhone = document.getElementById('hotelCtaPhone');
-const ctaSubmit = ctaForm?.querySelector('.go-form__submit');
-const ctaLegal = ctaForm?.querySelector('.go-form__legal');
-const ctaStatus = document.getElementById('hotelCtaStatus');
-let ctaButtonMotion = null;
 
 const RUSSIAN_PHONE_PATTERN = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
 
@@ -1728,50 +1875,6 @@ function formatRussianPhone(rawValue) {
   if (national.length > 8) formatted += `-${national.slice(8, 10)}`;
   return formatted;
 }
-
-function syncCtaFormState() {
-  if (!ctaName || !ctaPhone || !ctaSubmit || !ctaLegal) return false;
-  const ready = Boolean(ctaName.value.trim()) && RUSSIAN_PHONE_PATTERN.test(ctaPhone.value);
-  ctaSubmit.hidden = !ready;
-  ctaSubmit.tabIndex = ready ? 0 : -1;
-  ctaLegal.hidden = !ready;
-  if (ready && !ctaButtonMotion) {
-    ctaButtonMotion = mountHotelMagneticButton(
-      ctaSubmit,
-      ctaSubmit,
-      ctaSubmit.querySelector('.go-t'),
-      {wobble:.65}
-    );
-  }
-  return ready;
-}
-
-ctaForm?.addEventListener('input', event => {
-  if (event.target === ctaPhone) {
-    ctaPhone.value = formatRussianPhone(ctaPhone.value);
-  }
-  syncCtaFormState();
-});
-
-ctaPhone?.addEventListener('focus', () => {
-  if (!ctaPhone.value) ctaPhone.value = '+7';
-  ctaPhone.setSelectionRange(ctaPhone.value.length, ctaPhone.value.length);
-});
-
-ctaPhone?.addEventListener('blur', () => {
-  if (ctaPhone.value === '+7') ctaPhone.value = '';
-  syncCtaFormState();
-});
-
-ctaForm?.addEventListener('submit', event => {
-  event.preventDefault();
-  if (!syncCtaFormState()) return;
-  ctaSubmit.querySelector('.go-t').textContent = 'Заявка принята';
-  ctaSubmit.disabled = true;
-  ctaSubmit.tabIndex = -1;
-  ctaButtonMotion?.disable();
-  ctaStatus.textContent = 'Заявка принята. Мы свяжемся с вами.';
-});
 
 function syncPhoneValidity(showError = false) {
   if (!applicationPhone) return false;
@@ -1862,10 +1965,9 @@ function mountHotelMagneticButton(zone, button, label, options = {}) {
   };
 }
 
-const applicationSubmit = application?.querySelector('.hotel-application__submit');
+const applicationSubmit = applicationForm?.querySelector('.hotel-application__submit');
 mountHotelMagneticButton(heroDownload, heroDownload, heroDownload?.querySelector('.hero-download__label'));
 mountHotelMagneticButton(scrollCue, scrollCue, scrollCue?.querySelector('.scroll-cue-arrows'), {wobble:.65});
-const headerDownload = document.getElementById('headerDownload');
 mountHotelMagneticButton(headerDownload, headerDownload, headerDownload?.querySelector('span'), {wobble:0});
 const applicationButtonMotion = mountHotelMagneticButton(
   applicationSubmit,
@@ -1886,7 +1988,7 @@ if (application && applicationPanel) {
       ScrollTrigger.create({
         trigger:application,
         start:'top top',
-        endTrigger:goBand || footer,
+        endTrigger:footer,
         end:'top top',
         pin:applicationSticky,
         pinSpacing:false,

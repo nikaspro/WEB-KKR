@@ -4,9 +4,10 @@
 
 ## Открыть сайт
 
-**[Рабочая версия на GitHub Pages](https://nikaspro.github.io/WEB-KKR/)**
+- **[Для путешественников](https://nikaspro.github.io/WEB-KKR/)**
+- **[Для отелей](https://nikaspro.github.io/WEB-KKR/hotels/)**
 
-GitHub Actions собирает production-версию и публикует её автоматически. Исходный `index.html` не нужно открывать через интерфейс GitHub или `raw.githubusercontent.com`.
+GitHub Actions собирает обе актуальные страницы из корневого проекта и публикует их автоматически. Исходные HTML-файлы не нужно открывать через интерфейс GitHub или `raw.githubusercontent.com`.
 
 ## Требования
 
@@ -36,8 +37,11 @@ npm run package:portable # portable/ и автономный standalone/index.ht
 
 ```text
 .github/workflows/pages.yml  # проверки и публикация GitHub Pages
-index.html                   # разметка единственной рабочей страницы
+index.html                   # страница для путешественников
+hotels/index.html            # актуальная страница для отелей
+hotel-page-current/          # автономная актуальная локальная копия hotel-страницы
 src/
+  hotels/                    # логика и стили страницы для отелей
   scene/
     scene.js                 # логика, интерактив и GSAP-сцены
     phases.js                # окна и тайминги фаз
@@ -60,6 +64,7 @@ scripts/
   legacy-check.mjs           # проверка локальных ссылок и ассетов
   portable-package.mjs       # переносимая сборка
 legacy/rd-hero-v4.html       # совместимый переход на корневую страницу
+archive/                     # старые автономные снимки, не участвующие в сборке
 ```
 
 Правила проекта находятся в [AGENTS.md](./AGENTS.md), правила GSAP — в [GSAP.md](./GSAP.md).

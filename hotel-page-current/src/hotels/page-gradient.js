@@ -109,6 +109,17 @@ const pageGradientConfig = {
   cameraZoom:2.95
 };
 
+const hotelDataPalette = ['#2D8CFF','#62D8FF','#5BB9F2','#A3E7F5','#4776E6','#77C8FF'];
+
+function mixHexColor(from, to, progress) {
+  const channel = index => Math.round(
+    parseInt(from.slice(index, index + 2), 16)
+    + (parseInt(to.slice(index, index + 2), 16) - parseInt(from.slice(index, index + 2), 16)) * progress
+  ).toString(16).padStart(2, '0');
+
+  return `#${channel(1)}${channel(3)}${channel(5)}`;
+}
+
 export function mountPageGradient(host, {reduced = false} = {}) {
   const canvas = document.createElement('canvas');
   canvas.className = 'hotel-neat-gradient__canvas';
@@ -132,10 +143,18 @@ export function mountPageGradient(host, {reduced = false} = {}) {
 
   let destroyed = false;
 
-  return () => {
-    if (destroyed) return;
-    destroyed = true;
-    gradient.destroy();
-    canvas.remove();
+  return {
+    setHotelDataPalette(progress) {
+      gradient.colors = pageGradientConfig.colors.map((color, index) => ({
+        ...color,
+        color:mixHexColor(color.color, hotelDataPalette[index], progress)
+      }));
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      gradient.destroy();
+      canvas.remove();
+    }
   };
 }

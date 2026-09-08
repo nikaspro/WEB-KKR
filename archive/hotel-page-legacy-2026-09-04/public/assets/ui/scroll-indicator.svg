@@ -1,0 +1,38 @@
+<svg width="64" height="932" viewBox="0 0 64 932" fill="none" xmlns="http://www.w3.org/2000/svg">
+<mask id="mask0_202_3078" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="328" width="64" height="276">
+<rect y="328" width="64" height="276" fill="url(#paint0_linear_202_3078)"/>
+</mask>
+<g mask="url(#mask0_202_3078)">
+<rect x="26" y="325.9" width="3" height="10" rx="1.5" transform="rotate(90 26 325.9)" fill="white"/>
+<rect x="26" y="338.5" width="3" height="10" rx="1.5" transform="rotate(90 26 338.5)" fill="white"/>
+<rect x="26" y="351.1" width="3" height="10" rx="1.5" transform="rotate(90 26 351.1)" fill="white"/>
+<rect x="26" y="363.7" width="3" height="10" rx="1.5" transform="rotate(90 26 363.7)" fill="white"/>
+<rect x="29" y="376.3" width="3" height="13" rx="1.5" transform="rotate(90 29 376.3)" fill="white"/>
+<rect x="34" y="388.9" width="3" height="18" rx="1.5" transform="rotate(90 34 388.9)" fill="white"/>
+<rect x="38" y="401.5" width="3" height="22" rx="1.5" transform="rotate(90 38 401.5)" fill="white"/>
+<rect x="43" y="414.1" width="3" height="27" rx="1.5" transform="rotate(90 43 414.1)" fill="white"/>
+<rect x="48" y="426.7" width="3" height="32" rx="1.5" transform="rotate(90 48 426.7)" fill="white"/>
+<rect x="43" y="439.3" width="3" height="27" rx="1.5" transform="rotate(90 43 439.3)" fill="white"/>
+<rect x="38" y="451.9" width="3" height="22" rx="1.5" transform="rotate(90 38 451.9)" fill="white"/>
+<rect x="34" y="464.5" width="3" height="18" rx="1.5" transform="rotate(90 34 464.5)" fill="white"/>
+<rect x="29" y="477.1" width="3" height="13" rx="1.5" transform="rotate(90 29 477.1)" fill="white"/>
+<rect x="26" y="489.7" width="3" height="10" rx="1.5" transform="rotate(90 26 489.7)" fill="white"/>
+<rect x="26" y="502.3" width="3" height="10" rx="1.5" transform="rotate(90 26 502.3)" fill="white"/>
+<rect x="26" y="514.9" width="3" height="10" rx="1.5" transform="rotate(90 26 514.9)" fill="white"/>
+<rect x="25" y="527.5" width="3" height="9" rx="1.5" transform="rotate(90 25 527.5)" fill="white"/>
+<rect x="25" y="540.1" width="3" height="9" rx="1.5" transform="rotate(90 25 540.1)" fill="white"/>
+<rect x="25" y="552.7" width="3" height="9" rx="1.5" transform="rotate(90 25 552.7)" fill="white"/>
+<rect x="25" y="565.3" width="3" height="9" rx="1.5" transform="rotate(90 25 565.3)" fill="white"/>
+<rect x="25" y="577.9" width="3" height="9" rx="1.5" transform="rotate(90 25 577.9)" fill="white"/>
+<rect x="25" y="590.5" width="3" height="9" rx="1.5" transform="rotate(90 25 590.5)" fill="white"/>
+<rect x="25" y="603.1" width="3" height="9" rx="1.5" transform="rotate(90 25 603.1)" fill="white"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_202_3078" x1="32" y1="604" x2="32.0001" y2="328" gradientUnits="userSpaceOnUse">
+<stop stop-color="#D9D9D9" stop-opacity="0"/>
+<stop offset="0.2" stop-color="#A6A6A6"/>
+<stop offset="0.8" stop-color="#8D8D8D"/>
+<stop offset="1" stop-color="#737373" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>
