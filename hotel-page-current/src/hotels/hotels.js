@@ -729,7 +729,6 @@ const analysisRipple = document.querySelector('[data-hotel-url-ripple]');
 const analysisStatusesRegion = document.querySelector('.hotel-analysis__statuses');
 const analysisStatuses = gsap.utils.toArray('.hotel-analysis__statuses .hotel-analysis__status');
 const analysisCards = gsap.utils.toArray('.hotel-analysis-card');
-const analysisCardAnchors = gsap.utils.toArray('.hotel-analysis-card-anchor');
 const hotelUrlPreset = hotelUrlInput?.value || 'my-hotel.ru';
 const hotelUrlTyping = {characters:0};
 const analysisStatusText = analysisStatuses.map(status => Array.from(status.childNodes)
@@ -841,18 +840,21 @@ function playAnalysisCardFlight() {
 
   const flights = getAnalysisCardFlights();
   const stageHeight = analysisStage?.clientHeight || innerHeight;
-  const riseDistance = Math.max(280, Math.min(620, stageHeight * .62));
+  const riseDistance = Math.max(160, Math.min(240, stageHeight * .24));
   const fallY = stageHeight * .72 + Math.max(180, innerHeight * .18);
   const riseDuration = .64;
   const fallDuration = .86;
   const stagger = .08;
-  const fallStart = riseDuration + Math.max(0, analysisCards.length - 1) * stagger;
+  const fallStart = riseDuration + .12;
   const fallEnd = fallStart + fallDuration + Math.max(0, analysisCards.length - 1) * stagger;
   analysisCardFlightPlayed = true;
   analysisCardFlight = gsap.timeline({defaults:{overwrite:'auto'}})
+    .set(analysisCards, {
+      autoAlpha:1,
+      stagger
+    }, 0)
     .fromTo(analysisCards,
       {
-        autoAlpha:0,
         x:0,
         y:0,
         z:0,
@@ -860,7 +862,6 @@ function playAnalysisCardFlight() {
         rotation:0
       },
       {
-        autoAlpha:1,
         x:index => flights[index].x * .34,
         y:index => -riseDistance + flights[index].y * .16,
         z:index => flights[index].z * .32,
@@ -868,7 +869,7 @@ function playAnalysisCardFlight() {
         rotation:index => flights[index].rotation * .45,
         duration:riseDuration,
         stagger,
-        ease:'power4.out'
+        ease:'power2.out'
       }, 0)
     .to(analysisCards, {
       x:index => flights[index].x,
@@ -880,11 +881,7 @@ function playAnalysisCardFlight() {
       stagger,
       ease:'power3.in'
     }, fallStart)
-    .to(analysisCards, {
-      autoAlpha:0,
-      duration:.24,
-      ease:'power2.in'
-    }, fallEnd - .18);
+    .set(analysisCards, {autoAlpha:0}, fallEnd);
 }
 
 function getAnalysisActionCenterY() {
@@ -895,37 +892,7 @@ function getAnalysisActionCenterY() {
   return analysisStage.clientHeight * .5 - actionCenter;
 }
 
-function enableAnalysisCardParallax() {
-  if (!analysis || !analysisCardAnchors.length
-    || !matchMedia('(hover:hover) and (pointer:fine)').matches) return;
-
-  const depths = [56, 48, 68, 52, 60, 44, 42, 38];
-  const controllers = analysisCardAnchors.map((anchor, index) => ({
-    x:gsap.quickTo(anchor, 'x', {duration:.62, ease:'power3.out'}),
-    y:gsap.quickTo(anchor, 'y', {duration:.68, ease:'power3.out'}),
-    rotationX:gsap.quickTo(anchor, 'rotationX', {duration:.72, ease:'power3.out'}),
-    rotationY:gsap.quickTo(anchor, 'rotationY', {duration:.72, ease:'power3.out'}),
-    depth:depths[index]
-  }));
-
-  addEventListener('pointermove', event => {
-    const sectionBounds = analysis.getBoundingClientRect();
-    if (sectionBounds.bottom <= 0 || sectionBounds.top >= innerHeight) return;
-
-    const x = gsap.utils.clamp(-1, 1, (event.clientX / innerWidth - .5) * 2);
-    const y = gsap.utils.clamp(-1, 1, (event.clientY / innerHeight - .5) * 2);
-
-    controllers.forEach(controller => {
-      controller.x(-x * controller.depth);
-      controller.y(-y * controller.depth * .34);
-      controller.rotationX(y * 5.6);
-      controller.rotationY(-x * 7.6);
-    });
-  }, {passive:true});
-}
-
 if (!reduced && analysis) {
-  enableAnalysisCardParallax();
   hotelUrlInput.value = '';
   gsap.set(hotelUrlInput, {
     color:'#fff',
@@ -1137,7 +1104,6 @@ function runAnalysisSequence() {
     transformOrigin:'50% 50%'
   });
   startAnalysisRimMotion();
-  playAnalysisCardFlight();
   setAnalysisRimSpeed(0, true);
   gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
   analysisSequence = gsap.timeline({
@@ -1203,7 +1169,6 @@ function runAnalysisSequence() {
   const getStatusStart = index => statusStart + index * statusStep
     + (index > completeStatusIndex ? completeStatusHold : 0);
   const completeStatusStart = getStatusStart(completeStatusIndex);
-  const completeStatusExit = completeStatusStart + .70 + statusReadHold + completeStatusHold;
 
   const actionTiltStep = completeStatusStart / 3;
   analysisSequence
@@ -1232,12 +1197,7 @@ function runAnalysisSequence() {
     duration:.48,
     ease:'power2.inOut'
   }, completeStatusStart - .48);
-
-  analysisSequence.to(analysisAction, {
-    rotation:0,
-    duration:.34,
-    ease:'power2.inOut'
-  }, completeStatusExit - .36);
+  analysisSequence.call(playAnalysisCardFlight, [], completeStatusStart);
 
   analysisStatuses.forEach((status, index) => {
     const at = getStatusStart(index);
