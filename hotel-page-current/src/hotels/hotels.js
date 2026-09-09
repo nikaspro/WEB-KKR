@@ -11,6 +11,7 @@ let pageIsLeaving = false;
 let pageGradientLatched = false;
 let pageGradientShouldBeVisible = false;
 const agentMessageVideos = [...document.querySelectorAll('.hotel-message__video')];
+const agentMessageVideoPlaybackRate = 3;
 const agentMessageVideoObserver = reduced || !agentMessageVideos.length
   ? null
   : new IntersectionObserver(entries => {
@@ -26,10 +27,14 @@ const agentMessageVideoObserver = reduced || !agentMessageVideos.length
           delete source.dataset.src;
           video.load();
         }
+        video.playbackRate = agentMessageVideoPlaybackRate;
         void video.play().catch(() => {});
       });
     }, {rootMargin:'240px 0px'});
-agentMessageVideos.forEach(video => agentMessageVideoObserver?.observe(video));
+agentMessageVideos.forEach(video => {
+  video.playbackRate = agentMessageVideoPlaybackRate;
+  agentMessageVideoObserver?.observe(video);
+});
 const heroScene = document.querySelector('.hotels-hero');
 const hero = document.querySelector('.hotels-hero .hero');
 const heroTitle = document.getElementById('heroH1');
@@ -722,7 +727,7 @@ const analysisShell = analysisForm?.querySelector('.hotel-url__shell');
 const hotelUrlInput = document.getElementById('hotelUrl');
 const analysisRipple = document.querySelector('[data-hotel-url-ripple]');
 const analysisStatusesRegion = document.querySelector('.hotel-analysis__statuses');
-const analysisStatuses = gsap.utils.toArray('.hotel-analysis__status');
+const analysisStatuses = gsap.utils.toArray('.hotel-analysis__statuses .hotel-analysis__status');
 const analysisCards = gsap.utils.toArray('.hotel-analysis-card');
 const analysisCardAnchors = gsap.utils.toArray('.hotel-analysis-card-anchor');
 const hotelUrlPreset = hotelUrlInput?.value || 'my-hotel.ru';
@@ -738,6 +743,8 @@ let analysisReveal = null;
 let analysisGradientTimer = 0;
 let analysisExperience = null;
 let analysisFlowStarted = false;
+let analysisCardFlight = null;
+let analysisCardFlightPlayed = false;
 let analysisRimStatusIndex = -1;
 let analysisRimMotion = null;
 const analysisRimRotation = {value:0};
@@ -806,12 +813,78 @@ function getAnalysisCardFlights() {
   const wideX = Math.min(560, innerWidth * .36);
 
   return [
-    {x:-x, y:-y, z:80, rotation:-12, scale:1.2},
-    {x, y:-y * .92, z:-65, rotation:12, scale:.86},
-    {x:0, y:y * 1.25, z:35, rotation:-2.5, scale:1.08},
-    {x:-wideX, y:y * .78, z:-30, rotation:6.5, scale:.92},
-    {x:wideX, y:y * .68, z:70, rotation:-7, scale:1.18}
+    {x:-x * 1.08, y:-y * .72, z:80, rotation:-15, scale:1.22},
+    {x:x * 1.10, y:-y * .24, z:-65, rotation:14, scale:1.12},
+    {x:-wideX * .92, y:y * .66, z:-30, rotation:10, scale:1.18},
+    {x:-x * .06, y:y * .18, z:50, rotation:-4, scale:1.34},
+    {x:wideX * .98, y:y * .70, z:70, rotation:-12, scale:1.26}
   ];
+}
+
+function resetAnalysisCardFlight() {
+  analysisCardFlight?.kill();
+  analysisCardFlight = null;
+  analysisCardFlightPlayed = false;
+  gsap.set(analysisCards, {
+    autoAlpha:0,
+    x:0,
+    y:0,
+    z:0,
+    scale:.24,
+    rotation:0,
+    transformOrigin:'50% 50%'
+  });
+}
+
+function playAnalysisCardFlight() {
+  if (analysisCardFlightPlayed || !analysisCards.length) return;
+
+  const flights = getAnalysisCardFlights();
+  const stageHeight = analysisStage?.clientHeight || innerHeight;
+  const riseDistance = Math.max(280, Math.min(620, stageHeight * .62));
+  const fallY = stageHeight * .72 + Math.max(180, innerHeight * .18);
+  const riseDuration = .64;
+  const fallDuration = .86;
+  const stagger = .08;
+  const fallStart = riseDuration + Math.max(0, analysisCards.length - 1) * stagger;
+  const fallEnd = fallStart + fallDuration + Math.max(0, analysisCards.length - 1) * stagger;
+  analysisCardFlightPlayed = true;
+  analysisCardFlight = gsap.timeline({defaults:{overwrite:'auto'}})
+    .fromTo(analysisCards,
+      {
+        autoAlpha:0,
+        x:0,
+        y:0,
+        z:0,
+        scale:.24,
+        rotation:0
+      },
+      {
+        autoAlpha:1,
+        x:index => flights[index].x * .34,
+        y:index => -riseDistance + flights[index].y * .16,
+        z:index => flights[index].z * .32,
+        scale:index => flights[index].scale * .72,
+        rotation:index => flights[index].rotation * .45,
+        duration:riseDuration,
+        stagger,
+        ease:'power4.out'
+      }, 0)
+    .to(analysisCards, {
+      x:index => flights[index].x,
+      y:fallY,
+      z:index => flights[index].z,
+      scale:index => flights[index].scale,
+      rotation:index => flights[index].rotation,
+      duration:fallDuration,
+      stagger,
+      ease:'power3.in'
+    }, fallStart)
+    .to(analysisCards, {
+      autoAlpha:0,
+      duration:.24,
+      ease:'power2.in'
+    }, fallEnd - .18);
 }
 
 function getAnalysisActionCenterY() {
@@ -826,7 +899,7 @@ function enableAnalysisCardParallax() {
   if (!analysis || !analysisCardAnchors.length
     || !matchMedia('(hover:hover) and (pointer:fine)').matches) return;
 
-  const depths = [56, 48, 68, 52, 60];
+  const depths = [56, 48, 68, 52, 60, 44, 42, 38];
   const controllers = analysisCardAnchors.map((anchor, index) => ({
     x:gsap.quickTo(anchor, 'x', {duration:.62, ease:'power3.out'}),
     y:gsap.quickTo(anchor, 'y', {duration:.68, ease:'power3.out'}),
@@ -883,6 +956,7 @@ if (!reduced && analysis) {
           rotation:0,
           filter:'blur(0px)'
         });
+        gsap.set(analysisForm, {autoAlpha:0});
         if (!analysisFlowStarted) stopAnalysisRimMotion();
       }
     }
@@ -908,11 +982,9 @@ if (!reduced && analysis) {
       0
     )
     .fromTo(analysisForm,
-      {autoAlpha:0, y:12, scale:.965},
+      {autoAlpha:0},
       {
         autoAlpha:1,
-        y:0,
-        scale:1,
         duration:.34,
         ease:'power2.out'
       },
@@ -981,29 +1053,48 @@ function restoreAnalysisFirstState() {
   analysisForm.removeAttribute('data-submitting');
   analysisForm.setAttribute('aria-busy', 'false');
   analysis?.classList.remove('is-submitted', 'is-prompt-hidden');
+  gsap.set(analysisStatusesRegion, {visibility:'hidden'});
   analysisStatuses.forEach((status, index) => {
     status.setAttribute('aria-hidden', 'true');
     gsap.set(status, {autoAlpha:0});
     renderAnalysisStatus(status, analysisStatusText[index], analysisStatusText[index].length);
   });
   stopAnalysisRimMotion();
+  resetAnalysisCardFlight();
   analysisRimStatusIndex = -1;
+  gsap.set(analysisPrompt, {
+    autoAlpha:1,
+    y:0,
+    scale:1,
+    rotation:0,
+    filter:'blur(0px)'
+  });
   gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
 }
 
 function runAnalysisSequence() {
-  gsap.killTweensOf([analysisForm, hotelUrlInput, analysisPrompt]);
+  gsap.killTweensOf(hotelUrlInput);
+  resetAnalysisCardFlight();
   gsap.set(hotelUrlInput, {color:'#fff', textShadow:'none'});
+  gsap.set(analysisStatusesRegion, {visibility:'visible'});
 
-  analysis?.classList.add('is-submitted');
+  analysis?.classList.add('is-submitted', 'is-prompt-hidden');
   analysisForm.dataset.submitting = 'true';
   analysisForm.setAttribute('aria-busy', 'true');
   hotelUrlInput.readOnly = true;
   hotelUrlInput.tabIndex = -1;
 
   if (reduced) {
+    const flights = getAnalysisCardFlights();
+    gsap.set(analysisCards, {
+      autoAlpha:1,
+      x:index => flights[index].x,
+      y:index => flights[index].y,
+      z:index => flights[index].z,
+      scale:index => flights[index].scale,
+      rotation:index => flights[index].rotation
+    });
     gsap.set(analysisPrompt, {autoAlpha:0});
-    analysis?.classList.add('is-prompt-hidden');
   }
 
   const showStatus = status => {
@@ -1017,7 +1108,16 @@ function runAnalysisSequence() {
     gsap.set(analysisStatuses, {autoAlpha:0});
     const finalStatus = analysisStatuses.at(-1);
     finalStatus?.classList.add('is-final');
-    if (finalStatus) showStatus(finalStatus);
+    if (finalStatus) {
+      showStatus(finalStatus);
+      gsap.set(finalStatus, {
+        autoAlpha:1,
+        y:0,
+        scale:1,
+        rotationX:0,
+        filter:'blur(0px)'
+      });
+    }
     analysisForm.setAttribute('aria-busy', 'false');
     return;
   }
@@ -1030,15 +1130,6 @@ function runAnalysisSequence() {
     filter:'blur(12px)',
     transformOrigin:'50% 50%'
   });
-  gsap.set(analysisCards, {
-    autoAlpha:0,
-    x:0,
-    y:0,
-    z:0,
-    scale:.18,
-    rotation:0,
-    transformOrigin:'50% 50%'
-  });
   gsap.set(analysisAction, {
     scale:1,
     rotation:0,
@@ -1046,6 +1137,7 @@ function runAnalysisSequence() {
     transformOrigin:'50% 50%'
   });
   startAnalysisRimMotion();
+  playAnalysisCardFlight();
   setAnalysisRimSpeed(0, true);
   gsap.set(analysisForm, {autoAlpha:1, pointerEvents:'none'});
   analysisSequence = gsap.timeline({
@@ -1057,6 +1149,8 @@ function runAnalysisSequence() {
       scrub:.82,
       invalidateOnRefresh:true,
       onEnter:() => {
+        analysis?.classList.add('is-submitted', 'is-prompt-hidden');
+        gsap.set(analysisStatusesRegion, {visibility:'visible'});
         gsap.set(analysisPrompt, {
           autoAlpha:0,
           y:0,
@@ -1078,9 +1172,6 @@ function runAnalysisSequence() {
         );
         const activeStatus = analysisStatuses[activeIndex];
         if (activeStatus) showStatus(activeStatus);
-        if (activeIndex === analysisStatuses.length - 1) {
-          gsap.set(analysisForm, {autoAlpha:0});
-        }
         setAnalysisRimSpeed(activeIndex);
         analysisForm.setAttribute('aria-busy', String(self.progress < .985));
       },
@@ -1105,16 +1196,12 @@ function runAnalysisSequence() {
   const statusStart = .98;
   const statusReadHold = .28;
   const statusStep = 1.30;
-  const finalStatusIndex = analysisStatuses.length - 1;
   const completeStatusIndex = analysisStatuses.findIndex(
     status => status.classList.contains('hotel-analysis__status--complete')
   );
   const completeStatusHold = 1.1;
   const getStatusStart = index => statusStart + index * statusStep
     + (index > completeStatusIndex ? completeStatusHold : 0);
-  const finalStatusBase = getStatusStart(finalStatusIndex);
-  const finalStatusDelay = .42;
-  const finalStatusStart = finalStatusBase + finalStatusDelay;
   const completeStatusStart = getStatusStart(completeStatusIndex);
   const completeStatusExit = completeStatusStart + .70 + statusReadHold + completeStatusHold;
 
@@ -1146,94 +1233,34 @@ function runAnalysisSequence() {
     ease:'power2.inOut'
   }, completeStatusStart - .48);
 
-  analysisSequence.fromTo(analysisCards,
-    {
-      autoAlpha:0,
-      x:index => getAnalysisCardFlights()[index].x * .58,
-      y:index => getAnalysisCardFlights()[index].y * .58,
-      z:index => getAnalysisCardFlights()[index].z * .58,
-      scale:.76,
-      rotation:index => getAnalysisCardFlights()[index].rotation * .58
-    },
-    {
-      autoAlpha:1,
-      x:index => getAnalysisCardFlights()[index].x,
-      y:index => getAnalysisCardFlights()[index].y,
-      z:index => getAnalysisCardFlights()[index].z,
-      scale:index => getAnalysisCardFlights()[index].scale,
-      rotation:index => getAnalysisCardFlights()[index].rotation,
-      duration:.3,
-      stagger:.018,
-      ease:'power3.out',
-    },
-    completeStatusStart
-  );
-
-  analysisSequence.to(analysisCards, {
-    autoAlpha:0,
-    duration:.28,
-    stagger:{each:.012, from:'end'},
-    ease:'power2.in'
-  }, finalStatusBase - .38);
-
-  analysisSequence.to(analysisForm, {
-    autoAlpha:0,
-    scale:.985,
-    duration:.32,
-    ease:'power2.in'
-  }, completeStatusExit);
-
   analysisSequence.to(analysisAction, {
     rotation:0,
     duration:.34,
     ease:'power2.inOut'
-  }, finalStatusBase - .36);
+  }, completeStatusExit - .36);
 
   analysisStatuses.forEach((status, index) => {
-    const isFinal = index === finalStatusIndex;
-    const at = isFinal ? finalStatusStart : getStatusStart(index);
+    const at = getStatusStart(index);
     const isComplete = status.classList.contains('hotel-analysis__status--complete');
     const text = analysisStatusText[index];
 
-    if (isFinal) {
-      analysisSequence.fromTo(status,
-        {
-          autoAlpha:0,
-          y:12,
-          scale:.985,
-          rotationX:0,
-          filter:'blur(6px)'
-        },
-        {
-          autoAlpha:1,
-          y:0,
-          scale:1,
-          rotationX:0,
-          filter:'blur(0px)',
-          duration:.62,
-          ease:'sine.out'
-        },
-        at
-      );
-    } else {
-      const typing = {characters:0};
-      analysisSequence.set(status, {
-        autoAlpha:1,
-        y:0,
-        scale:1,
-        rotationX:0,
-        filter:'blur(0px)'
-      }, at);
-      analysisSequence.to(typing, {
-        characters:text.length,
-        duration:.34,
-        ease:`steps(${text.length})`,
-        onStart:() => renderAnalysisStatus(status, text, 0),
-        onUpdate:() => renderAnalysisStatus(status, text, typing.characters),
-        onComplete:() => renderAnalysisStatus(status, text, text.length),
-        onReverseComplete:() => renderAnalysisStatus(status, text, 0)
-      }, at);
-    }
+    const typing = {characters:0};
+    analysisSequence.set(status, {
+      autoAlpha:1,
+      y:0,
+      scale:1,
+      rotationX:0,
+      filter:'blur(0px)'
+    }, at);
+    analysisSequence.to(typing, {
+      characters:text.length,
+      duration:.34,
+      ease:`steps(${text.length})`,
+      onStart:() => renderAnalysisStatus(status, text, 0),
+      onUpdate:() => renderAnalysisStatus(status, text, typing.characters),
+      onComplete:() => renderAnalysisStatus(status, text, text.length),
+      onReverseComplete:() => renderAnalysisStatus(status, text, isComplete ? text.length : 0)
+    }, at);
 
     if (index < analysisStatuses.length - 1) {
       analysisSequence.to(status, {
@@ -1241,17 +1268,17 @@ function runAnalysisSequence() {
         y:-34,
         scale:1.04,
         rotationX:10,
-        filter:isComplete ? 'blur(0px)' : 'blur(12px)',
+        filter:'blur(12px)',
         duration:.32,
         ease:'power2.in'
-      }, at + .70 + statusReadHold + (isComplete ? completeStatusHold : 0));
+      }, at + .70 + statusReadHold);
     }
   });
 
   analysisSequence.to({}, {duration:.92});
   analysisSequence.to(analysisAction, {
     scale:2.2,
-    duration:analysisSequence.duration(),
+    duration:completeStatusStart,
     ease:'none'
   }, 0);
 }
@@ -1390,8 +1417,8 @@ if (!reduced && dialogue) {
         ease:'power2.out',
         scrollTrigger:{
           trigger:dialogueTitle,
-          start:'top 92%',
-          end:'top 68%',
+          start:'top 140%',
+          end:'top 76%',
           scrub:.6,
           invalidateOnRefresh:true
         }
@@ -1406,8 +1433,9 @@ if (!reduced && dialogue) {
     gsap.fromTo(message,
       {
         autoAlpha:0,
-        y:72,
-        scale:.94,
+        y:96,
+        scale:.82,
+        '--hotel-rim-spin':'90deg',
         rotation:direction * 1.6,
         transformOrigin:direction < 0 ? '18% 100%' : '82% 100%'
       },
@@ -1415,12 +1443,13 @@ if (!reduced && dialogue) {
         autoAlpha:1,
         y:0,
         scale:1,
+        '--hotel-rim-spin':'450deg',
         rotation:0,
         ease:'power2.out',
         scrollTrigger:{
           trigger:message,
-          start:'top 96%',
-          end:'top 66%',
+          start:'top 120%',
+          end:'top 76%',
           scrub:1.05,
           invalidateOnRefresh:true
         }
@@ -1440,7 +1469,15 @@ if (!reduced && dialogue) {
 
       gsap.set(signals, signalRest);
 
-      const signalFlash = gsap.timeline({paused:true});
+      const signalFlash = gsap.timeline({
+        scrollTrigger:{
+          trigger:message,
+          start:'top 64%',
+          end:'bottom 14%',
+          toggleActions:'restart none restart reset',
+          invalidateOnRefresh:true
+        }
+      });
 
       signals.forEach((signal, signalIndex) => {
         const signalStart = signalIndex * .14;
@@ -1472,21 +1509,7 @@ if (!reduced && dialogue) {
           }, signalStart + .3);
       });
 
-      const playSignalFlash = () => signalFlash.restart(true);
-      const resetSignalFlash = () => {
-        signalFlash.pause(0);
-        gsap.set(signals, {...signalRest, overwrite:true});
-      };
-
-      ScrollTrigger.create({
-        trigger:message,
-        start:'top 64%',
-        end:'bottom 14%',
-        invalidateOnRefresh:true,
-        onEnter:playSignalFlash,
-        onEnterBack:playSignalFlash,
-        onLeaveBack:resetSignalFlash
-      });
+      signalFlash.set(signals, signalRest, signalFlash.duration());
     }
 
     const bonusOwner = message.closest('[data-bonus-message]');
@@ -1559,13 +1582,12 @@ if (!reduced && dialogue) {
     };
 
     ScrollTrigger.create({
-      trigger:message,
+      trigger:bonusOwner,
       start:'top 66%',
       end:'bottom 18%',
       invalidateOnRefresh:true,
       onEnter:showBonus,
       onEnterBack:showBonus,
-      onLeave:() => hideBonus(-28),
       onLeaveBack:() => hideBonus(24)
     });
   });
@@ -1575,11 +1597,10 @@ if (!reduced && dialogue) {
 
 const hotelInfoCards = [...document.querySelectorAll('.hotel-info-card')];
 const hotelData = document.querySelector('.hotel-data');
-const hotelDataInner = hotelData?.querySelector('.hotel-data__inner');
-const hotelDataTrack = hotelData?.querySelector('.hotel-data__grid');
+const hotelInfoCardShells = hotelData ? [...hotelData.querySelectorAll('.hotel-info-card-shell')] : [];
 const hotelCardImages = hotelData ? [...hotelData.querySelectorAll('.hotel-info-card__photo')] : [];
 const analysisFinalStatus = document.querySelector('.hotel-analysis__status--result');
-const hotelHorizontalEnabled = !reduced
+const hotelDesktopEnabled = !reduced
   && matchMedia('(min-width:761px)').matches;
 const hotelCardPointerEnabled = !reduced
   && matchMedia('(hover:hover) and (pointer:fine)').matches;
@@ -1595,6 +1616,18 @@ function setHotelDataPalette(active) {
   });
 }
 
+function setHotelDataTitle(visible) {
+  if (!analysisFinalStatus) return;
+  analysisFinalStatus.setAttribute('aria-hidden', String(!visible));
+  gsap.set(analysisFinalStatus, {
+    autoAlpha:visible ? 1 : 0,
+    y:0,
+    scale:1,
+    rotation:0,
+    filter:'blur(0px)'
+  });
+}
+
 if (hotelData && hotelCardImages.length) {
   const hotelCardImageObserver = new IntersectionObserver((entries, observer) => {
     if (!entries.some(entry => entry.isIntersecting)) return;
@@ -1607,7 +1640,7 @@ if (hotelData && hotelCardImages.length) {
   hotelCardImageObserver.observe(hotelData);
 }
 
-if (!reduced && !hotelHorizontalEnabled) {
+if (!reduced && !hotelDesktopEnabled) {
   hotelInfoCards.forEach((card, index) => {
     const isRightColumn = index % 2 === 1;
 
@@ -1634,109 +1667,104 @@ if (!reduced && !hotelHorizontalEnabled) {
   gsap.set(hotelInfoCards, {autoAlpha:1, '--card-shift-y':'0px'});
 }
 
-if (hotelHorizontalEnabled && hotelData && hotelDataInner && hotelDataTrack && analysisFinalStatus) {
-  const getExitReveal = () => Math.min(hotelInfoCards.at(-1)?.offsetWidth * .45 || 0, 220);
-  const setResultPinned = active => {
-    analysisStage?.classList.toggle('is-result-pinned', active);
-    analysisFinalStatus.classList.toggle('is-horizontal-pinned', active);
-  };
+if (hotelDesktopEnabled && hotelData && analysisFinalStatus) {
+  const hotelCardFlights = [
+    {x:() => -innerWidth * .06, y:() => innerHeight * .92, rotation:-8, scale:.90},
+    {x:() => innerWidth * .04, y:() => innerHeight * 1.08, rotation:6, scale:.94},
+    {x:() => -innerWidth * .02, y:() => innerHeight * .82, rotation:-4, scale:.88},
+    {x:() => innerWidth * .07, y:() => innerHeight * 1.18, rotation:9, scale:.92}
+  ];
 
-  hotelData.classList.add('is-horizontal');
+  hotelData.classList.add('is-vertical');
+  setHotelDataTitle(true);
+  gsap.set(hotelInfoCardShells, {
+    autoAlpha:1,
+    x:index => hotelCardFlights[index]?.x() ?? 0,
+    y:index => hotelCardFlights[index]?.y() ?? innerHeight,
+    rotation:index => hotelCardFlights[index]?.rotation ?? 0,
+    scale:index => hotelCardFlights[index]?.scale ?? .92,
+    transformOrigin:'50% 50%'
+  });
 
-  const horizontalTimeline = gsap.timeline({
+  const verticalTimeline = gsap.timeline({
     scrollTrigger:{
       trigger:hotelData,
-      start:'top 90%',
-      end:() => `+=${Math.round(innerWidth + hotelDataTrack.scrollWidth - getExitReveal())}`,
-      pin:hotelDataInner,
-      scrub:1.25,
-      anticipatePin:1,
+      start:'top top',
+      end:'bottom bottom',
+      scrub:1.05,
       invalidateOnRefresh:true,
       onEnter:() => {
-        gsap.set(hotelDataTrack, {visibility:'visible'});
+        setHotelDataTitle(true);
         setHotelDataPalette(true);
       },
       onLeave:() => {
-        gsap.set(hotelDataTrack, {visibility:'hidden'});
+        setHotelDataPalette(false);
       },
       onEnterBack:() => {
-        gsap.set(hotelDataTrack, {visibility:'visible'});
+        setHotelDataTitle(true);
         setHotelDataPalette(true);
       },
       onLeaveBack:() => {
-        gsap.set(hotelDataTrack, {visibility:'hidden'});
+        setHotelDataTitle(false);
         setHotelDataPalette(false);
       }
     }
   });
 
-  gsap.set(hotelDataTrack, {autoAlpha:0});
-
-  horizontalTimeline
-    .fromTo(hotelDataTrack,
-      {x:() => innerWidth + 2},
-      {
-        x:() => -(hotelDataTrack.scrollWidth - getExitReveal()),
-        ease:'none',
-        snap:{x:1}
-      },
-      0
-    )
-    .to(hotelDataTrack, {
-      opacity:1,
-      duration:.008,
-      ease:'none'
-    }, 0)
-    .to(hotelDataTrack, {
-      opacity:0,
-      duration:.065,
-      ease:'power1.inOut'
-    }, .435)
-    .fromTo(analysisFinalStatus,
-      {opacity:1, y:0, scale:1},
-      {
-        opacity:0,
-        y:-18,
-        scale:.99,
-        duration:.065,
-        ease:'sine.inOut',
-        immediateRender:false,
-        onStart:() => analysisFinalStatus.classList.remove('is-horizontal-past'),
-        onComplete:() => analysisFinalStatus.classList.add('is-horizontal-past'),
-        onReverseComplete:() => analysisFinalStatus.classList.remove('is-horizontal-past')
-      },
-      .435
-    );
-
-  ScrollTrigger.create({
-    trigger:hotelData,
-    start:'top 64%',
-    end:() => horizontalTimeline.scrollTrigger.end,
-    invalidateOnRefresh:true,
-    onEnter:() => {
-      analysisFinalStatus.classList.remove('is-horizontal-past');
-      setResultPinned(true);
+  verticalTimeline.fromTo(hotelInfoCardShells,
+    {
+      autoAlpha:1,
+      x:index => hotelCardFlights[index]?.x() ?? 0,
+      y:index => hotelCardFlights[index]?.y() ?? innerHeight,
+      rotation:index => hotelCardFlights[index]?.rotation ?? 0,
+      scale:index => hotelCardFlights[index]?.scale ?? .92
     },
-    onLeave:() => {
-      setResultPinned(false);
+    {
+      x:0,
+      y:0,
+      rotation:0,
+      scale:1,
+      duration:.56,
+      stagger:.11,
+      ease:'power3.out'
     },
-    onEnterBack:() => {
-      analysisFinalStatus.classList.remove('is-horizontal-past');
-      setResultPinned(true);
-    },
-    onLeaveBack:() => setResultPinned(false)
-  });
+    0
+  )
+    .to(hotelInfoCardShells, {
+      autoAlpha:0,
+      x:index => hotelCardFlights[index]?.x() ?? 0,
+      y:index => -(hotelCardFlights[index]?.y() ?? innerHeight),
+      rotation:index => hotelCardFlights[index]?.rotation ?? 0,
+      scale:index => hotelCardFlights[index]?.scale ?? .92,
+      duration:.56,
+      stagger:.11,
+      ease:'power3.in'
+    }, .96)
+    .to(analysisFinalStatus, {
+      autoAlpha:0,
+      duration:.34,
+      ease:'power2.inOut'
+    }, .96);
 }
 
-if (!hotelHorizontalEnabled && hotelData) {
+if (!hotelDesktopEnabled && hotelData) {
   ScrollTrigger.create({
     trigger:hotelData,
     start:'top 90%',
     end:'bottom 10%',
     invalidateOnRefresh:true,
-    onEnter:() => setHotelDataPalette(true),
-    onEnterBack:() => setHotelDataPalette(true),
-    onLeaveBack:() => setHotelDataPalette(false)
+    onEnter:() => {
+      setHotelDataTitle(true);
+      setHotelDataPalette(true);
+    },
+    onEnterBack:() => {
+      setHotelDataTitle(true);
+      setHotelDataPalette(true);
+    },
+    onLeaveBack:() => {
+      setHotelDataTitle(false);
+      setHotelDataPalette(false);
+    }
   });
 }
 
@@ -1744,9 +1772,6 @@ if (hotelCardPointerEnabled) {
   hotelInfoCards.forEach(card => {
     const cardShell = card.closest('.hotel-info-card-shell');
     if (!cardShell) return;
-    const siblingCards = hotelInfoCards
-      .filter(item => item !== card)
-      .map(item => item.closest('.hotel-info-card-shell'));
     const tagDepthRatios = [14 / 560, 22 / 560, 30 / 560];
     const tagTilts = [3.5, 5, 6.5];
     const tagDurations = [.26, .44, .66];
@@ -1775,12 +1800,6 @@ if (hotelCardPointerEnabled) {
         controller.rotationX(0);
         controller.rotationY(0);
       });
-      gsap.to(siblingCards, {
-        opacity:1,
-        duration:.38,
-        ease:'power2.out',
-        overwrite:'auto'
-      });
       gsap.to(cardShell, {
         '--card-lift':'0px',
         '--card-rx':'0deg',
@@ -1794,15 +1813,9 @@ if (hotelCardPointerEnabled) {
 
     cardShell.addEventListener('pointerenter', () => {
       cardShell?.classList.add('is-pointer-active');
-      gsap.to(siblingCards, {
-        opacity:.54,
-        duration:.38,
-        ease:'power2.out',
-        overwrite:'auto'
-      });
       gsap.to(cardShell, {
-        '--card-lift':hotelHorizontalEnabled ? '0px' : '-12px',
-        '--card-scale':hotelHorizontalEnabled ? 1 : 1.035,
+        '--card-lift':hotelDesktopEnabled ? '0px' : '-12px',
+        '--card-scale':hotelDesktopEnabled ? 1 : 1.035,
         duration:.5,
         ease:'power3.out',
         overwrite:'auto'

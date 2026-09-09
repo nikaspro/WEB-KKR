@@ -28,14 +28,6 @@
   transform-origin:center;
 }
 
-.hotel-flow-field--3d{display:none}
-
-.hotel-flow-depth-plane{
-  transform-box:view-box;
-  transform-origin:center;
-  transform:rotate(18deg) skewY(-4deg) scaleY(.84);
-}
-
 .hotel-flow-lines{
   transform-box:fill-box;
   transform-origin:center;
@@ -84,72 +76,6 @@
   filter:url(#hotel-flow-line-soft);
 }
 
-.hotel-flow-orb{
-  transform-box:fill-box;
-  transform-origin:center;
-}
-
-.hotel-flow-orb--top{
-  transform-box:view-box;
-  transform-origin:260px 155px;
-  animation:hotelFlowTopOrbit 22s linear infinite;
-}
-.hotel-flow-orb--bottom{
-  transform-box:view-box;
-  transform-origin:260px 845px;
-  animation:hotelFlowBottomOrbit 22s linear infinite;
-}
-.hotel-flow-orb--3d-top{animation:hotelFlowTopDepth 18s ease-in-out infinite}
-.hotel-flow-orb--3d-bottom{animation:hotelFlowBottomDepth 18s ease-in-out infinite}
-.hotel-flow-surface{
-  transform-box:fill-box;
-  transform-origin:center;
-  filter:url(#hotel-flow-sphere-blur);
-}
-.hotel-flow-orb--top .hotel-flow-surface{animation:hotelFlowSphereBreathe 5.8s ease-in-out -1.4s infinite alternate}
-.hotel-flow-orb--bottom .hotel-flow-surface{animation:hotelFlowSphereBreathe 6.6s ease-in-out -3.1s infinite alternate-reverse}
-.hotel-flow-orb--3d-top .hotel-flow-surface{animation:hotelFlowSphereBreathe 5.8s ease-in-out -1.4s infinite alternate}
-.hotel-flow-orb--3d-bottom .hotel-flow-surface{animation:hotelFlowSphereBreathe 6.6s ease-in-out -3.1s infinite alternate-reverse}
-
-.hotel-flow-orbit-lines{
-  --hotel-flow-orbit-paint:url(#hotel-flow-top-orbit);
-  display:none;
-}
-
-.hotel-flow-orbit-lines--bottom{
-  --hotel-flow-orbit-paint:url(#hotel-flow-bottom-orbit);
-}
-
-.hotel-flow-orbit-lines--back{opacity:.3}
-.hotel-flow-orbit-lines--front{opacity:.94}
-
-.hotel-flow-orbit-motion{
-  transform-box:view-box;
-  transform-origin:260px 155px;
-  animation:hotelFlowOrbitLines 14s linear infinite;
-}
-
-.hotel-flow-orbit-arc{
-  fill:none;
-  stroke:var(--hotel-flow-orbit-paint);
-  stroke-linecap:round;
-  vector-effect:non-scaling-stroke;
-}
-
-.hotel-flow-orbit-arc--glow{
-  stroke-width:22;
-  opacity:.34;
-  filter:url(#hotel-flow-orbit-glow);
-}
-
-.hotel-flow-orbit-arc--core{
-  stroke-width:6;
-  opacity:.62;
-  filter:url(#hotel-flow-orbit-soft);
-}
-
-.hotel-flow-orbit-arc--secondary{opacity:.34}
-
 .hotel-flow-message-copy{
   font-family:"Nunito Sans",sans-serif;
   dominant-baseline:middle;
@@ -168,83 +94,63 @@
   letter-spacing:.1px;
 }
 
-.hotel-flow-conversation{
+.hotel-flow-dialogue-message{
+  transform-box:view-box;
+  transform-origin:center;
+}
+
+.hotel-flow-dialogue-message--user{
+  transform-origin:375px 116px;
+}
+
+.hotel-flow-dialogue-message--agent{
+  transform-origin:224px 328px;
+}
+
+.hotel-flow-dialogue-message--hotel{
+  transform-origin:292px 538px;
+}
+
+.hotel-flow-dialogue-message--agent:last-child{
+  transform-origin:216px 748px;
+}
+
+.hotel-flow-dialogue-message .hotel-flow-message-shape{
+  fill:rgba(8,21,34,.86);
+  stroke:rgba(255,255,255,.26);
+  stroke-width:1.5;
+}
+
+.hotel-flow-dialogue-message--agent .hotel-flow-message-shape{
+  fill:rgba(3,10,52,.9);
+  stroke:rgba(79,113,255,.48);
+}
+
+.hotel-flow-dialogue-message--hotel .hotel-flow-message-shape{
+  fill:rgba(3,34,42,.92);
+  stroke:rgba(31,222,211,.48);
+}
+
+.hotel-flow-dialogue-rim{
+  fill:none;
+  stroke:url(#hotel-flow-dialogue-rim);
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-dasharray:.2 .8;
+  vector-effect:non-scaling-stroke;
+}
+
+.hotel-flow-dialogue-message--hotel .hotel-flow-dialogue-rim{
+  stroke:url(#hotel-flow-dialogue-rim-hotel);
+}
+
+.hotel-flow-dialogue-sheen{
+  fill:url(#hotel-flow-dialogue-sheen);
   opacity:0;
 }
 
-.hotel-flow-conversation--prompt{
-  animation:hotelFlowPromptBubble 11s ease-in-out infinite;
-}
-
-.hotel-flow-message-copy--typing{
-  transform-box:fill-box;
-  clip-path:inset(0 100% 0 0);
-  animation:hotelFlowTyping 11s steps(25,end) infinite;
-}
-
-.hotel-hero-color-flow.is-typewriter-ready .hotel-flow-message-copy--typing,
-.hotel-hero-color-flow.is-typewriter-ready .hotel-flow-message-copy--response{
-  clip-path:none;
-  animation:none;
-  opacity:1;
-}
-
-.hotel-flow-typing-caret{
-  stroke:rgba(255,255,255,.92);
-  stroke-width:2.2;
-  stroke-linecap:round;
-  animation:hotelFlowTypingCaret .72s step-end infinite;
-}
-
-.hotel-flow-conversation--thinking{
-  animation:hotelFlowThinkingBubble 11s ease-in-out infinite;
-}
-
-.hotel-flow-thinking-dots{
-  fill:rgba(255,255,255,.9);
-}
-
-.hotel-flow-thinking-dots circle{
-  animation:hotelFlowThinkingDot 1.05s ease-in-out infinite;
-}
-
-.hotel-flow-thinking-dots circle:nth-child(2){animation-delay:.14s}
-.hotel-flow-thinking-dots circle:nth-child(3){animation-delay:.28s}
-
-.hotel-flow-conversation--response{
-  animation:hotelFlowResponseBubble 11s ease-in-out infinite;
-}
-
-.hotel-flow-message-copy--response{
-  animation:hotelFlowResponseCopy 11s ease-in-out infinite;
-}
-
-.hotel-flow-field--flat .hotel-flow-orb--top .hotel-flow-conversation{
-  transform-box:view-box;
-  transform-origin:260px 155px;
-}
-
-.hotel-flow-field--flat .hotel-flow-orb--bottom .hotel-flow-conversation{
-  transform-box:view-box;
-  transform-origin:260px 845px;
-}
-
-.hotel-flow-field--flat .hotel-flow-orb--top .hotel-flow-conversation--prompt{
-  animation:
-    hotelFlowPromptBubble 11s ease-in-out infinite,
-    hotelFlowTopMessageScale 22s linear infinite;
-}
-
-.hotel-flow-field--flat .hotel-flow-orb--bottom .hotel-flow-conversation--thinking{
-  animation:
-    hotelFlowThinkingBubble 11s ease-in-out infinite,
-    hotelFlowBottomMessageScale 22s linear infinite;
-}
-
-.hotel-flow-field--flat .hotel-flow-orb--bottom .hotel-flow-conversation--response{
-  animation:
-    hotelFlowResponseBubble 11s ease-in-out infinite,
-    hotelFlowBottomMessageScale 22s linear infinite;
+.hotel-flow-conversation{
+  opacity:0;
 }
 
 .hero-band.is-motion-paused .hotel-hero-color-flow *{
@@ -273,117 +179,20 @@
   to{opacity:.66}
 }
 
-@keyframes hotelFlowTopOrbit{
-  0%,100%{transform:translate(20px,39px) scale(1.16)}
-  12.5%{transform:translate(-3px,14px) scale(1.08)}
-  25%{transform:translate(-60px,3px) scale(.96)}
-  37.5%{transform:translate(-117px,14px) scale(.84)}
-  50%{transform:translate(-140px,39px) scale(.74)}
-  62.5%{transform:translate(-117px,64px) scale(.84)}
-  75%{transform:translate(-60px,75px) scale(.94)}
-  87.5%{transform:translate(-3px,64px) scale(1.08)}
-}
-
-@keyframes hotelFlowBottomOrbit{
-  0%,100%{transform:translate(-20px,-39px) scale(.76)}
-  12.5%{transform:translate(3px,-14px) scale(.84)}
-  25%{transform:translate(60px,-3px) scale(.96)}
-  37.5%{transform:translate(117px,-14px) scale(1.08)}
-  50%{transform:translate(140px,-39px) scale(1.18)}
-  62.5%{transform:translate(117px,-64px) scale(1.08)}
-  75%{transform:translate(60px,-75px) scale(.96)}
-  87.5%{transform:translate(3px,-64px) scale(.84)}
-}
-
-@keyframes hotelFlowTopDepth{
-  0%,100%{transform:translate(74px,44px) scale(.78);opacity:.84}
-  50%{transform:translate(56px,62px) scale(.88);opacity:.94}
-}
-
-@keyframes hotelFlowBottomDepth{
-  0%,100%{transform:translate(-74px,-44px) scale(1.14);opacity:1}
-  50%{transform:translate(-56px,-62px) scale(1.02);opacity:.94}
-}
-
-@keyframes hotelFlowSphereBreathe{
-  from{transform:scale(.96,1.035) rotate(-2deg)}
-  to{transform:scale(1.035,.965) rotate(2deg)}
-}
-
-@keyframes hotelFlowOrbitLines{
-  to{transform:rotate(360deg)}
-}
-
-@keyframes hotelFlowPromptBubble{
-  0%,3%,100%{opacity:0}
-  7%,91%{opacity:1}
-  96%{opacity:0}
-}
-
-@keyframes hotelFlowTyping{
-  0%,8%{clip-path:inset(0 100% 0 0)}
-  34%,92%{clip-path:inset(0 0 0 0)}
-  96%,100%{clip-path:inset(0 100% 0 0)}
-}
-
-@keyframes hotelFlowTypingCaret{
-  0%,48%{opacity:1}
-  49%,100%{opacity:.15}
-}
-
-@keyframes hotelFlowThinkingBubble{
-  0%,39%{opacity:0}
-  43%,57%{opacity:1}
-  61%,100%{opacity:0}
-}
-
-@keyframes hotelFlowThinkingDot{
-  0%,100%{opacity:.24;transform:translateY(0)}
-  50%{opacity:1;transform:translateY(-3px)}
-}
-
-@keyframes hotelFlowResponseBubble{
-  0%,59%{opacity:0}
-  64%,91%{opacity:1}
-  96%,100%{opacity:0}
-}
-
-@keyframes hotelFlowResponseCopy{
-  0%,62%{opacity:0}
-  67%,92%{opacity:1}
-  96%,100%{opacity:0}
-}
-
-@keyframes hotelFlowTopMessageScale{
-  0%,100%{transform:scale(.862);animation-timing-function:ease-in-out}
-  12.5%{transform:scale(.926);animation-timing-function:ease-in-out}
-  25%{transform:scale(1.042);animation-timing-function:ease-in-out}
-  37.5%{transform:scale(1.19);animation-timing-function:ease-in-out}
-  50%{transform:scale(1.351);animation-timing-function:ease-in-out}
-  62.5%{transform:scale(1.19);animation-timing-function:ease-in-out}
-  75%{transform:scale(1.064);animation-timing-function:ease-in-out}
-  87.5%{transform:scale(.926);animation-timing-function:ease-in-out}
-}
-
-@keyframes hotelFlowBottomMessageScale{
-  0%,100%{transform:scale(1.316);animation-timing-function:ease-in-out}
-  12.5%{transform:scale(1.19);animation-timing-function:ease-in-out}
-  25%{transform:scale(1.042);animation-timing-function:ease-in-out}
-  37.5%{transform:scale(.926);animation-timing-function:ease-in-out}
-  50%{transform:scale(.847);animation-timing-function:ease-in-out}
-  62.5%{transform:scale(.926);animation-timing-function:ease-in-out}
-  75%{transform:scale(1.042);animation-timing-function:ease-in-out}
-  87.5%{transform:scale(1.19);animation-timing-function:ease-in-out}
-}
-
 @media (max-width:900px){
   .hotel-hero-color-flow{display:none}
 }
 
 @media (prefers-reduced-motion:reduce){
+  .hotel-flow-dialogue-message{
+    opacity:1;
+    transform:none;
+  }
+
+  .hotel-flow-dialogue-rim{stroke-dasharray:none}
+  .hotel-flow-dialogue-sheen{display:none}
+}
+
+@media (prefers-reduced-motion:reduce){
   .hotel-hero-color-flow *{animation:none}
-  .hotel-flow-conversation--prompt,
-  .hotel-flow-conversation--response{opacity:1}
-  .hotel-flow-message-copy--typing{clip-path:none}
-  .hotel-flow-conversation--thinking{display:none}
 }

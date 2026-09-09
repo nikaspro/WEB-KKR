@@ -89,116 +89,71 @@ export function mountHeroColorFlow(root, {reduced = false} = {}) {
 
   defs.append(geometry);
 
-  let typingTimeline = null;
+  const messages = [...root.querySelectorAll('.hotel-flow-dialogue-message')];
+  let dialogueTimeline = null;
 
-  const prepareTypewriter = ({selector, start, duration, anchor = 'left'}) => {
-    const typingCopy = root.querySelector(selector);
-    const typingBubble = typingCopy?.closest('.hotel-flow-conversation');
-    const typingShape = typingBubble?.querySelector('.hotel-flow-message-shape');
-    if (!typingCopy || !typingBubble || !typingShape) return null;
+  if (!reduced && messages.length) {
+    const messageInterval = 3.2;
+    dialogueTimeline = gsap.timeline({repeat:-1, repeatDelay:.35});
+    gsap.set(messages, {autoAlpha:0, y:18, scale:.78});
 
-    const message = typingCopy.textContent;
-    const textX = Number(typingCopy.getAttribute('x'));
-    const textY = Number(typingCopy.getAttribute('y'));
-    const shapeX = Number(typingShape.getAttribute('x'));
-    const finalWidth = Number(typingShape.getAttribute('width'));
-    const rightEdge = shapeX + finalWidth;
-    const minimumWidth = 96;
-    const caret = createSvgElement('line', {
-      class:'hotel-flow-typing-caret',
-      x1:textX,
-      x2:textX,
-      y1:textY - 18,
-      y2:textY + 18
+    messages.forEach((message, index) => {
+      const start = index * messageInterval;
+      const previousMessage = messages[index - 1];
+      const rim = message.querySelector('.hotel-flow-dialogue-rim');
+      const sheen = message.querySelector('.hotel-flow-dialogue-sheen');
+
+      if (previousMessage) {
+        dialogueTimeline.to(previousMessage, {
+          opacity:.42,
+          scale:.86,
+          duration:.58,
+          ease:'power2.out'
+        }, start);
+      }
+
+      dialogueTimeline.to(message, {
+        autoAlpha:1,
+        y:0,
+        scale:1.1,
+        duration:.68,
+        ease:'expo.out'
+      }, start);
+
+      if (rim) {
+        dialogueTimeline.fromTo(rim, {strokeDashoffset:0}, {
+          strokeDashoffset:-1,
+          duration:2.5,
+          ease:'none'
+        }, start + .08);
+      }
+
+      if (sheen) {
+        dialogueTimeline
+          .set(sheen, {x:0, opacity:0}, start + .18)
+          .to(sheen, {x:310, opacity:.9, duration:.62, ease:'power2.in'}, start + .18)
+          .to(sheen, {x:720, opacity:0, duration:.72, ease:'power2.out'}, start + .8);
+      }
     });
-    const measure = typingCopy.cloneNode();
-    const characterWidths = [0];
 
-    measure.classList.remove('hotel-flow-message-copy--typing');
-    measure.setAttribute('visibility', 'hidden');
-    typingBubble.append(measure);
-    typingBubble.append(caret);
-
-    for (let count = 1; count <= message.length; count += 1) {
-      measure.textContent = message.slice(0, count);
-      characterWidths.push(measure.getComputedTextLength());
-    }
-
-    measure.remove();
-    const fullTextWidth = characterWidths.at(-1) || 1;
-    const horizontalPadding = textX - shapeX;
-    const targetWidth = horizontalPadding * 2 + fullTextWidth;
-    const typingState = {count:0};
-    let visibleCharacterCount = -1;
-    const renderTyping = () => {
-      const nextCount = Math.min(message.length, Math.floor(typingState.count));
-      if (nextCount === visibleCharacterCount) return;
-
-      visibleCharacterCount = nextCount;
-      const revealedWidth = characterWidths[nextCount];
-      const bubbleWidth = minimumWidth + (targetWidth - minimumWidth) * (revealedWidth / fullTextWidth);
-      const currentShapeX = anchor === 'right' ? rightEdge - bubbleWidth : shapeX;
-      const currentTextX = currentShapeX + horizontalPadding;
-      const caretX = currentTextX + revealedWidth;
-      typingCopy.textContent = message.slice(0, nextCount);
-      typingCopy.setAttribute('x', currentTextX.toFixed(1));
-      typingShape.setAttribute('x', currentShapeX.toFixed(1));
-      typingShape.setAttribute('width', bubbleWidth.toFixed(1));
-      caret.setAttribute('x1', caretX.toFixed(1));
-      caret.setAttribute('x2', caretX.toFixed(1));
-    };
-
-    return {duration, message, renderTyping, start, typingState, reset:() => {
-      typingState.count = 0;
-      visibleCharacterCount = -1;
-      renderTyping();
-    }};
-  };
-
-  if (!reduced) {
-    const typewriters = [
-      prepareTypewriter({
-        selector:'.hotel-flow-field--flat .hotel-flow-message-copy--typing',
-        start:.88,
-        duration:2.86
-      }),
-      prepareTypewriter({
-        selector:'.hotel-flow-field--flat .hotel-flow-message-copy--response',
-        start:7.37,
-        duration:2.2,
-        anchor:'right'
-      })
-    ].filter(Boolean);
-
-    if (!typewriters.length) {
-      return {
-        pause:() => svg.pauseAnimations?.(),
-        resume:() => svg.unpauseAnimations?.()
-      };
-    }
-
-    root.classList.add('is-typewriter-ready');
-    typingTimeline = gsap.timeline({repeat:-1});
-    typingTimeline.call(() => typewriters.forEach(typewriter => typewriter.reset()), [], 0);
-    typewriters.forEach(typewriter => {
-      typingTimeline.to(typewriter.typingState, {
-        count:typewriter.message.length + .01,
-        duration:typewriter.duration,
-        ease:'none',
-        onUpdate:typewriter.renderTyping
-      }, typewriter.start);
-    });
-    typingTimeline.call(() => {}, [], 11);
+    dialogueTimeline.to(messages, {
+      autoAlpha:0,
+      y:-10,
+      scale:.82,
+      duration:.7,
+      stagger:.06,
+      ease:'power2.in'
+    }, messages.length * messageInterval + .25);
   }
 
   return {
     pause:() => {
       svg.pauseAnimations?.();
-      typingTimeline?.pause();
+      dialogueTimeline?.pause();
     },
     resume:() => {
       svg.unpauseAnimations?.();
-      typingTimeline?.resume();
+      dialogueTimeline?.resume();
     }
   };
 }

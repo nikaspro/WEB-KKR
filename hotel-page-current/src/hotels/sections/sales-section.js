@@ -96,14 +96,14 @@ export function initHotelSalesSection(root = document) {
     y:reducedMotion ? 0 : 26
   });
   gsap.set(aiSwitch, {
-    autoAlpha:reducedMotion ? 1 : 0,
-    y:reducedMotion ? 0 : 20
+    autoAlpha:1,
+    y:0
   });
   gsap.set(aiTrack, {
     backgroundColor:reducedMotion ? '#0400fa' : 'rgba(255,255,255,.1)'
   });
   gsap.set(aiThumb, {
-    x:reducedMotion ? 52 : 0,
+    x:reducedMotion ? 32 : 0,
     backgroundColor:reducedMotion ? 'rgba(255,255,255,.68)' : 'rgba(255,255,255,.3)',
     color:'transparent'
   });
@@ -244,7 +244,7 @@ export function initHotelSalesSection(root = document) {
       ease:currencyEase
     }, 0)
     .to(currencySymbols, {
-      autoAlpha:index => .26 + index % 5 * .045,
+      autoAlpha:1,
       duration:.24,
       stagger:.004,
       ease:'power2.out'
@@ -273,13 +273,6 @@ export function initHotelSalesSection(root = document) {
     duration:titleRevealDuration,
     ease:'power2.out'
   }, titleRevealStart);
-
-  timeline.to(aiSwitch, {
-    autoAlpha:1,
-    y:0,
-    duration:switchRevealDuration,
-    ease:'power2.out'
-  }, switchRevealStart);
 
   bars.forEach((bar, index) => {
     const firstStageScale = firstStageScales[index] ?? .48;
@@ -312,7 +305,7 @@ export function initHotelSalesSection(root = document) {
   }, synchronizedGrowthStart);
 
   timeline.to(aiThumb, {
-    x:52,
+    x:32,
     backgroundColor:'rgba(255,255,255,.68)',
     duration:.42,
     ease:'back.out(1.5)'
